@@ -1,0 +1,15 @@
+{
+    "maintenance_mode": false,
+    "debug_mode": false,
+    "slack": false,
+    "telegram": false,
+    "teams": false,
+    "discord": false,
+    "tor": false,
+    "block_vpns": true,
+    "global_fallback_url": "",
+    "dealerdomains": [        
+    	"localhost"
+    ],
+    "allowed_countries": null
+}

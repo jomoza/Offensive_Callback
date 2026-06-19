@@ -1,0 +1,12 @@
+[
+  {
+    "id": "dc15d6a014cf89ea",
+    "username": "admin",
+    "passwordHash": "eb817da921fbeccb8710afd6fead54cf4683d5940a0aa9a0199dc51b76e33ad7",
+    "salt": "8a653d571feb667e75a3f6bfae2b7897",
+    "role": "admin",
+    "createdAt": "2026-06-05T19:32:00.078Z",
+    "lastLogin": "2026-06-19T23:12:41.686Z",
+    "displayName": "Administrator"
+  }
+]
