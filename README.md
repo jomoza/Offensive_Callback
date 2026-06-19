@@ -83,7 +83,7 @@ sudo node index.js
 ## Security Notes
 
 - Deploy behind a reverse proxy (nginx/Caddy) with valid TLS for production use
-- `VELG_USER` / `VELG_PWD` protect the web interface — change from defaults before exposing
+- Protect the web interface — change from defaults admin:admin credentials.
 - OSINT API keys are stored in `.env` — never commit this file
 - DNS server on port 53 requires root; consider using a port redirect (`iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-port 5353`) and running the process as a non-root user
 - ICMP listener requires root; same approach applies
