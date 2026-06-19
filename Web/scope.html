@@ -1,42 +1,838 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>5ELG - Database</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5ELG — Upload CSV</title>
     <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="assets/css/index.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/sweetalert.js"></script>
+    <style>
+        /* ── SIDEBAR (from options) ── */
+/* ── SIDEBAR (from options) ── */
+/* ── layout ── */
+        :root {
+            --nav-w: 220px;
+            --nav-w-col: 54px;
+            --nav-tr: .18s cubic-bezier(.4,0,.2,1);
+        }
+        .cfg-grid { display:grid; grid-template-columns:var(--nav-w) 1fr; gap:0; min-height:calc(100vh - 120px); margin-top:14px; transition:grid-template-columns var(--nav-tr); }
+        .cfg-grid.nav-collapsed { grid-template-columns:var(--nav-w-col) 1fr; }
+        .cfg-sidebar { border-right:1px solid rgba(255,255,255,.07); padding-right:0; overflow:hidden; }
+        .cfg-content { padding-left:28px; }
+        .cfg-pane { display:none; }
+        .cfg-pane.active { display:block; }
+
+        /* ── nav container ── */
+        .cfg-nav { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; padding:0 0 12px; width:100%; overflow:hidden; }
+
+        /* ── nav header (logo + toggle) ── */
+        .cfg-nav-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:12px 12px 12px 14px;
+            border-bottom:1px solid rgba(255,255,255,.06);
+            margin-bottom:6px; flex-shrink:0;
+        }
+        .cfg-nav-logo {
+            font-size:13px; font-weight:800; letter-spacing:.14em; color:#7eb8ff;
+            white-space:nowrap; overflow:hidden;
+            max-width:100px;
+            transition:opacity var(--nav-tr), max-width var(--nav-tr);
+        }
+        .cfg-grid.nav-collapsed .cfg-nav-logo { opacity:0; max-width:0; }
+
+        .cfg-nav-toggle {
+            width:26px; height:26px; border:1px solid rgba(255,255,255,.1); border-radius:4px;
+            background:transparent; color:rgba(255,255,255,.4); cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:11px;
+            transition:all var(--nav-tr); flex-shrink:0;
+        }
+        .cfg-nav-toggle:hover { background:rgba(126,184,255,.08); color:#7eb8ff; border-color:rgba(126,184,255,.3); }
+        .cfg-grid.nav-collapsed .cfg-nav-toggle { transform:rotate(180deg); }
+
+        /* ── separator ── */
+        .cfg-nav-sep { height:1px; background:rgba(255,255,255,.05); margin:4px 12px; flex-shrink:0; }
+
+        /* ── nav item ── */
+        .cfg-nav-item {
+            position:relative;
+            display:flex; align-items:center; gap:10px;
+            padding:0 12px;
+            height:40px;
+            font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+            color:rgba(255,255,255,.32);
+            cursor:pointer;
+            border-left:2px solid transparent;
+            margin:1px 0;
+            transition:all var(--nav-tr);
+            user-select:none; white-space:nowrap; overflow:hidden; max-width:100%;
+        }
+        .cfg-nav-item:hover { color:rgba(255,255,255,.75); background:rgba(255,255,255,.04); border-left-color:rgba(255,255,255,.15); }
+        .cfg-nav-item.active { color:#fff; background:rgba(126,184,255,.07); border-left-color:#7eb8ff; }
+        .cfg-nav-item.nav-ext { opacity:.6; font-size:10px; }
+        .cfg-nav-item.nav-ext:hover { opacity:1; }
+
+        /* ── icon ── */
+        .nav-icon { font-size:15px; flex-shrink:0; width:20px; text-align:center; transition:transform var(--nav-tr); }
+        .cfg-nav-item:hover .nav-icon { transform:scale(1.1); }
+
+        /* ── label ── */
+        .nav-label { overflow:hidden; transition:opacity var(--nav-tr), max-width var(--nav-tr); max-width:160px; }
+        .cfg-grid.nav-collapsed .nav-label { opacity:0; max-width:0; }
+
+        /* ── tooltip (only visible when collapsed, appears on right) ── */
+        .nav-tooltip {
+            pointer-events:none;
+            position:fixed;
+            left:calc(var(--nav-w-col) + 10px);
+            top:50%; transform:translateY(-50%) translateX(-6px);
+            background:#131320;
+            border:1px solid rgba(126,184,255,.15);
+            border-radius:5px;
+            padding:9px 12px;
+            min-width:190px; max-width:240px;
+            box-shadow:0 6px 24px rgba(0,0,0,.5);
+            opacity:0;
+            transition:opacity var(--nav-tr), transform var(--nav-tr);
+            z-index:1000;
+        }
+        .cfg-nav-item:hover .nav-tooltip { opacity:1; transform:translateY(-50%) translateX(0); }
+        /* Hide tooltip when expanded — user can already read the label */
+        .cfg-grid:not(.nav-collapsed) .nav-tooltip { display:none; }
+
+        .tt-title { font-size:10px; font-weight:700; color:#7eb8ff; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; }
+        .tt-desc  { font-size:10px; color:rgba(255,255,255,.45); line-height:1.55; text-transform:none; letter-spacing:0; font-weight:400; }
+
+
+
+        /* ── section head ── */
+        .sec-head { display:flex; align-items:center; gap:8px; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.06); }
+        .sec-title { font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#e0e0e0; }
+        .sec-sub { font-size:11px; color:rgba(255,255,255,.3); margin-left:auto; }
+        .sec-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+
+        /* ── upload page specific ── */
+        .upload-wrap {
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* ── info banner ── */
+        .info-banner {
+            background: rgba(126,184,255,.04);
+            border: 1px solid rgba(126,184,255,.12);
+            border-radius: 6px;
+            padding: 16px 18px;
+        }
+        .info-banner-head {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: #7eb8ff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .info-banner p {
+            margin: 0 0 8px;
+            font-size: 11px;
+            color: rgba(255,255,255,.5);
+            line-height: 1.7;
+        }
+        .info-banner p:last-child { margin-bottom: 0; }
+
+        /* ── schema table ── */
+        .schema-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-top: 10px;
+        }
+        .schema-table th {
+            padding: 4px 8px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.28);
+            border-bottom: 1px solid rgba(255,255,255,.07);
+        }
+        .schema-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            vertical-align: top;
+        }
+        .schema-table tr:last-child td { border-bottom: none; }
+        .schema-table td:first-child {
+            font-family: Consolas, monospace;
+            font-size: 10px;
+            color: #7eb8ff;
+            white-space: nowrap;
+        }
+        .schema-table td:nth-child(2) { color: rgba(255,255,255,.55); }
+        .schema-table td:nth-child(3) {
+            color: rgba(255,255,255,.28);
+            font-size: 9px;
+        }
+        .req-badge {
+            display: inline-block;
+            padding: 0 4px;
+            border-radius: 2px;
+            font-size: 8px;
+            font-weight: 700;
+            background: rgba(200,112,112,.15);
+            color: #c87070;
+        }
+        .opt-badge {
+            display: inline-block;
+            padding: 0 4px;
+            border-radius: 2px;
+            font-size: 8px;
+            font-weight: 700;
+            background: rgba(255,255,255,.06);
+            color: rgba(255,255,255,.3);
+        }
+
+        /* ── drop zone ── */
+        .drop-zone {
+            border: 2px dashed rgba(126,184,255,.2);
+            border-radius: 6px;
+            background: rgba(126,184,255,.02);
+            padding: 36px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #7eb8ff;
+            background: rgba(126,184,255,.05);
+        }
+        .drop-zone.has-file {
+            border-color: rgba(95,255,176,.3);
+            background: rgba(95,255,176,.025);
+            padding: 20px 24px;
+        }
+        .drop-zone.invalid {
+            border-color: rgba(200,112,112,.5);
+            background: rgba(200,112,112,.04);
+        }
+        .drop-icon-svg { opacity: .3; transition: opacity .2s, transform .2s; }
+        .drop-zone:hover .drop-icon-svg { opacity: .55; transform: translateY(-2px); }
+        .drop-zone.has-file .drop-icon-svg,
+        .drop-zone.has-file .drop-empty { display: none; }
+        .drop-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .drop-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.45); }
+        .drop-sub { font-size: 11px; color: rgba(255,255,255,.22); }
+        #file-input { display: none; }
+
+        /* ── file card (selected state) ── */
+        .file-card { display: none; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+        .drop-zone.has-file .file-card { display: flex; }
+        .fc-icon {
+            width: 48px; height: 48px; border-radius: 6px;
+            background: rgba(95,255,176,.1); border: 1px solid rgba(95,255,176,.2);
+            display: flex; align-items: center; justify-content: center;
+            font-family: Consolas, monospace; font-size: 13px; font-weight: 800;
+            color: #5fffb0; letter-spacing: -.02em;
+        }
+        .fc-name { font-size: 12px; font-weight: 700; color: #e0e0e0; }
+        .fc-meta { font-size: 10px; color: rgba(255,255,255,.35); }
+
+        /* ── validation panel ── */
+        .val-panel {
+            background: #0a0a0a;
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 6px;
+            overflow: hidden;
+            display: none;
+        }
+        .val-panel.visible { display: block; }
+        .val-head {
+            display: flex; align-items: center; gap: 7px;
+            padding: 7px 14px;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+            font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+            color: rgba(255,255,255,.3);
+        }
+        .val-body { padding: 10px 14px; }
+        .val-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+            font-size: 11px;
+        }
+        .val-row:last-child { border-bottom: none; }
+        .val-icon { flex-shrink: 0; font-size: 12px; }
+        .val-col { font-family: Consolas, monospace; font-size: 10px; color: #7eb8ff; min-width: 140px; flex-shrink: 0; }
+        .val-status { font-size: 10px; }
+        .val-ok    { color: #5fffb0; }
+        .val-miss  { color: #c87070; }
+        .val-warn  { color: #ffd070; }
+
+        /* ── summary bar ── */
+        .val-summary {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 14px;
+            border-top: 1px solid rgba(255,255,255,.05);
+            font-size: 11px;
+        }
+        .vs-stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+        .vs-n { font-size: 16px; font-weight: 700; }
+        .vs-lbl { font-size: 9px; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .07em; }
+
+        /* ── progress ── */
+        .progress-wrap { width: 100%; display: none; }
+        .progress-wrap.active { display: block; }
+        .progress-bar-track {
+            width: 100%; height: 3px; background: rgba(255,255,255,.06);
+            border-radius: 2px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 2px;
+            background: linear-gradient(90deg, #7eb8ff, #5fffb0);
+            width: 0%; transition: width .15s;
+        }
+        .progress-text { font-size: 10px; color: rgba(255,255,255,.3); text-align: right; margin-top: 3px; }
+
+        /* ── buttons ── */
+        .btn-row { display: flex; align-items: center; gap: 8px; }
+        .btn-upload {
+            flex: 1;
+            padding: 11px;
+            border: 1px solid rgba(95,255,176,.35);
+            border-radius: 4px;
+            font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+            cursor: pointer; background: transparent; color: #5fffb0;
+            transition: all .15s;
+            display: none;
+        }
+        .btn-upload.visible { display: block; }
+        .btn-upload:hover:not(:disabled) { background: rgba(95,255,176,.07); border-color: #5fffb0; }
+        .btn-upload:disabled { opacity: .35; cursor: default; }
+        .btn-clear {
+            padding: 11px 14px;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 4px;
+            font-size: 10px; font-weight: 700;
+            cursor: pointer; background: transparent; color: rgba(255,255,255,.3);
+            transition: all .12s; display: none;
+        }
+        .btn-clear.visible { display: block; }
+        .btn-clear:hover { border-color: rgba(200,112,112,.4); color: #c87070; }
+
+
+        /* ── big upload button ── */
+        .btn-open-upload {
+            width: 100%;
+            padding: 22px;
+            border: 2px dashed rgba(95,255,176,.3);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: rgba(95,255,176,.03);
+            color: #5fffb0;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-family: Consolas, monospace;
+        }
+        .btn-open-upload:hover {
+            background: rgba(95,255,176,.07);
+            border-color: #5fffb0;
+            border-style: solid;
+            box-shadow: 0 0 24px rgba(95,255,176,.08);
+            transform: translateY(-1px);
+        }
+        .btn-open-upload:active { transform: translateY(0); }
+
+        /* ── result ── */
+        .upload-result {
+            padding: 10px 14px; border-radius: 4px; font-size: 11px; display: none;
+        }
+        .upload-result.success { background: rgba(95,255,176,.06); border: 1px solid rgba(95,255,176,.2); color: #5fffb0; }
+        .upload-result.error   { background: rgba(200,112,112,.06); border: 1px solid rgba(200,112,112,.2); color: #c87070; }
+    </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav>        
-        <div class="nav-container">
-            <div class="brand">
-                <a href="/web/index">5ELG</a>
-                <a href="https://github.com/jomoza/5ELG" target="_blank">GITHUB</a>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/web/callback">CALLBACK</a>|</li>
-                <li><a href="/web/dashboard">BROWSERS_DASHBOARD</a>
-                <a href="/web/scanners" >IPs_DASHBOARD</a>|</li>
-                <li><a href="/web/files">FILES</a>|</li>
-                <li><a href="/web/options">OPTIONS</a></li>
-            </ul>
+<nav>
+    <div class="nav-container">
+        <div class="brand">
+            <a href="/web/index" class="brand-logo">Offensive Callback <span class="brand-tag">0FC4</span></a>
+                <a href="/run/logout" class="brand-logout">LOG OUT</a>
+    <span class="brand-user" id="nav-user"></span>
+
         </div>
-    </nav>
+        <script>fetch('/run/whoami').then(r=>r.json()).then(d=>{var e=document.getElementById('nav-user');if(e&&d.username)e.textContent=d.username;}).catch(function(){});</script>
+        <ul class="nav-links">
+            <li><a href="/web/callback" class="nav-btn nav-callback">CALLBACK</a></li>
+            <li><a href="/web/dashboard" class="nav-btn nav-browsers">BROWSERS</a></li>
+            <li><a href="/web/scanners" class="nav-btn nav-panel">PANEL</a></li>
+            <li><a href="/web/options" class="nav-btn nav-app">APP</a></li>
+        </ul>
+    </div>
+</nav>
+<script>
+(function(){
+    var p=location.pathname;
+    var a=p.includes('/callback')?'nav-callback'
+         :p.includes('/dashboard')||p.includes('/browsers')?'nav-browsers'
+         :p.includes('/scanners')||p.includes('/scope')||p.includes('/infoIPX')?'nav-panel'
+         :p.includes('/options')?'nav-app'
+         :'nav-app';
+    var el=document.querySelector('.'+a);
+    if(el)el.classList.add('active');
+})();
+</script>
 
-    <hr>
+<div class="cfg-grid" id="upload-grid">
+<div class="cfg-sidebar">
+        <div class="cfg-nav">
 
-    <h4>Upload CSV Data</h4>
-    <center>
-    <p>If you have collected data offline, you can upload it in CSV format here. This data will be added to the database and processed alongside live data.</p>
-    <form action="/api/out/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload">
-    </form>
-    </center>
-    <hr>
+            <!-- Header: logo + collapse toggle -->
+            <div class="cfg-nav-header">
+                <span class="cfg-nav-logo">5ELG</span>
+                <button class="cfg-nav-toggle" onclick="toggleNav()" title="Collapse / expand sidebar" id="nav-toggle-btn">
+                    ◀
+                </button>
+            </div>
 
+            <!-- General -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options'">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">General</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">General</div>
+                    <div class="tt-desc">Server overview, protocol status, environment variables and storage paths.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- DNS Server -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#dns'">
+                <span class="nav-icon">🌐</span>
+                <span class="nav-label">DNS Server</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">DNS Server</div>
+                    <div class="tt-desc">Manage DNS records, dealer domains and server configuration.</div>
+                </span>
+            </div>
+
+            <!-- Dealers -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#dealers'">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">Dealers</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Dealers</div>
+                    <div class="tt-desc">Configure and manage dealer campaigns, proxy dealers and injection payloads.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- Users -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#users'">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Users</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Users</div>
+                    <div class="tt-desc">Manage operator accounts: create, change passwords, assign roles and delete users.</div>
+                </span>
+            </div>
+
+            <!-- Backups -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#backups'">
+                <span class="nav-icon">💾</span>
+                <span class="nav-label">Backups</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Backups</div>
+                    <div class="tt-desc">Generate and download database backups as CSV files.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- Files -->
+            <div class="cfg-nav-item nav-ext" onclick="window.location.href='/web/files'">
+                <span class="nav-icon">📁</span>
+                <span class="nav-label">Files ↗</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Files</div>
+                    <div class="tt-desc">Browse and manage uploaded files on the server.</div>
+                </span>
+            </div>
+
+            <!-- Upload — active (current page) -->
+            <div class="cfg-nav-item active" id="nav-upload">
+                <span class="nav-icon">⬆️</span>
+                <span class="nav-label">Upload</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Upload</div>
+                    <div class="tt-desc">Upload CSV datasets or dealer files to the server.</div>
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="cfg-content">
+        <div class="upload-wrap">
+
+            <div>
+                <div class="sec-head">
+                    <span class="sec-dot" style="background:var(--green,#5fffb0)"></span>
+                    <span class="sec-title">Upload CSV Data</span>
+                </div>
+                <p style="font-size:12px;color:rgba(255,255,255,.3);margin:0 0 14px">Import offline-collected dealer data into the 5ELG database.</p>
+            </div>
+
+
+            <!-- ── Upload button ── -->
+            <button class="btn-open-upload" onclick="openUploadModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                UPLOAD CSV DATA
+            </button>
+
+            <!-- ── Explanation ── -->
+            <div class="info-banner">
+                <div class="info-banner-head">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#7eb8ff" stroke-width="1.5"/><path d="M12 8v4M12 16h.01" stroke="#7eb8ff" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    What is this for?
+                </div>
+                <p>If you have deployed a <strong style="color:rgba(255,255,255,.75)">Dealer Proxy</strong> — an alternative dealer implementation running in a separate environment (PHP, Python, Bash, etc.) — it can generate CSV exports of the collected data. Upload that CSV here to import the captured sessions into 5ELG's database for unified analysis alongside live browser traffic.</p>
+                <p>This is especially useful for <strong style="color:rgba(255,255,255,.75)">offline collection</strong> (air-gapped systems, local network traps, phishing proxies) where the dealer cannot communicate directly with this server in real time.</p>
+
+                <div style="margin-top:12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:6px">Required CSV schema</div>
+                <table class="schema-table">
+                    <thead><tr><th>Column</th><th>Description</th><th>Required</th></tr></thead>
+                    <tbody>
+                        <tr><td>FP_REQUEST</td><td>Raw fingerprint request data</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>TS</td><td>Timestamp of the capture</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>IP</td><td>Source IP address</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>UA</td><td>User-Agent string (URL-encoded)</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>FP_USER</td><td>User fingerprint hash (Fu)</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>FP_BROWSER</td><td>Browser fingerprint hash (Fb)</td><td><span class="req-badge">REQUIRED</span></td></tr>
+                        <tr><td>SCREEN_ENCODED</td><td>Base64-encoded screenshot</td><td><span class="opt-badge">optional</span></td></tr>
+                        <tr><td>HTML_ENCODED</td><td>Base64-encoded page HTML</td><td><span class="opt-badge">optional</span></td></tr>
+                        <tr><td>JS_DATA</td><td>JavaScript device data (Jd)</td><td><span class="opt-badge">optional</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- ── Last upload result (shown after success) ── -->
+            <div class="upload-result" id="upload-result"></div>
+
+        </div>
+    </div><!-- /cfg-content -->
+</div><!-- /cfg-grid -->
+
+<script>
+    const REQUIRED_COLS = ['FP_REQUEST','TS','IP','UA','FP_USER','FP_BROWSER'];
+    const OPTIONAL_COLS = ['SCREEN_ENCODED','HTML_ENCODED','JS_DATA'];
+    const ALL_COLS = [...REQUIRED_COLS, ...OPTIONAL_COLS];
+
+    let selectedFile = null;
+    let validationOk = false;
+
+    /* ── helpers ── */
+    function fmtBytes(b) {
+        if (!b) return '0 B';
+        const u = ['B','KB','MB','GB'], i = Math.floor(Math.log(b)/Math.log(1024));
+        return (b/Math.pow(1024,i)).toFixed(1)+' '+u[i];
+    }
+    function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    /* ── open modal ── */
+    function openUploadModal() {
+        selectedFile = null; validationOk = false;
+
+        Swal.fire({
+            title: '<span style="font-size:14px;letter-spacing:.08em">⬆ UPLOAD CSV DATA</span>',
+            html: `
+                <div id="swal-upload-inner" style="text-align:left">
+
+                    <!-- Drop zone -->
+                    <div id="swal-drop" style="
+                        border:2px dashed rgba(126,184,255,.25);border-radius:6px;
+                        background:rgba(126,184,255,.02);padding:32px 20px;
+                        text-align:center;cursor:pointer;transition:all .2s;
+                        display:flex;flex-direction:column;align-items:center;gap:10px;
+                        user-select:none;margin-bottom:12px;
+                    " onclick="document.getElementById('swal-file-input').click()"
+                       ondragover="event.preventDefault();this.style.borderColor='#7eb8ff';this.style.background='rgba(126,184,255,.06)'"
+                       ondragleave="this.style.borderColor='rgba(126,184,255,.25)';this.style.background='rgba(126,184,255,.02)'"
+                       ondrop="event.preventDefault();this.style.borderColor='rgba(126,184,255,.25)';this.style.background='rgba(126,184,255,.02)';handleSwalFile(event.dataTransfer.files[0])">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="opacity:.35">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#7eb8ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div id="swal-drop-title" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.45)">Drop CSV file here or click to browse</div>
+                        <div style="font-size:10px;color:rgba(255,255,255,.2)">Only .csv files accepted</div>
+                    </div>
+                    <input type="file" id="swal-file-input" accept=".csv" style="display:none" onchange="handleSwalFile(this.files[0])">
+
+                    <!-- Validation panel (hidden until file selected) -->
+                    <div id="swal-val" style="display:none;background:#0a0a0a;border:1px solid rgba(255,255,255,.07);border-radius:6px;overflow:hidden;margin-bottom:12px">
+                        <div style="display:flex;align-items:center;gap:7px;padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.05);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)">
+                            <span id="swal-val-dot" style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:#666"></span>
+                            Schema Validation
+                            <span id="swal-val-sub" style="margin-left:auto;font-weight:400;color:rgba(255,255,255,.2)"></span>
+                        </div>
+                        <div id="swal-val-body" style="padding:10px 14px"></div>
+                        <div id="swal-val-summary" style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid rgba(255,255,255,.05);font-size:11px"></div>
+                    </div>
+
+                    <!-- Progress (hidden until upload starts) -->
+                    <div id="swal-progress" style="display:none;margin-bottom:12px">
+                        <div style="width:100%;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden">
+                            <div id="swal-pbar" style="height:100%;border-radius:2px;background:linear-gradient(90deg,#7eb8ff,#5fffb0);width:0%;transition:width .15s"></div>
+                        </div>
+                        <div id="swal-ptext" style="font-size:10px;color:rgba(255,255,255,.3);text-align:right;margin-top:3px"></div>
+                    </div>
+
+                </div>`,
+            width: '540px',
+            showConfirmButton: true,
+            confirmButtonText: '⬆ Upload',
+            showCancelButton: true,
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: 'rgba(95,255,176,.15)',
+            customClass: { confirmButton: 'swal-upload-btn' },
+            didOpen: () => {
+                const confirmBtn = Swal.getConfirmButton();
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.style.opacity = '.35';
+                    confirmBtn.style.border = '1px solid rgba(95,255,176,.3)';
+                    confirmBtn.style.color = '#5fffb0';
+                    confirmBtn.style.fontWeight = '700';
+                    confirmBtn.style.letterSpacing = '.06em';
+                }
+            },
+            preConfirm: () => {
+                if (!selectedFile || !validationOk) return false;
+                return doUpload();
+            }
+        });
+    }
+
+    /* ── handle file in modal ── */
+    function handleSwalFile(file) {
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'csv') {
+            const drop = document.getElementById('swal-drop');
+            if (drop) { drop.style.borderColor='rgba(200,112,112,.5)'; drop.style.background='rgba(200,112,112,.04)'; setTimeout(()=>{drop.style.borderColor='rgba(126,184,255,.25)';drop.style.background='rgba(126,184,255,.02)';},1500); }
+            const t = document.getElementById('swal-drop-title');
+            if (t) { t.textContent = '✗ Only .csv files accepted'; t.style.color = '#c87070'; setTimeout(()=>{t.textContent='Drop CSV file here or click to browse';t.style.color='rgba(255,255,255,.45)';},1500); }
+            return;
+        }
+        selectedFile = file;
+
+        // Update drop zone to show file selected
+        const drop = document.getElementById('swal-drop');
+        if (drop) {
+            drop.style.borderColor = 'rgba(95,255,176,.3)';
+            drop.style.background  = 'rgba(95,255,176,.025)';
+            drop.style.borderStyle = 'solid';
+            drop.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;padding:4px 0;width:100%">
+                    <div style="width:40px;height:40px;border-radius:5px;background:rgba(95,255,176,.1);border:1px solid rgba(95,255,176,.2);display:flex;align-items:center;justify-content:center;font-family:Consolas,monospace;font-size:11px;font-weight:800;color:#5fffb0;flex-shrink:0">CSV</div>
+                    <div style="text-align:left;flex:1;min-width:0">
+                        <div style="font-size:12px;font-weight:700;color:#e0e0e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(file.name)}</div>
+                        <div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px">${fmtBytes(file.size)} · ${file.size.toLocaleString()} bytes</div>
+                    </div>
+                    <div style="font-size:10px;color:rgba(255,255,255,.25);cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();resetSwalDrop()">✕ change</div>
+                </div>`;
+        }
+        validateSwalCsv(file);
+    }
+
+    function resetSwalDrop() {
+        selectedFile = null; validationOk = false;
+        const drop = document.getElementById('swal-drop');
+        if (drop) {
+            drop.style.borderColor='rgba(126,184,255,.25)';drop.style.background='rgba(126,184,255,.02)';drop.style.borderStyle='dashed';
+            drop.innerHTML = `
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="opacity:.35">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="#7eb8ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div id="swal-drop-title" style="font-size:12px;font-weight:700;color:rgba(255,255,255,.45)">Drop CSV file here or click to browse</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.2)">Only .csv files accepted</div>`;
+            drop.onclick = ()=>document.getElementById('swal-file-input').click();
+        }
+        const val = document.getElementById('swal-val'); if(val) val.style.display='none';
+        const confirmBtn = Swal.getConfirmButton();
+        if (confirmBtn) { confirmBtn.disabled=true; confirmBtn.style.opacity='.35'; }
+    }
+
+    /* ── CSV validation inside modal ── */
+    function validateSwalCsv(file) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const text = ev.target.result;
+            const lines = text.split('\n').filter(l => l.trim());
+            if (!lines.length) { showSwalValError('File is empty'); return; }
+
+            const cols = lines[0].split(',').map(c => c.trim().replace(/^["']|["']$/g,'').toUpperCase());
+            const foundReq   = REQUIRED_COLS.filter(c => cols.includes(c));
+            const missingReq = REQUIRED_COLS.filter(c => !cols.includes(c));
+            const foundOpt   = OPTIONAL_COLS.filter(c => cols.includes(c));
+            const extraCols  = cols.filter(c => !ALL_COLS.includes(c));
+            const rowCount   = lines.length - 1;
+
+            let sampleOk = true, sampleNote = '';
+            if (lines.length > 1) {
+                const sc = lines[1].split(',');
+                if (sc.length !== cols.length) { sampleOk=false; sampleNote=`Row 1 has ${sc.length} values, header has ${cols.length}`; }
+            }
+
+            validationOk = missingReq.length === 0 && sampleOk;
+
+            const valEl  = document.getElementById('swal-val');
+            const dotEl  = document.getElementById('swal-val-dot');
+            const subEl  = document.getElementById('swal-val-sub');
+            const bodyEl = document.getElementById('swal-val-body');
+            const sumEl  = document.getElementById('swal-val-summary');
+            if (!valEl) return;
+
+            valEl.style.display = 'block';
+            if (dotEl) dotEl.style.background = validationOk ? '#5fffb0' : '#c87070';
+            if (subEl) subEl.textContent = validationOk ? `${rowCount.toLocaleString()} rows · ready` : 'Schema errors found';
+
+            if (bodyEl) bodyEl.innerHTML =
+                REQUIRED_COLS.map(col => {
+                    const f = cols.includes(col);
+                    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+                        <span style="flex-shrink:0;font-size:12px">${f?'✓':'✗'}</span>
+                        <span style="font-family:Consolas,monospace;font-size:10px;color:#7eb8ff;min-width:140px;flex-shrink:0">${col}</span>
+                        <span style="font-size:10px;color:${f?'#5fffb0':'#c87070'}">${f?'Present':'MISSING — required'}</span>
+                    </div>`;
+                }).join('') +
+                OPTIONAL_COLS.map(col => {
+                    const f = cols.includes(col);
+                    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+                        <span style="flex-shrink:0;font-size:12px;opacity:.4">${f?'✓':'○'}</span>
+                        <span style="font-family:Consolas,monospace;font-size:10px;color:#7eb8ff;opacity:.5;min-width:140px;flex-shrink:0">${col}</span>
+                        <span style="font-size:10px;color:rgba(255,255,255,.3)">${f?'Present':'Not included (optional)'}</span>
+                    </div>`;
+                }).join('') +
+                (extraCols.length ? extraCols.map(col=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px">
+                    <span style="color:#ffd070;flex-shrink:0">⚠</span>
+                    <span style="font-family:Consolas,monospace;font-size:10px;color:#ffd070;min-width:140px;flex-shrink:0">${col}</span>
+                    <span style="font-size:10px;color:#ffd070">Unknown — will be ignored</span>
+                </div>`).join('') : '') +
+                (!sampleOk ? `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px">
+                    <span style="flex-shrink:0">⚠</span>
+                    <span style="font-family:Consolas,monospace;font-size:10px;color:#ffd070;min-width:140px;flex-shrink:0">Row structure</span>
+                    <span style="font-size:10px;color:#ffd070">${esc(sampleNote)}</span>
+                </div>` : '');
+
+            if (sumEl) sumEl.innerHTML =
+                `<div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-size:16px;font-weight:700;color:#5fffb0">${foundReq.length}/${REQUIRED_COLS.length}</span><span style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em">Required</span></div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,.06)"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-size:16px;font-weight:700;color:#7eb8ff">${foundOpt.length}/${OPTIONAL_COLS.length}</span><span style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em">Optional</span></div>
+                <div style="width:1px;height:28px;background:rgba(255,255,255,.06)"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:1px"><span style="font-size:16px;font-weight:700;color:rgba(255,255,255,.5)">${rowCount.toLocaleString()}</span><span style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.07em">Rows</span></div>
+                <span style="margin-left:auto;font-size:10px;font-weight:700;display:flex;align-items:center;gap:5px;color:${validationOk?'#5fffb0':'#c87070'}">
+                    <span style="width:6px;height:6px;border-radius:50%;background:${validationOk?'#5fffb0':'#c87070'}"></span>
+                    ${validationOk ? 'Schema valid — ready' : missingReq.length+' column'+(missingReq.length>1?'s':'')+' missing'}
+                </span>`;
+
+            const confirmBtn = Swal.getConfirmButton();
+            if (confirmBtn) {
+                confirmBtn.disabled = !validationOk;
+                confirmBtn.style.opacity = validationOk ? '1' : '.35';
+            }
+        };
+        reader.readAsText(file.slice(0, 32768));
+    }
+
+    function showSwalValError(msg) {
+        const valEl = document.getElementById('swal-val'); if(valEl) valEl.style.display='block';
+        const dotEl = document.getElementById('swal-val-dot'); if(dotEl) dotEl.style.background='#c87070';
+        const subEl = document.getElementById('swal-val-sub'); if(subEl) subEl.textContent='Error';
+        const bodyEl = document.getElementById('swal-val-body'); if(bodyEl) bodyEl.innerHTML=`<div style="padding:8px 0;font-size:11px;color:#c87070">✗ ${esc(msg)}</div>`;
+        const sumEl = document.getElementById('swal-val-summary'); if(sumEl) sumEl.innerHTML='';
+        const confirmBtn = Swal.getConfirmButton(); if(confirmBtn){confirmBtn.disabled=true;confirmBtn.style.opacity='.35';}
+        validationOk = false;
+    }
+
+    /* ── actual upload ── */
+    function doUpload() {
+        return new Promise(resolve => {
+            const progressEl = document.getElementById('swal-progress');
+            const pbar       = document.getElementById('swal-pbar');
+            const ptext      = document.getElementById('swal-ptext');
+            if (progressEl) progressEl.style.display = 'block';
+
+            const confirmBtn = Swal.getConfirmButton();
+            if (confirmBtn) { confirmBtn.disabled=true; confirmBtn.style.opacity='.35'; }
+
+            const fd = new FormData();
+            fd.append('file', selectedFile);
+
+            const xhr = new XMLHttpRequest();
+            xhr.upload.addEventListener('progress', e => {
+                if (e.lengthComputable) {
+                    const pct = Math.round(e.loaded/e.total*100);
+                    if (pbar) pbar.style.width = pct+'%';
+                    if (ptext) ptext.textContent = pct+'% — '+fmtBytes(e.loaded)+' / '+fmtBytes(e.total);
+                }
+            });
+            xhr.addEventListener('load', () => {
+                if (pbar) pbar.style.width = '100%';
+                resolve(xhr.status >= 200 && xhr.status < 300);
+                const resultEl = document.getElementById('upload-result');
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    Swal.fire({title:'Imported!',html:`<strong>${esc(selectedFile.name)}</strong> imported successfully into the database.`,icon:'success',timer:2500,showConfirmButton:false});
+                    if (resultEl) { resultEl.style.display='block'; resultEl.className='upload-result success'; resultEl.innerHTML=`✓ <strong>${esc(selectedFile.name)}</strong> imported successfully.`; }
+                } else {
+                    Swal.showValidationMessage(`Upload failed — HTTP ${xhr.status}`);
+                    if (confirmBtn) { confirmBtn.disabled=false; confirmBtn.style.opacity='1'; }
+                }
+            });
+            xhr.addEventListener('error', () => {
+                Swal.showValidationMessage('Network error during upload');
+                if (confirmBtn) { confirmBtn.disabled=false; confirmBtn.style.opacity='1'; }
+                resolve(false);
+            });
+            xhr.open('POST', '/api/out/upload');
+            xhr.send(fd);
+        });
+    }
+
+    /* ── sidebar collapse ── */
+    let _navCollapsed = localStorage.getItem('5elg-nav-collapsed') === '1';
+    function applyNavState() {
+        const grid = document.getElementById('upload-grid');
+        const btn  = document.getElementById('nav-toggle-btn');
+        if (!grid) return;
+        if (_navCollapsed) { grid.classList.add('nav-collapsed'); if(btn) btn.textContent = '▶'; }
+        else               { grid.classList.remove('nav-collapsed'); if(btn) btn.textContent = '◀'; }
+    }
+    function toggleNav() {
+        _navCollapsed = !_navCollapsed;
+        localStorage.setItem('5elg-nav-collapsed', _navCollapsed ? '1' : '0');
+        applyNavState();
+    }
+    applyNavState();
+</script>
 </body>
 </html>

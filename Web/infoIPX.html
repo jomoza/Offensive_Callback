@@ -1,496 +1,1465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>IP Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5ELG - IP Detail</title>
     <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="assets/css/index.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
-        
-        .info-box {
-            margin: 20px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .button-group {
-            margin: 20px 0;
-            display: flex;
-            gap: 10px;
-        }
-        .button-group button {
-            padding: 10px 15px;
-            cursor: pointer;
-            border: none;
-            background-color: #81a1c1;
-            color: black;
-            border-radius: 5px;
-            font-size: 1em;
-        }
-        .button-group button:hover {
-            background-color: #6391b0;
-        }
-        .section-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            flex-wrap: wrap; /* Allows buttons to wrap in case of overflow */
-        }
-        .section-title {
-            margin: 10px 0;
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-        .section-content {
-            display: none;
-            margin: 10px 0;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .toggle-button {
-            padding: 10px 15px;
-            cursor: pointer;
-            background-color: #81a1c1;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        .toggle-button:hover {
-            background-color: #6391b0;
-        }
-        /* General Styles for Small Buttons */
+        /* ── global ── */
+        body{background:#060606}
+        .page-wrap{display:grid;grid-template-columns:1fr 340px;gap:12px;align-items:start}
+        .page-wrap.no-sidebar{grid-template-columns:1fr}
+        @media(max-width:900px){.page-wrap{grid-template-columns:1fr}}
 
-        #small-button {
-            font-size: 0.95rem; /* Smaller font size */
-            padding: 5px 10px; /* Less padding for a compact look */
-            background-color: transparent; /* A simple purple background */
-            color: #ffffff; /* White text color */
-            border: none; /* No borders for a minimal look */
-            border-radius: 4px; /* Slightly rounded corners */
-            cursor: pointer; /* Pointer cursor for better UX */
-            transition: all 0.2s ease-in-out; /* Smooth hover effects */
-        }
+        /* ── ip header ── */
+        .ip-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:14px 0 16px;flex-wrap:wrap}
+        .ip-title{display:flex;flex-direction:column;gap:4px}
+        .ip-addr-big{font-family:'Consolas','Menlo',monospace;font-size:24px;font-weight:700;color:#e0e0e0;letter-spacing:.04em}
+        .ip-sub{font-size:10px;color:rgba(255,255,255,.28);letter-spacing:.06em;text-transform:uppercase}
+        .ip-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-top:3px;border:1px solid}
+        .ip-actions{display:flex;gap:5px;flex-wrap:wrap}
+        .act-btn{display:inline-flex;align-items:center;height:26px;padding:0 11px;border:1px solid rgba(255,255,255,.14);border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.06em;cursor:pointer;background:transparent;color:rgba(255,255,255,.6);transition:all .1s;white-space:nowrap;text-decoration:none}
+        .act-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.3);color:#fff}
+        .act-btn.blue{border-color:rgba(126,184,255,.3);color:#7eb8ff}.act-btn.blue:hover{background:rgba(126,184,255,.08)}
+        .act-btn.green{border-color:rgba(95,255,176,.3);color:#5fffb0}.act-btn.green:hover{background:rgba(95,255,176,.08)}
+        .act-btn.purple{border-color:rgba(196,176,255,.3);color:#c4b0ff}.act-btn.purple:hover{background:rgba(196,176,255,.08)}
+        .act-btn.red{border-color:rgba(200,80,80,.3);color:#c87070}.act-btn.red:hover{background:rgba(200,80,80,.07)}
 
-        /* Hover Effect */
-        #small-button:hover {
-            background-color: transparent; /* Slightly darker purple on hover */
-            transform: scale(1.05); /* Slight zoom effect on hover */
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow on hover */
-        }
+        /* ── notice banner ── */
+        .notice{background:rgba(180,180,100,.06);border:1px solid rgba(180,180,100,.2);border-radius:4px;padding:9px 13px;font-size:11px;color:rgba(255,255,255,.65);margin-bottom:12px;line-height:1.7}
+        .notice b{color:#c8c870}
 
-        /* Active State */
-        #small-button:active {
-            background-color: transparent; /* Even darker purple when clicked */
-            transform: scale(1); /* Remove the hover zoom effect */
-        }
+        /* ── score bar ── */
+        .score-bar{display:flex;align-items:center;gap:8px;margin:10px 0 4px}
+        .score-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+        .score-fill{height:100%;border-radius:3px}
+        .score-num{font-size:16px;font-weight:700;min-width:40px}
+        .score-label{font-size:10px;font-weight:700;padding:1px 7px;border-radius:3px}
 
-        /* Disabled State */
-        #small-button:disabled {
-            background-color: #cccccc; /* Light grey for disabled state */
-            color: #666666; /* Grey text color */
-            cursor: not-allowed; /* Show not-allowed cursor */
-            opacity: 0.7; /* Reduce opacity for a disabled effect */
-        }
+        /* ── card ── */
+        .card{background:#0a0a0a;border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:10px}
+        .card-head{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+        .card-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .card-head .card-badge{margin-left:auto;font-size:9px;background:rgba(255,255,255,.06);padding:1px 7px;border-radius:2px;color:rgba(255,255,255,.45)}
+        .card-body{padding:10px 12px}
 
+        /* ── kv rows ── */
+        .kv-row{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+        .kv-row:last-child{border-bottom:none}
+        .kv-k{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.28);min-width:90px;flex-shrink:0}
+        .kv-v{color:#d0d0d0;word-break:break-all;font-size:11px}
+        .kv-v.mono{font-family:'Consolas','Menlo',monospace;font-size:10px;color:#7eb8ff}
+        .kv-v.ok{color:#5fffb0}.kv-v.warn{color:#c87070}.kv-v.dim{color:rgba(255,255,255,.28)}
+
+        /* ── map ── */
+        #ip-map{height:220px;border-radius:0;filter:brightness(.82) saturate(.55)}
+        .leaflet-container{background:#0a0a0a}
+        .leaflet-popup-content-wrapper{background:#111;border:1px solid rgba(255,255,255,.1);color:#ddd;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.8)}
+        .leaflet-popup-tip{background:#111}
+        .leaflet-popup-content{margin:7px 10px;font-size:11px}
+
+        /* ── issues grid ── */
+        .issues-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+        .issue-pill{display:flex;align-items:center;gap:4px;padding:4px 7px;border-radius:3px;font-size:9px;font-weight:700}
+        .issue-true{background:rgba(200,80,80,.1);color:#c87070}
+        .issue-false{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
+
+        /* ── CVE list ── */
+        .cve-item{background:rgba(200,80,80,.04);border:1px solid rgba(200,80,80,.1);border-radius:3px;padding:7px 9px;margin-bottom:5px}
+        .cve-head{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+        .cve-id{font-family:'Consolas','Menlo',monospace;font-size:11px;font-weight:700;color:#c87070}
+        .cve-score{font-size:10px;font-weight:700;padding:1px 5px;border-radius:2px}
+        .cve-desc{font-size:10px;color:rgba(255,255,255,.42);line-height:1.5}
+        .cve-extra{font-size:10px;color:rgba(180,160,220,.7);margin-top:2px}
+
+        /* ── port list ── */
+        .port-entry{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:3px 8px;margin:2px;font-size:10px}
+        .pe-num{font-family:monospace;font-weight:700}.pe-proto{font-size:8px;color:rgba(255,255,255,.3)}.pe-svc{color:rgba(255,255,255,.5)}.pe-src{font-size:8px;color:rgba(255,255,255,.18)}
+        .port-entry.has-banner{border-color:rgba(126,184,255,.15)}
+
+        /* ── shodan service ── */
+        .svc-block{background:rgba(126,184,255,.03);border:1px solid rgba(126,184,255,.08);border-radius:3px;margin-bottom:6px;overflow:hidden}
+        .svc-toggle{display:flex;align-items:center;gap:6px;padding:7px 10px;cursor:pointer;user-select:none;transition:background .1s}
+        .svc-toggle:hover{background:rgba(126,184,255,.05)}
+        .svc-toggle-arrow{font-size:9px;color:rgba(255,255,255,.3);transition:transform .14s;flex-shrink:0}
+        .svc-block.open .svc-toggle-arrow{transform:rotate(90deg);color:rgba(255,255,255,.6)}
+        .svc-detail{display:none;padding:0 10px 10px;border-top:1px solid rgba(126,184,255,.06)}
+        .svc-block.open .svc-detail{display:block}
+        /* DNS trace */
+        .dns-tbl{width:100%;border-collapse:collapse}
+        .dns-tbl th{padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.28);border-bottom:1px solid rgba(255,255,255,.08);font-weight:700;background:#050505;white-space:nowrap}
+        .dns-tbl td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;font-size:10px}
+        .dns-tbl tr:last-child td{border-bottom:none}
+        .dns-tbl tr:hover td{background:rgba(255,255,255,.02)}
+        .dns-type{display:inline-block;padding:1px 5px;border-radius:2px;font-size:9px;font-weight:700;font-family:monospace}
+        .dns-type-A{background:rgba(95,255,176,.1);color:#5fffb0}
+        .dns-type-AAAA{background:rgba(95,255,176,.08);color:#4dcc9a}
+        .dns-type-MX{background:rgba(126,184,255,.1);color:#7eb8ff}
+        .dns-type-TXT{background:rgba(196,176,255,.1);color:#c4b0ff}
+        .dns-type-CNAME{background:rgba(255,208,112,.08);color:#c8c870}
+        .dns-type-PTR{background:rgba(255,208,112,.06);color:#a0a050}
+        .dns-type-NS{background:rgba(200,160,80,.1);color:#c0a060}
+        .dns-type-SOA{background:rgba(200,80,80,.08);color:#c07070}
+        .dns-type-DNSKEY{background:rgba(180,80,80,.12);color:#c87070}
+        .dns-type-UNKNOWN{background:rgba(255,255,255,.05);color:rgba(255,255,255,.35)}
+        .dns-type-default{background:rgba(255,255,255,.05);color:rgba(255,255,255,.45)}
+        .dns-domain{font-family:monospace;color:#e0e0e0;word-break:break-all}
+        .dns-rcode-NOERROR{color:#5fffb0;font-size:9px;font-weight:700}
+        .dns-rcode-NXDOMAIN{color:#c87070;font-size:9px;font-weight:700}
+        .dns-rcode-other{color:#9090b0;font-size:9px;font-weight:700}
+        /* intelligence boxes */
+        .intel-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:8px 10px;margin-bottom:8px}
+        .intel-box-head{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+        .intel-box-head .dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+        .stat-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-size:10px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);margin:2px}
+        .stat-chip.hi{background:rgba(200,80,80,.1);color:#c87070}
+        .stat-chip.ok{background:rgba(95,255,176,.08);color:#5fffb0}
+        .stat-chip.info{background:rgba(126,184,255,.08);color:#7eb8ff}
+        .ua-match-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px}
+        .ua-match-row:last-child{border-bottom:none}
+        .ua-match-hash{font-family:monospace;font-size:9px;color:#7eb8ff;min-width:110px}
+        .ua-match-val{color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .svc-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+        .svc-port{font-family:monospace;font-size:14px;font-weight:700;color:#7eb8ff}
+        .svc-mod{font-size:9px;background:rgba(126,184,255,.08);color:#6898c8;padding:1px 5px;border-radius:2px;font-weight:700}
+        .svc-banner{font-family:'Consolas','Menlo',monospace;font-size:9px;color:rgba(255,255,255,.35);background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:2px;padding:5px 7px;margin-top:5px;white-space:pre-wrap;word-break:break-all;max-height:90px;overflow:hidden;line-height:1.5}
+        .svc-ssl{margin-top:5px;font-size:10px;color:rgba(255,255,255,.45);display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+        .ssl-ok{color:#5fffb0;font-weight:700}.ssl-exp{color:#c87070;font-weight:700}
+        .ssh-row{display:flex;gap:8px;margin-bottom:3px;font-size:10px}
+        .ssh-k{color:rgba(255,255,255,.28);min-width:80px}.ssh-v{color:rgba(255,255,255,.65);font-family:monospace;font-size:9px}
+
+        /* ── request table ── */
+        .req-table{width:100%;border-collapse:collapse;font-size:11px}
+        .req-table th{padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3);border-bottom:1px solid rgba(255,255,255,.07);font-weight:700;background:#050505}
+        .req-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;color:rgba(255,255,255,.75)}
+        .req-table tr:last-child td{border-bottom:none}
+        .req-table tr:hover td{background:rgba(255,255,255,.02)}
+        .fu-hash{font-family:monospace;font-size:10px;color:#7eb8ff}
+        .url-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+        /* ── fingerprint card ── */
+        .fu-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:8px 10px;margin-bottom:6px;font-size:10px}
+        .fu-card-head{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+        .fu-hash-lg{font-family:monospace;font-size:11px;color:#7eb8ff;word-break:break-all}
+        .fu-stat{display:inline-flex;align-items:center;gap:3px;background:rgba(255,255,255,.05);padding:1px 6px;border-radius:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,.5);margin:0 2px}
+
+        /* ── osint links ── */
+        .osint-links{display:flex;flex-wrap:wrap;gap:5px;padding:9px 12px}
+        .osint-link{display:inline-flex;align-items:center;height:22px;padding:0 9px;border:1px solid rgba(255,255,255,.2);border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.65);text-decoration:none;transition:all .1s}
+        .osint-link:hover{background:rgba(255,255,255,.07);border-color:#fff;color:#fff}
+
+        /* ── whois ── */
+        .whois-block{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:6px 9px;margin-bottom:5px}
+        .whois-row{display:flex;gap:8px;margin-bottom:2px;font-size:10px}
+        .wk{color:rgba(255,255,255,.28);min-width:88px;flex-shrink:0}.wv{color:rgba(255,255,255,.65);word-break:break-all}
+
+        /* ── intel extract ── */
+        .intel-item{background:rgba(95,255,176,.04);border:1px solid rgba(95,255,176,.1);border-radius:3px;padding:6px 9px;margin-bottom:4px;font-size:10px;color:rgba(255,255,255,.7)}
+        .intel-item b{color:#5fffb0}
+        .intel-item.jwt{background:rgba(200,160,80,.04);border-color:rgba(200,160,80,.12)}.intel-item.jwt b{color:#c8a050}
+        .intel-item.api{background:rgba(196,176,255,.04);border-color:rgba(196,176,255,.12)}.intel-item.api b{color:#c4b0ff}
+        .intel-item.file{background:rgba(126,184,255,.04);border-color:rgba(126,184,255,.1)}.intel-item.file b{color:#7eb8ff}
+
+        /* ── http detail ── */
+        .http-title{font-size:11px;color:#c8c8c8;font-weight:600;margin-bottom:3px}
+        .comp-tag{display:inline-block;background:rgba(196,176,255,.07);color:#a090c0;border-radius:2px;padding:1px 5px;font-size:9px;margin:1px 2px 1px 0}
+
+        /* ── sidebar ── */
+        .sidebar{}
+        .sidebar .card{margin-bottom:10px}
+
+        /* ── tabs ── */
+        .tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:0;background:#050505}
+        .tab{padding:7px 13px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.28);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;user-select:none}
+        .tab:hover{color:rgba(255,255,255,.6)}.tab.active{color:#7eb8ff;border-bottom-color:rgba(126,184,255,.6)}
+        .tab-content{display:none;padding:12px}.tab-content.active{display:block}
+
+        /* ── empty ── */
+        .empty{font-size:11px;color:rgba(255,255,255,.2);font-style:italic;padding:8px 0}
+
+        /* ── loading skeleton ── */
+        .skel{height:12px;background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:skel 1.4s infinite;border-radius:2px;margin-bottom:6px}
+        @keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        .tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9px;font-weight:700;background:rgba(255,255,255,.06);color:rgba(255,255,255,.45);margin:1px 2px 1px 0}
+        /* ── traffic analysis panel (full-width above header) ── */
+        .ta-panel{background:#0a0a0a;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:12px 14px;margin-bottom:10px}
+        .ta-panel-head{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .ta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px}
+        .ta-stat{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:8px 10px}
+        .ta-stat-num{font-size:22px;font-weight:700;color:#e0e0e0;line-height:1}
+        .ta-stat-label{font-size:9px;color:rgba(255,255,255,.3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+        .ta-stat-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:2px}
+        .ta-section{margin-bottom:12px}
+        .ta-section-title{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.28);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+        /* ratio bar */
+        .ratio-bar{height:8px;border-radius:4px;overflow:hidden;display:flex;gap:0;margin:5px 0}
+        .ratio-http{background:#7eb8ff;transition:width .4s}
+        .ratio-dns{background:#5fffb0;transition:width .4s}
+        /* hour histogram */
+        .hist-wrap{display:flex;align-items:flex-end;gap:2px;height:40px}
+        .hist-bar{flex:1;border-radius:1px 1px 0 0;min-height:2px;transition:height .3s;cursor:default;position:relative}
+        .hist-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#111;border:1px solid rgba(255,255,255,.15);border-radius:2px;padding:2px 6px;font-size:9px;color:#e0e0e0;white-space:nowrap;pointer-events:none;z-index:10}
+        .hist-labels{display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,.2);margin-top:2px}
+        /* top rows */
+        .top-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px}
+        .top-row:last-child{border-bottom:none}
+        .top-row-bar{flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+        .top-row-fill{height:100%;border-radius:2px}
+        .top-row-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.55);font-family:monospace;font-size:9px;flex:1}
+        .top-row-count{font-size:9px;color:rgba(255,255,255,.3);white-space:nowrap;min-width:28px;text-align:right}
+        /* fingerprints horizontal */
+        .fp-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:10px}
+        .fp-sum-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:7px 9px;text-align:center}
+        .fp-sum-num{font-size:18px;font-weight:700;color:#c4b0ff}
+        .fp-sum-label{font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+        .fp-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px}
+        .fp-card{background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:4px;font-size:10px;overflow:hidden}
+        .fp-card.shared{border-color:rgba(200,80,80,.25)}
+        .fp-card-header{display:flex;align-items:center;gap:6px;padding:8px 11px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06)}
+        .fp-card-hash{font-family:monospace;font-size:10px;color:#7eb8ff;word-break:break-all;flex:1;min-width:0}
+        .fp-card-meta{display:flex;flex-wrap:wrap;gap:3px;padding:6px 11px 4px;border-bottom:1px solid rgba(255,255,255,.04)}
+        .fp-card-body{padding:6px 11px 8px}
+        .fp-card-kv{display:flex;gap:6px;margin-bottom:3px;font-size:10px;align-items:baseline}
+        .fp-card-k{color:rgba(255,255,255,.28);min-width:72px;flex-shrink:0;font-size:9px;text-transform:uppercase;letter-spacing:.05em}
+        .fp-card-v{color:rgba(255,255,255,.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+        .fp-card-v.mono{font-family:monospace;font-size:9px;color:#7eb8ff}
+        .fp-section{margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.05)}
+        .fp-section-title{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.25);margin-bottom:4px}
+        .fp-url-item{font-size:9px;color:rgba(255,255,255,.5);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .fp-url-item:last-child{border-bottom:none}
+        .fp-alert{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:2px;font-size:9px;font-weight:700;background:rgba(200,80,80,.1);color:#c87070;margin:1px}
+        .fp-match{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:2px;font-size:9px;font-weight:700;background:rgba(255,208,60,.08);color:#c8c050;margin:1px}
+        /* cross-analysis table */
+        .cross-tbl{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px}
+        .cross-tbl th{padding:4px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.28);border-bottom:1px solid rgba(255,255,255,.07);background:#050505;font-weight:700}
+        .cross-tbl td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+        .cross-tbl tr:last-child td{border-bottom:none}
+        .cross-tbl tr:hover td{background:rgba(255,255,255,.02)}
+        .match-badge{display:inline-block;padding:1px 5px;border-radius:2px;font-size:9px;font-weight:700;margin:1px}
+        .match-ua{background:rgba(196,176,255,.1);color:#c4b0ff}
+        .match-tz{background:rgba(95,255,176,.08);color:#5fffb0}
+        .match-screen{background:rgba(126,184,255,.1);color:#7eb8ff}
+        .match-os{background:rgba(255,208,60,.08);color:#c8c050}
+        .match-lang{background:rgba(200,160,80,.1);color:#c0a060}
+        /* responsive tables */
+        .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .tbl-wrap table{width:100%;border-collapse:collapse;min-width:500px}
+        .tbl-search{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.05);align-items:center}
+        .tbl-search input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:4px 9px;font-size:11px;color:#e0e0e0;outline:none}
+        .tbl-search input::placeholder{color:rgba(255,255,255,.22)}
+        .tbl-search input:focus{border-color:rgba(255,255,255,.28)}
+        .tbl-info{font-size:10px;color:rgba(255,255,255,.28);white-space:nowrap}
+        .tbl-pager{display:flex;align-items:center;gap:4px;padding:6px 12px;border-top:1px solid rgba(255,255,255,.05);flex-wrap:wrap}
+        .tbl-pager-btn{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;padding:0 5px;border:1px solid rgba(255,255,255,.1);border-radius:2px;font-size:10px;cursor:pointer;background:transparent;color:rgba(255,255,255,.45);transition:all .1s}
+        .tbl-pager-btn:hover:not(:disabled){background:rgba(255,255,255,.06);color:#fff}
+        .tbl-pager-btn.on{background:rgba(126,184,255,.12);border-color:rgba(126,184,255,.4);color:#7eb8ff;font-weight:700}
+        .tbl-pager-btn:disabled{opacity:.2;cursor:default}
+        .tbl-pager-info{font-size:10px;color:rgba(255,255,255,.28);margin-left:auto}
+        /* ── scroll nav ── */
+        .scroll-nav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+        .snav{display:inline-flex;align-items:center;height:22px;padding:0 9px;border:1px solid rgba(255,255,255,.1);border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.06em;cursor:pointer;background:transparent;color:rgba(255,255,255,.4);transition:all .1s;white-space:nowrap;text-decoration:none;user-select:none}
+        .snav:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.25);color:#fff}
+        .snav.geo{border-color:rgba(126,184,255,.2);color:#7eb8ff}.snav.geo:hover{background:rgba(126,184,255,.07)}
+        .snav.cve{border-color:rgba(200,80,80,.2);color:#c87070}.snav.cve:hover{background:rgba(200,80,80,.06)}
+        .snav.shodan{border-color:rgba(126,184,255,.2);color:#6898c8}.snav.shodan:hover{background:rgba(126,184,255,.06)}
+        .snav.traffic{border-color:rgba(95,255,176,.2);color:#5fffb0}.snav.traffic:hover{background:rgba(95,255,176,.06)}
+        .snav.dns{border-color:rgba(180,180,100,.2);color:#c8c870}.snav.dns:hover{background:rgba(180,180,100,.06)}
+        .snav.nmap{border-color:rgba(196,176,255,.2);color:#c4b0ff}.snav.nmap:hover{background:rgba(196,176,255,.06)}
+        .snav.whois{border-color:rgba(180,180,100,.2);color:#b0b070}.snav.whois:hover{background:rgba(180,180,100,.06)}
+        /* sidebar panels */
+        .sb-panel{background:#0a0a0a;border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:10px}
+        .sb-panel-head{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06);font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+        .sb-panel-body{padding:8px 10px}
+        .sb-fu-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:3px;padding:7px 9px;margin-bottom:6px;font-size:10px}
+        .sb-fu-card:last-child{margin-bottom:0}
+        .sb-fu-hash{font-family:monospace;font-size:10px;color:#7eb8ff;word-break:break-all;margin-bottom:3px}
     </style>
 </head>
 <body>
-    <nav>
-        <div class="nav-container">
-            <div class="brand">
-                <a href="/web/index">5ELG</a>
-                <a href="https://github.com/jomoza/5ELG" target="_blank">GITHUB</a>
+<nav>
+    <div class="nav-container">
+        <div class="brand">
+            <a href="/web/index" class="brand-logo">Offensive Callback <span class="brand-tag">0FC4</span></a>
+                <a href="/run/logout" class="brand-logout">LOG OUT</a>
+    <span class="brand-user" id="nav-user"></span>
+
+        </div>
+        <script>fetch('/run/whoami').then(r=>r.json()).then(d=>{var e=document.getElementById('nav-user');if(e&&d.username)e.textContent=d.username;}).catch(function(){});</script>
+        <ul class="nav-links">
+            <li><a href="/web/callback" class="nav-btn nav-callback">CALLBACK</a></li>
+            <li><a href="/web/dashboard" class="nav-btn nav-browsers">BROWSERS</a></li>
+            <li><a href="/web/scanners" class="nav-btn nav-panel">PANEL</a></li>
+            <li><a href="/web/options" class="nav-btn nav-app">APP</a></li>
+        </ul>
+    </div>
+</nav>
+<script>
+(function(){
+    var p=location.pathname;
+    var a=p.includes('/callback')?'nav-callback'
+         :p.includes('/dashboard')||p.includes('/browsers')?'nav-browsers'
+         :p.includes('/scanners')||p.includes('/scope')||p.includes('/infoIPX')?'nav-panel'
+         :p.includes('/options')?'nav-app'
+         :'nav-app';
+    var el=document.querySelector('.'+a);
+    if(el)el.classList.add('active');
+})();
+</script>
+
+<!-- HEADER -->
+<div class="ip-header">
+    <div class="ip-title">
+        <div class="ip-addr-big" id="ip-addr">…</div>
+        <div class="ip-sub">IP INTELLIGENCE · ID {{idreq}}</div>
+        <div id="ip-badge"></div>
+    </div>
+    <div class="ip-actions">
+        <button class="act-btn blue" onclick="runAction('/api/ips/run/scann','SCAN')">⬡ RUN NMAP</button>
+        <button class="act-btn" onclick="runAction('/api/ips/run/geo','GEO')">◎ RUN GEO</button>
+        <button class="act-btn purple" onclick="runAction('/api/ips/run/osint','OSINT')">◈ RUN OSINT</button> | 
+        <button class="act-btn green" onclick="showRawData()">⊞ VIEW RAW DATA</button>
+        <button class="act-btn red" onclick="deleteRecord()">✕ DELETE</button> |
+        <a class="act-btn" href="/web/scanners">← BACK</a>
+    </div>
+</div>
+
+<div id="notice-bar"></div>
+
+<!-- MAIN LAYOUT -->
+<div class="page-wrap" id="page-wrap">
+    <!-- LEFT: main content -->
+    <div id="main-col">
+
+        <!-- SCROLL NAV -->
+        <div class="scroll-nav" id="scroll-nav">
+            <span style="font-size:13px;color:rgba(255,255,255,.2);letter-spacing:.08em;text-transform:uppercase;padding-right:4px">Jump to</span>
+            <a class="snav geo" onclick="scrollToSection('sec-geo')">◉ Geo</a>
+            <a class="snav traffic" onclick="scrollToSection('sec-traffic')">⇄ HTTP Traffic</a>
+            <a class="snav dns" onclick="scrollToSection('sec-traffic');switchTabById('tab-dns')">⬡ DNS Trace</a>
+            <a class="snav" onclick="scrollToSection('sec-traffic');switchTabById('tab-intel')">🔐 Intel</a>
+            <a class="snav" id="nav-fp" style="display:none;border-color:rgba(196,176,255,.2);color:#c4b0ff" onclick="scrollToSection('sec-fingerprints')">◉ Fingerprints</a>
+            <a class="snav cve" id="nav-cve" style="display:none" onclick="scrollToSection('sec-cve')">⚠ CVEs</a>
+            <a class="snav shodan" id="nav-shodan" style="display:none" onclick="scrollToSection('sec-shodan')">⬡ Shodan</a>
+            <span id="nav-nmap" style="display:none"></span>
+            <span id="nav-whois" style="display:none"></span>
+        </div>
+
+        <!-- GEO + MAP row -->
+        <div id="sec-geo" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="card" style="margin-bottom:0">
+                <div class="card-head"><span class="card-dot" style="background:#7eb8ff"></span>Geolocation</div>
+                <div id="map-wrap" style="overflow:hidden">
+                    <div id="ip-map"></div>
+                </div>
+                <div class="card-body" id="geo-body">
+                    <div class="skel"></div><div class="skel" style="width:70%"></div>
+                </div>
             </div>
-            <ul class="nav-links">
-                <li><a href="/web/callback">CALLBACK</a>|</li>
-                <li><a href="/web/dashboard">BROWSERS_DASHBOARD</a>
-                <a href="/web/scanners" >IPs_DASHBOARD</a>|</li>
-                <li><a href="/web/files">FILES</a>|</li>
-                <li><a href="/web/options">OPTIONS</a></li>
-            </ul>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-head"><span class="card-dot" style="background:#5fffb0"></span>Threat Score</div>
+                    <div class="card-body" id="threat-body"><div class="skel"></div></div>
+                </div>
+                <div class="card" style="margin-bottom:0">
+                    <div class="card-head"><span class="card-dot" style="background:#9090b0"></span>CriminalIP Issues</div>
+                    <div class="card-body" id="issues-body"><div class="skel"></div></div>
+                </div>
+                <div class="card" style="margin-bottom:0;flex:1">
+                    <div class="card-head"><span class="card-dot" style="background:#c4b0ff"></span>Open Ports</div>
+                    <div class="card-body" id="ports-body"><div class="skel"></div></div>
+                </div>
+            </div>
         </div>
-    </nav>
 
-    <h1>OSINT Data Viewer {{idreq}}</h1>
-    <h2 id="ip-title" style="text-align: center; color: white;"></h2>
-
-    <div id="info-container" class="info-box">
-        <p><b>ID:</b> <span id="">{{idreq}}</span></p>
-        <p><b>Mac:</b> <span id="data-mac">...</span></p>
-        <p><b>Links:</b> <span id="data-links">...</span></p>
-        <div class="button-group">
-            <button onclick="showRequests()">REQUEST</button>
+        <!-- HTTP REQUESTS + DNS (moved up, before shodan) -->
+        <div class="card" id="sec-traffic">
+            <div class="tabs" id="traffic-tabs">
+                <div class="tab active" onclick="switchTab(this,'tab-requests')">HTTP Requests</div>
+                <div class="tab" onclick="switchTab(this,'tab-dns')">DNS Trace</div>
+                <div class="tab" onclick="switchTab(this,'tab-intel')">Captured Intel</div>
+            </div>
+            <div class="tab-content active" id="tab-requests">
+                <div class="skel"></div><div class="skel" style="width:80%"></div>
+            </div>
+            <div class="tab-content" id="tab-dns">
+                <div class="empty">Loading…</div>
+            </div>
+            <div class="tab-content" id="tab-intel">
+                <div class="empty">Loading…</div>
+            </div>
         </div>
-        <hr>
-        <h2>Geolocation Information</h2>
-        <p><b>Country:</b> <span id="geo-country">Loading...</span></p>
-        <p><b>City:</b> <span id="geo-city">Loading...</span></p>
-        <p><b>Latitude:</b> <span id="geo-latitude">Loading...</span></p>
-        <p><b>Longitude:</b> <span id="geo-longitude">Loading...</span></p>
-        <div class="button-group">
-            <button onclick="showMap()">SHOW IN MAP</button>
+
+        <!-- TRAFFIC ANALYSIS (below traffic tabs) -->
+        <div id="ta-panel-wrap" style="display:none">
+            <div class="ta-panel" id="ta-panel-inner">
+                <div class="ta-panel-head">
+                    <span style="width:5px;height:5px;border-radius:50%;background:#9090b0;flex-shrink:0;display:inline-block"></span>
+                    Traffic Analysis
+                    <span id="ta-ip-label" style="font-family:monospace;color:rgba(255,255,255,.5);font-weight:400;margin-left:4px"></span>
+                </div>
+                <div id="ta-panel-content"></div>
+            </div>
+        </div>
+
+        <!-- FINGERPRINTS full-width horizontal -->
+        <div class="card" id="sec-fingerprints" style="display:none">
+            <div class="card-head"><span class="card-dot" style="background:#c4b0ff"></span>Browser Fingerprints<span class="card-badge" id="fp-badge"></span></div>
+            <div class="card-body" id="sidebar-fingerprints"><div class="skel"></div><div class="skel" style="width:60%"></div></div>
+        </div>
+
+        <!-- CVEs -->
+        <div class="card" id="sec-cve" style="display:none">
+            <div class="card-head"><span class="card-dot" style="background:#c87070"></span>Vulnerabilities<span class="card-badge" id="cve-badge"></span></div>
+            <div class="card-body" id="cve-body"></div>
+        </div>
+
+        <!-- SHODAN SERVICES -->
+        <div class="card" id="sec-shodan" style="display:none">
+            <div class="card-head"><span class="card-dot" style="background:#7eb8ff"></span>Shodan Services &amp; Banners<span class="card-badge" id="shodan-badge"></span></div>
+            <div class="card-body" id="shodan-body"></div>
         </div>
     </div>
 
-<!--    <div class="button-group">
-        <button onclick="">RUN NMAP</button>
-        <button onclick="">RUN GEOIP</button>
-        <button onclick="">RUN OSINT</button>
-        <button onclick="">DELETE DATA</button>
--->
+    <!-- RIGHT: sidebar -->
+    <div class="sidebar" id="sidebar-col">
+        <div class="sb-panel">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#5fffb0"></span>General</div>
+            <div class="sb-panel-body" id="general-body">
+                <div class="skel"></div><div class="skel" style="width:60%"></div>
+            </div>
+        </div>
+        <div class="sb-panel">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#7eb8ff"></span>Shodan Summary</div>
+            <div class="sb-panel-body" id="shodan-summary-body"><div class="skel"></div></div>
+        </div>
+        <div class="sb-panel">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#c4b0ff"></span>Traffic Summary</div>
+            <div class="sb-panel-body" id="traffic-summary-body"><div class="skel"></div></div>
+        </div>
+        <div class="sb-panel">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#c8c870"></span>Hostnames</div>
+            <div class="sb-panel-body" id="hostnames-body"><div class="skel"></div></div>
+        </div>
+
+        <!-- OSINT links -->
+        <div class="sb-panel">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#ff8080"></span>External OSINT</div>
+            <div class="sb-panel-body" id="osint-links-body" style="display:flex;flex-wrap:wrap;gap:4px">
+                <a class="act-btn" id="btn-intelx" href="#" target="_blank" style="font-size:9px">↗ INTELX</a>
+                <a class="act-btn" id="btn-censys" href="#" target="_blank" style="font-size:9px">↗ CENSYS</a>
+                <a class="act-btn" id="btn-shodan" href="#" target="_blank" style="font-size:9px">↗ SHODAN</a>
+                <a class="act-btn" id="btn-vt" href="#" target="_blank" style="font-size:9px">↗ VIRUSTOTAL</a>
+                <a class="act-btn" id="btn-abuse" href="#" target="_blank" style="font-size:9px">↗ ABUSEIPDB</a>
+                <a class="act-btn" id="btn-gn" href="#" target="_blank" style="font-size:9px">↗ GREYNOISE</a>
+                <a class="act-btn" id="btn-otx" href="#" target="_blank" style="font-size:9px">↗ OTX</a>
+            </div>
+        </div>
+
+        <!-- WHOIS in sidebar -->
+        <div class="sb-panel" id="sec-whois" style="display:none">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#c8c870"></span>WHOIS<span style="margin-left:auto;font-size:9px;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:2px" id="whois-badge"></span></div>
+            <div class="sb-panel-body" id="whois-body"></div>
+        </div>
+
+        <!-- NMAP in sidebar -->
+        <div class="sb-panel" id="sec-nmap" style="display:none">
+            <div class="sb-panel-head"><span class="card-dot" style="background:#c4b0ff"></span>Nmap Results</div>
+            <div class="sb-panel-body" id="nmap-body" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+
     </div>
+</div>
 
-    <hr>
-    <h2>RESULTS</h2>
-    <div id="sections-container">
-        <div class="section-buttons"></div>
-        <div id="section-contents"></div>
-    </div>
+<script>
+const ID = '{{idreq}}';
+let IP_ADDR = '';
+let ipData = null;
+let parsed = {};
+let geoData = {};
+let leafMap = null;
 
-    <script>
-        //{{idreq}}
+/* ── HELPERS ── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function dim(v){return v?`<span>${esc(v)}</span>`:`<span class="kv-v dim">—</span>`;}
+function kv(k,v,cls=''){return`<div class="kv-row"><span class="kv-k">${esc(k)}</span><span class="kv-v ${cls}">${v}</span></div>`;}
+function scoreColor(s){return({Critical:'#c87070',High:'#9090b0',Moderate:'#7eb8ff',Low:'rgba(255,255,255,.35)',Safe:'#5fffb0'})[s]||'rgba(255,255,255,.25)';}
+function cvssColor(n){return n>=9?'#c87070':n>=7?'#9090b0':n>=4?'#7eb8ff':'rgba(255,255,255,.35)';}
+function threatColor(t){return t>=70?'#c87070':t>=40?'#9090b0':t>=15?'#7eb8ff':'#5fffb0';}
+function threatLabel(t){return t>=70?'CRITICAL':t>=40?'HIGH':t>=15?'MEDIUM':'LOW';}
 
-        
-        const apiUrl = `/api/ips/info?ID={{idreq}}`;
-        let osintData = null;
-
-        // Function to escape HTML characters to prevent HTML rendering
-        function escapeHtml(unsafe) {
-            return String(unsafe) // Ensure it's a string
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        // Fetch data from the API
-        async function fetchData() {
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                osintData = await response.json();
-                console.log("OSINT Data:", osintData);
-
-                // Update title with the IP
-                document.getElementById('ip-title').textContent = `${osintData.IP}`;
-
-                const encodedIP = btoa(`${osintData.IP}`);
-                // Update geolocation information
-                const geo = JSON.parse(osintData.GEO) || {};
-                const [latitude, longitude] = geo.loc ? geo.loc.split(',') : [0, 0];
-                document.getElementById('data-mac').textContent = escapeHtml(osintData.MAC || 'N/A');
-                document.getElementById('data-links').innerHTML = `<a href='https://intelx.io/?s=${osintData.IP}'>INTELX</a> | <a href='https://search.censys.io/hosts/${osintData.IP}'>CENSYS</a> | <a href='https://en.fofa.info/result?qbase64=${encodedIP}'>FOFA</a> | <a href='https://ipinfo.io/${osintData.IP}'>IPINFO</a>`;
-
-                document.getElementById('geo-country').textContent = escapeHtml(geo.country || 'N/A');
-                document.getElementById('geo-city').textContent = escapeHtml(geo.city || 'N/A');
-                document.getElementById('geo-latitude').textContent = escapeHtml(latitude);
-                document.getElementById('geo-longitude').textContent = escapeHtml(longitude);
-
-                // Populate the sections
-                populateSections(JSON.parse(JSON.parse(osintData.DATA)));
-            } catch (error) {
-                console.error("Error fetching OSINT data:", error);
-            }
-        }
-
-        async function showRequests() {
-            try {
-                if (!osintData || !osintData.IP) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No IP data available.',
-                    });
-                    return;
-                }
-
-                const ip = osintData.IP;
-                const apiUrl = `/api/getfinger/getIPlogs/${ip}`;
-
-                Swal.fire({
-                    title: 'Loading Requests...',
-                    text: 'Fetching data, please wait...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const requestData = await response.json();
-                if (!requestData || requestData.length === 0) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'No Requests Found',
-                        text: 'No data available for this IP.',
-                    });
-                    return;
-                }
-
-                const tableRows = requestData.map((entry, index) => `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${entry.Ua || 'N/A'}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${entry.Fu || 'N/A'}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;"><a href="/web/info?id=${entry.Fr}" target="_blank">REQUEST</a></td>
-                    </tr>
-                `).join('');
-
-                const tableHtml = `
-                    <table style="width:100%; border-collapse: collapse;">
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid #ddd; padding: 8px;">#</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">Timestamp</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">User-Agent</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">Fingerprint</th>
-                            </tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                `;
-
-                Swal.fire({
-                    title: 'Request Logs',
-                    html: tableHtml,
-                    width: '80%',
-                    confirmButtonText: 'Close',
-                });
-
-            } catch (error) {
-                console.error('Error fetching request logs:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'An error occurred while fetching the request logs.',
-                });
-            }
-        }
-
-
-        // Show the map in a SweetAlert
-        function showMap() {
-            try {
-                const geo = JSON.parse(osintData.GEO) || {}; // Aseguramos que sea un objeto válido
-                const loc = geo.loc ? geo.loc.split(',') : null; // Extraemos loc si existe
-                const latitude = loc && loc.length > 0 ? parseFloat(loc[0]) : null; // Validamos latitud
-                const longitude = loc && loc.length > 1 ? parseFloat(loc[1]) : null; // Validamos longitud
-
-                if (!latitude || !longitude) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No valid coordinates available to display the map.',
-                    });
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Geolocation Map',
-                    html: '<div id="map" style="height: 400px;"></div>',
-                    width: '600px',
-                    didOpen: () => {
-                        const map = L.map('map').setView([latitude, longitude], 13);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '&copy; OpenStreetMap contributors'
-                        }).addTo(map);
-                        L.marker([latitude, longitude]).addTo(map)
-                            .bindPopup(`<b>${geo.city || 'Unknown City'}, ${geo.country || 'Unknown Country'}</b>`)
-                            .openPopup();
-                    }
-                });
-            } catch (error) {
-                console.error('Error displaying map:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'There was an issue displaying the map. Please check the data or try again.',
-                });
-            }
-        }
-
-
-        // Populate sections with JSON data
-        function populateSections(data) {
-            const sectionButtons = document.querySelector('.section-buttons');
-            const sectionContents = document.getElementById('section-contents');
-            sectionButtons.innerHTML = '';
-            sectionContents.innerHTML = '';
-
-            // Define sections
-            const sections = {
-                nmap: data.nmap || null,
-                whois: data.whois || null,
-                shodan: data.shodan || null,
-                criminalip: data.criminalip || null,
-                virustotal: data.virustotal || null,
-            };
-
-            Object.keys(sections).forEach(sectionKey => {
-                const sectionData = sections[sectionKey];
-                if (sectionData) {
-                    const button = document.createElement('button');
-                    button.textContent = sectionKey.toUpperCase();
-                    button.className = 'toggle-button';
-                    button.onclick = () => toggleSection(sectionKey, sectionData);
-                    sectionButtons.appendChild(button);
-                }
-            });
-        }
-
-        function toggleSection(sectionKey, sectionData) {
-    const sectionContents = document.getElementById('section-contents');
-    
-    // Verifica si la sección ya está visible
-    if (sectionContents.dataset.activeSection === sectionKey) {
-        // Si la sección ya está visible, la ocultamos
-        sectionContents.innerHTML = '';
-        sectionContents.dataset.activeSection = ''; // Reinicia el indicador de sección activa
-    } else {
-        // Si no está visible, mostramos la tabla
-        sectionContents.innerHTML = `
-            <h2>${sectionKey.toUpperCase()}</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${Object.keys(sectionData)
-                        .map(key => `
-                            <tr>
-                                <td>${escapeHtml(key)}</td>
-                                <td><pre>${escapeHtml(JSON.stringify(sectionData[key], null, 2))}</pre></td>
-                            </tr>
-                        `)
-                        .join('')}
-                </tbody>
-            </table>
-        `;
-        sectionContents.dataset.activeSection = sectionKey; // Marca la sección activa
-    }
+function classifyIP(ip){
+    if(!ip)return{type:'unknown',label:'UNKNOWN',color:'#888'};
+    if(/^127\.|^::1$/.test(ip))return{type:'loopback',label:'LOOPBACK',color:'#c8c870',desc:'Traffic from the server itself (localhost).'};
+    if(/^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(ip))return{type:'private',label:'PRIVATE LAN',color:'#c8c870',desc:'RFC 1918 private address — request came from inside your LAN. Geo data not applicable.'};
+    if(/^169\.254\./.test(ip))return{type:'link-local',label:'LINK-LOCAL',color:'#c8c870',desc:'Link-local address (APIPA). Not routable beyond local segment.'};
+    if(/^fc|^fd/i.test(ip))return{type:'private',label:'PRIVATE IPv6',color:'#c8c870',desc:'Private IPv6 ULA — not routable on public internet.'};
+    return{type:'public',label:'PUBLIC',color:'#5fffb0',desc:''};
 }
 
-async function showBrowsers() {
+function parseDataField(raw){
+    if(!raw)return{};
+    try{let d=raw;for(let i=0;i<3;i++){if(typeof d==='string')d=JSON.parse(d);else break;}return(typeof d==='object'&&d)?d:{};}
+    catch{return{};}
+}
+
+function computeThreat(p,cves){
+    let s=0;const iss=p.criminalip?.issues||{};
+    if(iss.is_scanner)s+=30;if(iss.is_darkweb)s+=35;if(iss.is_tor)s+=25;
+    if(iss.is_vpn)s+=15;if(iss.is_proxy)s+=10;if(iss.is_hosting)s+=8;if(iss.is_cloud)s+=4;if(iss.is_snort)s+=20;
+    const ib=p.criminalip?.score?.inbound||'';
+    if(ib==='Critical')s+=40;else if(ib==='High')s+=25;else if(ib==='Moderate')s+=10;
+    const maxCvss=cves.reduce((m,c)=>Math.max(m,c.cvssv3_score||0),0);
+    s+=Math.round(maxCvss*3);
+    if(p.shodan?.vulns)s+=Object.keys(p.shodan.vulns).length*8;
+    return Math.min(100,s);
+}
+
+function switchTab(el,id){
+    el.closest('.card').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.closest('.card').querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');document.getElementById(id)?.classList.add('active');
+}
+
+/* ── MAP ── */
+function buildMap(lat,lon,ipStr,city,country){
+    if(!lat||!lon)return;
+    if(leafMap){leafMap.remove();}
+    leafMap=L.map('ip-map',{zoomControl:true,attributionControl:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:18}).addTo(leafMap);
+    const svgMarker=`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#7eb8ff" fill-opacity=".9" stroke="#7eb8ff" stroke-width="1.5"/><circle cx="8" cy="8" r="2.5" fill="#000" fill-opacity=".7"/></svg>`;
+    const icon=L.divIcon({html:svgMarker,className:'',iconSize:[16,16],iconAnchor:[8,8]});
+    L.marker([lat,lon],{icon}).addTo(leafMap).bindPopup(`<b style="color:#7eb8ff">${esc(ipStr)}</b><br>${esc(city||'')} ${esc(country||'')}`).openPopup();
+    leafMap.setView([lat,lon],5);
+}
+
+/* ── SHODAN SERVICE RENDERER ── */
+function renderShodanSvc(s){
+    const ssl=s.ssl,ssh=s.ssh,http=s.http,mod=s._shodan?.module||'';
+    let sslHtml='';
+    if(ssl?.cert){const cert=ssl.cert,cn=cert.subject?.CN||cert.subject?.O||'',expires=cert.expires?cert.expires.replace(/(\d{4})(\d{2})(\d{2}).*/,'$1-$2-$3'):'';
+        sslHtml=`<div class="svc-ssl"><span class="${cert.expired?'ssl-exp':'ssl-ok'}">${cert.expired?'⚠ EXPIRED':'✓ VALID'}</span>${cn?`<span style="margin-left:6px">${esc(cn)}</span>`:''}${expires?`<span style="color:rgba(255,255,255,.3);margin-left:6px">${esc(expires)}</span>`:''}${ssl.cipher?.name?`<span class="tag" style="margin-left:6px;font-size:8px">${esc(ssl.cipher.name)}</span>`:''}</div>`;}
+    let sshHtml='';
+    if(ssh){sshHtml=`<div style="margin-top:5px">${ssh.type?`<div class="ssh-row"><span class="ssh-k">Key type</span><span class="ssh-v">${esc(ssh.type)}</span></div>`:''}${ssh.fingerprint?`<div class="ssh-row"><span class="ssh-k">Fingerprint</span><span class="ssh-v">${esc(ssh.fingerprint)}</span></div>`:''}${ssh.hassh?`<div class="ssh-row"><span class="ssh-k">HASSH</span><span class="ssh-v">${esc(ssh.hassh)}</span></div>`:''}${ssh.kex?.encryption_algorithms?.length?`<div class="ssh-row"><span class="ssh-k">Ciphers</span><span class="ssh-v" style="color:rgba(255,255,255,.4)">${ssh.kex.encryption_algorithms.slice(0,4).map(esc).join(', ')}</span></div>`:''}</div>`;}
+    let httpHtml='';
+    if(http){const comps=Object.keys(http.components||{});httpHtml=`<div>${http.title?`<div class="http-title">${esc(http.title)}</div>`:''}${http.server?`<div style="font-size:10px;color:rgba(255,255,255,.4)">Server: ${esc(http.server)}</div>`:''}${http.status?`<div style="font-size:10px;color:rgba(255,255,255,.4)">HTTP ${http.status}</div>`:''}${comps.length?`<div style="margin-top:3px">${comps.map(c=>`<span class="comp-tag">${esc(c)}</span>`).join('')}</div>`:''}${(http.redirects||[]).length?`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:3px;font-family:monospace">${http.redirects.map(r=>`→ ${esc(r.location||r.host||'')}`).join(' ')}</div>`:''}</div>`;}
+    const banner=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').slice(0,400);
+    const hasDet=!!(httpHtml||sshHtml||(banner&&!http&&!ssh)||sslHtml);
+    const uid=`svc-${s.port}-${(s.transport||'tcp')}`;
+    return`<div class="svc-block" id="${uid}">
+        <div class="svc-toggle" onclick="toggleSvc('${uid}')">
+            <span class="svc-toggle-arrow">▶</span>
+            <span class="svc-port">${s.port}</span>
+            <span class="pe-proto" style="background:rgba(126,184,255,.08);padding:1px 5px;border-radius:2px;font-size:9px;font-weight:700">${esc((s.transport||'tcp').toUpperCase())}</span>
+            ${mod?`<span class="svc-mod">${esc(mod)}</span>`:''}
+            ${s.product?`<span style="font-size:11px;color:rgba(255,255,255,.65)">${esc(s.product)}</span>`:''}
+            ${s.version?`<span style="font-size:10px;color:rgba(255,255,255,.38)">${esc(s.version)}</span>`:''}
+            ${(s.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
+            ${sslHtml&&sslHtml.includes('EXPIRED')?`<span style="font-size:9px;font-weight:700;color:#c87070;margin-left:4px">⚠ CERT EXPIRED</span>`:''}
+            ${s.timestamp?`<span style="font-size:9px;color:rgba(255,255,255,.18);margin-left:auto">${esc(s.timestamp.slice(0,10))}</span>`:''}
+            ${!hasDet?`<span style="font-size:9px;color:rgba(255,255,255,.15);margin-left:auto">no detail</span>`:''}
+        </div>
+        ${hasDet?`<div class="svc-detail">${httpHtml}${sshHtml}${banner&&!http&&!ssh?`<div class="svc-banner">${esc(banner)}</div>`:''}${sslHtml}</div>`:''}
+    </div>`;
+}
+
+/* ── WHOIS RENDERER ── */
+function renderWhois(w){
+    if(!w||typeof w!=='object')return'';
+    const fields=[['Net name',w.netName||w.netname||w.NetName||''],['Org',w.OrgName||w.organisation||w.org||''],['Country',w.country||w.Country||''],['CIDR',w.CIDR||w.inetnum||''],['Range',w.netRange||''],['Abuse',w.abuse||w.OrgAbuseEmail||''],['Tech',w.OrgTechEmail||''],['Updated',w.updated||w.Updated||'']].filter(([,v])=>v);
+    if(!fields.length){const ks=Object.keys(w).filter(k=>!['count','data','status'].includes(k)).slice(0,10);if(!ks.length)return'';return`<div class="whois-block">${ks.map(k=>`<div class="whois-row"><span class="wk">${esc(k)}</span><span class="wv">${esc(String(w[k]).slice(0,120))}</span></div>`).join('')}</div>`;}
+    return`<div class="whois-block">${fields.map(([k,v])=>`<div class="whois-row"><span class="wk">${esc(k)}</span><span class="wv">${esc(String(v).slice(0,120))}</span></div>`).join('')}</div>`;
+}
+
+/* ── MAIN INIT ── */
+function scrollToSection(id){
+    const el=document.getElementById(id);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function switchTabById(tabId){
+    const pane=document.getElementById(tabId);
+    if(!pane)return;
+    const card=pane.closest('.card');
+    if(!card)return;
+    card.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    card.querySelectorAll('.tab-content').forEach(p=>p.classList.remove('active'));
+    pane.classList.add('active');
+    // activate the matching tab button
+    card.querySelectorAll('.tab').forEach(t=>{if(t.getAttribute('onclick')&&t.getAttribute('onclick').includes(tabId))t.classList.add('active');});
+}
+
+function toggleSvc(id){
+    const el=document.getElementById(id);
+    if(el)el.classList.toggle('open');
+}
+
+async function init(){
     try {
-        // Get the IP address from the "ip-title" element
-        const ipElement = document.getElementById('ip-title');
-        const ip = ipElement ? ipElement.textContent.trim() : null;
+        // Fetch IP data
+        const res = await fetch(`/api/ips/info?ID=${ID}`);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        ipData = await res.json();
 
-        if (!ip) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No IP address found on the page.',
-            });
-            return;
+        IP_ADDR = ipData.IP || '—';
+        document.getElementById('ip-addr').textContent = IP_ADDR;
+        document.title = `5ELG · ${IP_ADDR}`;
+
+        // Parse data
+        parsed = parseDataField(ipData.DATA);
+        try{ geoData = ipData.GEO ? (typeof ipData.GEO==='string'?JSON.parse(ipData.GEO):ipData.GEO) : {}; }catch{}
+
+        // IP classification
+        const cls = classifyIP(IP_ADDR);
+        document.getElementById('ip-badge').innerHTML =
+            `<span class="ip-badge" style="background:${cls.color}10;border-color:${cls.color}35;color:${cls.color}">${cls.label}</span>`;
+        if(cls.type!=='public'&&cls.desc){
+            document.getElementById('notice-bar').innerHTML =
+                `<div class="notice"><b>⚠ ${cls.label}</b> — ${cls.desc}</div>`;
         }
 
-        // Fetch the browser data from the API
-        const apiUrl = `http://192.168.1.74/api/fip?ip=${ip}`;
-        const response = await fetch(apiUrl);
+        // Collect CVEs from all sources
+        const cveMap = new Map();
+        (parsed.criminalip?.vulnerability?.data||[]).forEach(c=>{if(!cveMap.has(c.cve_id))cveMap.set(c.cve_id,c);});
+        if(parsed.shodan?.vulns)Object.entries(parsed.shodan.vulns).forEach(([id,info])=>{if(!cveMap.has(id))cveMap.set(id,{cve_id:id,cvssv3_score:info.cvss||0,cve_description:info.summary||'',list_cwe:[],list_cpe:[]});});
+        const cves=[...cveMap.values()].sort((a,b)=>(b.cvssv3_score||0)-(a.cvssv3_score||0));
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Collect ports from all sources
+        const portMap = new Map();
+        (parsed.nmap||[]).forEach(h=>(h.openPorts||[]).forEach(p=>{const k=`${p.port}/${p.protocol||'tcp'}`;portMap.set(k,{port:p.port,proto:p.protocol||'tcp',service:p.service||'',version:p.product||'',banner:'',source:'nmap',score:1+(p.service?1:0)+(p.product?1:0)});}));
+        (parsed.shodan?.data||[]).forEach(s=>{const proto=(s.transport||'tcp').toLowerCase();const k=`${s.port}/${proto}`;const banner=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').trim().slice(0,80);const ex=portMap.get(k);const score=2+(banner?2:0)+(s.product?1:0)+(s.version?1:0);if(!ex||score>ex.score)portMap.set(k,{port:s.port,proto,service:s.product||s._shodan?.module||ex?.service||'',version:s.version||'',banner,source:'shodan',score});});
+        (parsed.shodan?.ports||[]).forEach(p=>{const k=`${p}/tcp`;if(!portMap.has(k))portMap.set(k,{port:p,proto:'tcp',service:'',version:'',banner:'',source:'shodan',score:0});});
+        (parsed.criminalip?.open_port_no||[]).forEach(p=>{const k=`${p.port}/${p.socket||'tcp'}`;if(!portMap.has(k))portMap.set(k,{port:p.port,proto:p.socket||'tcp',service:'',version:'',banner:'',source:'cip',score:0});});
+        (parsed.criminalip?.vulnerability?.data||[]).forEach(v=>(v.open_port_no||[]).forEach(p=>{const k=`${p.port}/${p.socket||'tcp'}`;if(!portMap.has(k))portMap.set(k,{port:p.port,proto:p.socket||'tcp',service:v.app_name||'',version:v.app_version||'',banner:'',source:'cip',score:0.5});}));
+        const allPorts=[...portMap.values()].sort((a,b)=>a.port-b.port);
+
+        // Hostnames
+        const hostSet = new Set();
+        (parsed.nmap||[]).forEach(h=>{if(h.hostname)hostSet.add(h.hostname);});
+        (parsed.shodan?.hostnames||[]).forEach(h=>hostSet.add(h));
+        (parsed.criminalip?.hostname?.data||[]).forEach(h=>{if(h.domain||h.hostname)hostSet.add(h.domain||h.hostname);});
+        const hostnames=[...hostSet];
+
+        // Threat score
+        const threat = computeThreat(parsed,cves);
+        const tc = threatColor(threat);
+        const tl = threatLabel(threat);
+
+        // Whois entries
+        const whoisList=[];
+        const cipW=parsed.criminalip?.whois;
+        if(cipW){if(Array.isArray(cipW.data)&&cipW.data.length)cipW.data.forEach(e=>whoisList.push(e));else if(typeof cipW==='object'&&Object.keys(cipW).some(k=>!['count','data'].includes(k)))whoisList.push(cipW);}
+        if(parsed.whois){if(Array.isArray(parsed.whois))parsed.whois.forEach(e=>whoisList.push(e));else if(typeof parsed.whois==='object')whoisList.push(parsed.whois);}
+
+        /* ── BUILD UI ── */
+
+        // GEO
+        const lat=parseFloat(geoData.lat||geoData.latitude||(geoData.loc||'').split(',')[0]);
+        const lon=parseFloat(geoData.lon||geoData.longitude||(geoData.loc||'').split(',')[1]);
+        if(!isNaN(lat)&&!isNaN(lon)){
+            buildMap(lat,lon,IP_ADDR,geoData.city,geoData.country||geoData.country_name);
+        } else {
+            document.getElementById('ip-map').style.display='none';
+        }
+        document.getElementById('geo-body').innerHTML = [
+            kv('Country', geoData.country||geoData.country_name ? `<img src="https://flagcdn.com/16x12/${(geoData.countryCode||geoData.country_code||geoData.country||'').toLowerCase().slice(0,2)}.png" width="16" height="12" style="margin-right:5px;vertical-align:middle" onerror="this.style.display='none'">` + esc(geoData.country||geoData.country_name||'—') : '—'),
+            kv('Region', esc(geoData.regionName||geoData.region||geoData.region_code||'—')),
+            kv('City', esc(geoData.city||'—')),
+            kv('Timezone', esc(geoData.timezone||geoData.tz||'—')),
+            kv('ISP', esc(geoData.isp||'—')),
+            kv('Org', esc(geoData.org||'—')),
+            kv('ASN', `<span class="kv-v mono">${esc(geoData.as||geoData.asn||'—')}</span>`),
+            kv('Coords', lat&&lon ? `<span class="kv-v mono">${lat}, ${lon}</span>` : '—'),
+        ].join('');
+
+        // General sidebar
+        document.getElementById('general-body').innerHTML = [
+            kv('ID', esc(ID)),
+            kv('IP', `<span class="kv-v mono">${esc(IP_ADDR)}</span>`),
+            kv('MAC', esc(ipData.MAC||'—')),
+            kv('Type', `<span style="color:${cls.color};font-weight:700">${cls.label}</span>`),
+            kv('Scan flag', ipData.SCAN ? '<span class="kv-v ok">✓ Scanned</span>' : '<span class="kv-v dim">Not scanned</span>'),
+            hostnames.length ? kv('Hostnames',hostnames.slice(0,2).map(esc).join('<br>')) : '',
+        ].join('');
+
+        // Hostnames sidebar
+        document.getElementById('hostnames-body').innerHTML = hostnames.length
+            ? hostnames.map(h=>`<div style="font-family:monospace;font-size:10px;color:#7eb8ff;margin-bottom:3px;word-break:break-all">${esc(h)}</div>`).join('')
+            : '<div class="empty">No hostnames found</div>';
+
+        // Threat score
+        document.getElementById('threat-body').innerHTML = `
+            <div class="score-bar">
+                <div class="score-num" style="color:${tc}">${threat}</div>
+                <div class="score-track"><div class="score-fill" style="width:${threat}%;background:${tc}"></div></div>
+                <span class="score-label" style="background:${tc}15;color:${tc}">${tl}</span>
+            </div>
+            ${parsed.criminalip?.score ? `
+            <div style="margin-top:8px">
+                ${kv('Inbound',`<span style="color:${scoreColor(parsed.criminalip.score.inbound)};font-weight:700">${esc(parsed.criminalip.score.inbound||'—')}</span>`)}
+                ${kv('Outbound',`<span style="color:${scoreColor(parsed.criminalip.score.outbound)};font-weight:700">${esc(parsed.criminalip.score.outbound||'—')}</span>`)}
+            </div>` : '<div class="empty">Run OSINT for threat data</div>'}`;
+
+        // Issues grid
+        const issues = parsed.criminalip?.issues||{};
+        document.getElementById('issues-body').innerHTML = Object.keys(issues).length
+            ? `<div class="issues-grid">${Object.entries(issues).map(([k,v])=>`<div class="issue-pill ${v?'issue-true':'issue-false'}">${v?'●':'○'} ${esc(k.replace('is_','').toUpperCase())}</div>`).join('')}</div>`
+            : '<div class="empty">No CriminalIP data — run OSINT</div>';
+
+        // Ports
+        document.getElementById('ports-body').innerHTML = allPorts.length
+            ? `<div style="display:flex;flex-wrap:wrap;gap:2px">${allPorts.map(p=>`<div class="port-entry ${p.banner?'has-banner':''}" title="${esc(p.banner||p.service)}"><span class="pe-num" style="color:${p.proto==='udp'?'#a090d0':'#5fffb0'}">${p.port}</span><span class="pe-proto">${p.proto.toUpperCase()}</span>${p.service?`<span class="pe-svc">${esc(p.service.slice(0,10))}</span>`:''}<span class="pe-src">${p.source}</span></div>`).join('')}</div>`
+            : '<div class="empty">No ports found — run SCAN</div>';
+
+        // Shodan
+        const shodanSvcs = parsed.shodan?.data||[];
+        if(parsed.shodan){
+            document.getElementById('sec-shodan').style.display='block';document.getElementById('nav-shodan').style.display='';
+            document.getElementById('shodan-badge').textContent = shodanSvcs.length+' services';
+            document.getElementById('shodan-body').innerHTML = shodanSvcs.length
+                ? shodanSvcs.map(renderShodanSvc).join('')
+                : '<div class="empty">No service banners</div>';
+            // Shodan summary sidebar
+            const sh=parsed.shodan;
+            document.getElementById('shodan-summary-body').innerHTML = [
+                kv('Org',esc(sh.org||'—')),
+                kv('ISP',esc(sh.isp||'—')),
+                kv('OS',esc(sh.os||'—')),
+                kv('ASN',`<span class="kv-v mono">${esc(sh.asn||'—')}</span>`),
+                kv('Last seen',esc(sh.last_update?sh.last_update.slice(0,10):'—')),
+                (sh.tags||[]).length?kv('Tags',sh.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')):'',
+                (sh.domains||[]).length?kv('Domains',sh.domains.map(esc).join(', ')):'',
+            ].join('');
+        } else {
+            document.getElementById('shodan-summary-body').innerHTML='<div class="empty">Run SCAN for Shodan data</div>';
         }
 
-        const browserData = await response.json();
-
-        // Check if there is data available
-        if (!browserData || browserData.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Data',
-                text: 'No browser data found for the given IP address.',
-            });
-            return;
+        // CVEs
+        if(cves.length){
+            document.getElementById('sec-cve').style.display='block';document.getElementById('nav-cve').style.display='';
+            document.getElementById('cve-badge').textContent=cves.length+' CVEs';
+            document.getElementById('cve-body').innerHTML=cves.map(c=>{
+                const sc=c.cvssv3_score||c.cvssv2_score||0;const cc=cvssColor(sc);
+                return`<div class="cve-item"><div class="cve-head"><span class="cve-id">${esc(c.cve_id)}</span>${sc?`<span class="cve-score" style="background:${cc}18;color:${cc}">CVSS ${sc.toFixed(1)}</span>`:''}${c.cvssv3_vector?`<span class="tag">${esc(c.cvssv3_vector)}</span>`:''}${c.app_name?`<span style="font-size:10px;color:#a090c0;margin-left:auto">${esc(c.app_name)} ${esc(c.app_version||'')}</span>`:''}</div><div class="cve-desc">${esc((c.cve_description||'').slice(0,300))}${(c.cve_description||'').length>300?'…':''}</div>${(c.list_cwe||[]).length?`<div class="cve-extra">CWE: ${c.list_cwe.map(w=>`${w.cwe_id} – ${esc(w.cwe_name||'')}`).join(' | ')}</div>`:''}${(c.list_cpe||[]).length?`<div class="cve-extra">CPE: ${c.list_cpe.slice(0,2).map(esc).join(', ')}</div>`:''}</div>`;
+            }).join('');
         }
 
-        // Parse and extract browser data from the API result
-        const parsedData = browserData.map((entry) => {
-            return {
-                Ts: entry.Ts || 'N/A', // Timestamp
-                Fu: entry.Fu || 'N/A', // Unique fingerprint
-                Fb: entry.Fb || 'N/A', // Browser fingerprint
+        // Whois
+        if(whoisList.length){
+            document.getElementById('sec-whois').style.display='block';document.getElementById('nav-whois').style.display='';
+            document.getElementById('whois-badge').textContent=whoisList.length+' records';
+            document.getElementById('whois-body').innerHTML=whoisList.map(renderWhois).join('');
+        }
+
+        // Nmap
+        const nmapHosts=parsed.nmap||[];
+        if(nmapHosts.length){
+            document.getElementById('sec-nmap').style.display='block';document.getElementById('nav-nmap').style.display='';
+            document.getElementById('nmap-body').innerHTML=nmapHosts.map(h=>`
+                ${h.hostname?kv('Hostname',`<span class="kv-v mono">${esc(h.hostname)}</span>`):''}
+                ${h.ip?kv('IP',`<span class="kv-v mono">${esc(h.ip)}</span>`):''}
+                ${h.mac?kv('MAC',`<span class="kv-v mono">${esc(h.mac)}</span>`):''}
+                ${h.osNmap?kv('OS',esc(h.osNmap)):''}
+                ${(h.openPorts||[]).length?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px">${h.openPorts.map(p=>`<div class="port-entry"><span class="pe-num" style="color:#c4b0ff">${p.port}</span><span class="pe-proto">${(p.protocol||'tcp').toUpperCase()}</span>${p.service?`<span class="pe-svc">${esc(p.service)}</span>`:''}${p.product?`<span class="pe-svc" style="color:#7eb8ff">${esc(p.product)}</span>`:''}</div>`).join('')}</div>`:''}`
+            ).join('<hr style="border:none;border-top:1px solid rgba(255,255,255,.05);margin:8px 0">');
+        }
+
+        // OSINT header buttons
+        if(cls.type==='public'){
+            const links={
+                'btn-intelx':`https://intelx.io/?s=${IP_ADDR}`,
+                'btn-censys':`https://search.censys.io/hosts/${IP_ADDR}`,
+                'btn-shodan':`https://www.shodan.io/host/${IP_ADDR}`,
+                'btn-vt':`https://www.virustotal.com/gui/ip-address/${IP_ADDR}`,
+                'btn-abuse':`https://www.abuseipdb.com/check/${IP_ADDR}`,
+                'btn-gn':`https://viz.greynoise.io/ip/${IP_ADDR}`,
+                'btn-otx':`https://otx.alienvault.com/indicator/ip/${IP_ADDR}`,
             };
-        });
+            Object.entries(links).forEach(([id,href])=>{const el=document.getElementById(id);if(el)el.href=href;});
+        } else {
+            // hide OSINT buttons for private IPs
+            ['btn-intelx','btn-censys','btn-shodan','btn-vt','btn-abuse','btn-gn','btn-otx'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+        }
 
-        // Build the HTML table dynamically
-        const tableRows = parsedData.map((data) => {
-            return `
-                <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(data.Ts)}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;"><a class="dashline line" href="/web/dashboard#${escapeHtml(data.Fu)}" target="_blank">${escapeHtml(data.Fu)}</a></td>
-                    <td style="border: 1px solid #ddd; padding: 8px;"><a class="dashline line" href="/web/dashboard#${escapeHtml(data.Fb)}" target="_blank">${escapeHtml(data.Fb)}</a></td>
-                    <td style="border: 1px solid #ddd;"><button id='small-button' onclick="location.href='/web/info?id=${escapeHtml(data.Fb)}'" class='line'>🔍</button></td>
-                </tr>
-            `;
-        }).join('');
+        // Fetch traffic + fingerprints
+        await loadTrafficData();
 
-        const tableHtml = `
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Timestamp</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">User Fingerprint</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Browser Fingerprint</th>
-                        <th style="border: 1px solid #ddd;">@</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tableRows}
-                </tbody>
-            </table>
-        `;
+    } catch(e){
+        console.error(e);
+        document.getElementById('ip-addr').textContent='Error: '+e.message;
+    }
+}
 
-        // Display the table in a SweetAlert modal
-        Swal.fire({
-            title: 'Browsers Data',
-            html: tableHtml,
-            width: '80%',
-            confirmButtonText: 'Close',
-            confirmButtonColor: 'red',
+/* ── LOAD TRAFFIC + FINGERPRINTS ── */
+async function loadTrafficData(){
+    try {
+        const res = await fetch(`/api/getfinger/getIPlogs/${IP_ADDR}`);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const logs = await res.json();
+
+        /* Split: DNS logs vs HTTP logs */
+        const dnsLogs  = logs.filter(l=>(l.Dl||'').toUpperCase()==='DNS.LOG');
+        const httpLogs = logs.filter(l=>(l.Dl||'').toUpperCase()!=='DNS.LOG');
+
+        /* Unique FUs from HTTP only */
+        const uniqueFUs = [...new Set(httpLogs.map(l=>l.Fu).filter(Boolean))];
+        const allFUs    = [...new Set(logs.map(l=>l.Fu).filter(Boolean))];
+
+        /* URL set from HTTP logs */
+        function extractURL(l){try{const er=JSON.parse(atob(l.Er||''));return er.url||er.requestURL||er.referer||'';}catch{return'';}}
+        const uniqueURLs = new Set(httpLogs.map(extractURL).filter(Boolean));
+        const dealers    = [...new Set(httpLogs.map(l=>l.Dl).filter(Boolean))];
+
+        /* ── Traffic summary sidebar ── */
+        document.getElementById('traffic-summary-body').innerHTML = [
+            kv('Total logs',`<b style="color:#e0e0e0">${logs.length}</b>`),
+            kv('HTTP requests',`<b style="color:#7eb8ff">${httpLogs.length}</b>`),
+            kv('DNS queries',`<b style="color:#5fffb0">${dnsLogs.length}</b>`),
+            kv('Fingerprints',`<b style="color:#c4b0ff">${uniqueFUs.length}</b>`),
+            kv('Unique URLs',`<b style="color:#7eb8ff">${uniqueURLs.size}</b>`),
+            kv('Dealers',dealers.length?esc(dealers.slice(0,3).join(', ')):'—'),
+            logs.length?kv('Last seen',esc(logs[0].Ts?.slice(0,16)||'—')):'',
+            logs.length?kv('First seen',esc(logs[logs.length-1].Ts?.slice(0,16)||'—')):'',
+        ].join('');
+
+        /* ── HTTP REQUESTS TAB — sorted newest first, paginated+searchable ── */
+        const httpSorted=[...httpLogs].sort((a,b)=>new Date(b.Ts||0)-new Date(a.Ts||0));
+        function renderHTTPTable(rows,page,pageSize,q){
+            const filtered=rows.filter(l=>{
+                if(!q)return true;
+                const url=extractURL(l);
+                return (l.Fu||'').toLowerCase().includes(q)||(url).toLowerCase().includes(q)||(l.Ua||'').toLowerCase().includes(q)||(l.Dl||'').toLowerCase().includes(q);
+            });
+            const total=filtered.length;
+            const ps=pageSize||50;
+            const tp=Math.ceil(total/ps)||1;
+            const pg=Math.min(Math.max(1,page),tp);
+            const slice=filtered.slice((pg-1)*ps,pg*ps);
+            const trs=slice.map((l,i)=>{
+                const url=extractURL(l);const ua=l.Ua||'—';
+                return`<tr>
+                    <td style="color:rgba(255,255,255,.25);text-align:right;font-size:9px;padding:4px 6px">${(pg-1)*ps+i+1}</td>
+                    <td style="white-space:nowrap;font-size:9px;color:rgba(255,255,255,.38);padding:4px 8px">${esc(l.Ts?.slice(0,16)||'—')}</td>
+                    <td style="padding:4px 8px"><span class="fu-hash" title="${esc(l.Fu||'')}">${esc((l.Fu||'—').slice(0,16))}…</span></td>
+                    <td style="padding:4px 8px;font-size:10px;color:rgba(255,255,255,.5)"><div style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(url)}">${esc(url.slice(0,80)||'—')}</div></td>
+                    <td style="padding:4px 8px;font-size:9px;color:rgba(255,255,255,.38)"><div style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(ua)}">${esc(ua.slice(0,50))}</div></td>
+                    <td style="padding:4px 8px;font-size:9px;color:rgba(255,255,255,.35)">${esc(l.Dl||'—')}</td>
+                    <td style="padding:4px 8px"><a href="/web/info?id=${esc(l.Fr||l.ID||'')}" target="_blank" class="act-btn blue" style="font-size:8px;height:16px;padding:0 5px">→</a></td>
+                </tr>`;
+            }).join('');
+            // pager
+            const pagerBtns=[];
+            const ab=(lbl,p,active,dis)=>{pagerBtns.push(`<button class="tbl-pager-btn${active?' on':''}" onclick="httpPage(${p})" ${dis?'disabled':''}>${lbl}</button>`);};
+            ab('‹',pg-1,false,pg===1);
+            for(let p=1;p<=tp;p++){if(p===1||p===tp||(p>=pg-2&&p<=pg+2))ab(p,p,p===pg,false);else if(pagerBtns[pagerBtns.length-1]!=='…')pagerBtns.push('<span class="tbl-pager-btn" style="cursor:default">…</span>');}
+            ab('›',pg+1,false,pg===tp);
+            return{html:`
+                <div class="tbl-search">
+                    <input type="text" id="http-search" placeholder="Filter by URL, Fu, UA, dealer…" value="${esc(q)}" oninput="httpSearch(this.value)">
+                    <span class="tbl-info">${total} rows</span>
+                </div>
+                <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
+                <table class="req-table" style="min-width:600px">
+                <thead><tr><th style="width:36px">#</th><th>Time ↓</th><th>Fu</th><th>URL</th><th>User-Agent</th><th>Dealer</th><th style="width:32px"></th></tr></thead>
+                <tbody>${trs||'<tr><td colspan="7" style="text-align:center;padding:20px;color:rgba(255,255,255,.2)">No results</td></tr>'}</tbody>
+                </table></div>
+                <div class="tbl-pager">${pagerBtns.join('')}<span class="tbl-pager-info">Page ${pg}/${tp}</span></div>`,pg,tp,total};
+        }
+        let _httpPage=1,_httpQ='';
+        window.httpPage=p=>{_httpPage=p;const r=renderHTTPTable(httpSorted,p,50,_httpQ);document.getElementById('tab-requests').innerHTML=r.html;};
+        window.httpSearch=q=>{_httpQ=q.toLowerCase();_httpPage=1;const r=renderHTTPTable(httpSorted,1,50,_httpQ);document.getElementById('tab-requests').innerHTML=r.html;};
+        if(httpLogs.length===0){
+            document.getElementById('tab-requests').innerHTML='<div class="empty" style="padding:16px">No HTTP requests from this IP</div>';
+        } else {
+            document.getElementById('tab-requests').innerHTML=renderHTTPTable(httpSorted,1,50,'').html;
+        }
+
+        /* ── DNS TRACE TAB ── */
+        /* ── DNS DECODER ── */
+        function parseDNSLog(l){
+            let er={},ed={};
+            try{er=JSON.parse(atob(l.Er||''));}catch{}
+            try{ed=JSON.parse(atob(l.Ed||''));}catch{}
+            const questions=er.questions||[];
+            const header=ed.header||er.header||{};
+            const edns=ed.edns||{};
+            const domain=questions[0]?.name||er.merca_uri||l.Fu||'—';
+            const qtype=questions[0]?.type||er.method||'?';
+            const rcode=header.rcode||'—';
+            const msgId=header.id||'—';
+            const allQuestions=questions.map(q=>({name:q.name,type:q.type,cls:q.class}));
+            const flags=[];
+            if(header.rd)flags.push('RD');
+            if(header.ra)flags.push('RA');
+            if(header.aa)flags.push('AA');
+            if(header.tc)flags.push('TC');
+            const ednsVer=edns.version!==undefined?edns.version:null;
+            return{domain,qtype,rcode,msgId,allQuestions,flags,ednsVer,er,ed,header};
+        }
+
+        function dnsTypeClass(t){
+            const map={A:'A',AAAA:'AAAA',MX:'MX',TXT:'TXT',CNAME:'CNAME',PTR:'PTR',NS:'NS',SOA:'SOA',DNSKEY:'DNSKEY',UNKNOWN:'UNKNOWN'};
+            return map[t]?`dns-type dns-type-${map[t]}`:'dns-type dns-type-default';
+        }
+        function rcodeClass(r){
+            if(r==='NOERROR')return'dns-rcode-NOERROR';
+            if(r==='NXDOMAIN')return'dns-rcode-NXDOMAIN';
+            return'dns-rcode-other';
+        }
+
+        if(dnsLogs.length===0){
+            document.getElementById('tab-dns').innerHTML='<div class="empty" style="padding:16px">No DNS queries from this IP (no DNS.LOG entries)</div>';
+        } else {
+            /* parse all DNS logs */
+            const parsedDNS=dnsLogs.map(l=>({...l,_dns:parseDNSLog(l)}));
+
+            /* summary stats */
+            const typeMap=new Map();
+            const domainMap=new Map();
+            const rcodeMap=new Map();
+            parsedDNS.forEach(l=>{
+                const {qtype,domain,rcode}=l._dns;
+                typeMap.set(qtype,(typeMap.get(qtype)||0)+1);
+                domainMap.set(domain,(domainMap.get(domain)||0)+1);
+                rcodeMap.set(rcode,(rcodeMap.get(rcode)||0)+1);
+            });
+            const topDomains=[...domainMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+            const hasNXDOMAIN=(rcodeMap.get('NXDOMAIN')||0)>0;
+            const hasDNSKEY=(typeMap.get('DNSKEY')||0)>0;
+            const hasUnknown=(typeMap.get('UNKNOWN')||0)>0;
+
+            const summaryHtml=`<div style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                <span style="font-size:9px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.07em">Stats:</span>
+                <span class="stat-chip ok">${parsedDNS.length} queries</span>
+                <span class="stat-chip info">${domainMap.size} domains</span>
+                <span class="stat-chip">${typeMap.size} query types</span>
+                ${hasNXDOMAIN?'<span class="stat-chip hi">⚠ NXDOMAIN responses</span>':''}
+                ${hasDNSKEY?'<span class="stat-chip hi">⚠ DNSKEY queries (DNSSEC probe)</span>':''}
+                ${hasUnknown?'<span class="stat-chip">UNKNOWN type queries</span>':''}
+                <span style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.3)">Top: ${topDomains.map(([d,n])=>`<b style="color:#7eb8ff">${esc(d)}</b> ×${n}`).join(' · ')}</span>
+            </div>`;
+
+            /* type breakdown pills */
+            const typeBreakdown=[...typeMap.entries()].sort((a,b)=>b[1]-a[1]).map(([t,n])=>
+                `<span class="${dnsTypeClass(t)}" style="margin-right:4px">${t} ×${n}</span>`
+            ).join('');
+
+            /* sort newest first */
+            parsedDNS.sort((a,b)=>new Date(b.Ts||0)-new Date(a.Ts||0));
+
+            function renderDNSTable(rows,page,q){
+                const filtered=rows.filter(l=>{
+                    if(!q)return true;
+                    const d=l._dns;
+                    return d.domain.toLowerCase().includes(q)||d.qtype.toLowerCase().includes(q)||(d.rcode||'').toLowerCase().includes(q);
+                });
+                const total=filtered.length;const ps=100;const tp=Math.ceil(total/ps)||1;
+                const pg=Math.min(Math.max(1,page),tp);
+                const slice=filtered.slice((pg-1)*ps,pg*ps);
+                const trs=slice.map(l=>{
+                    const d=l._dns;
+                    const extraQs=d.allQuestions.length>1?`<span style="font-size:8px;color:rgba(255,255,255,.28);margin-left:3px">+${d.allQuestions.length-1}</span>`:'';
+                    const flagsHtml=d.flags.length?`<span style="font-size:8px;color:rgba(255,255,255,.22);margin-left:4px">${d.flags.join(' ')}</span>`:'';
+                    const ednsHtml=d.ednsVer!==null?`<span style="font-size:8px;color:rgba(255,255,255,.18);margin-left:3px">EDNS${d.ednsVer}</span>`:'';
+                    return`<tr>
+                        <td style="color:rgba(255,255,255,.32);font-size:9px;white-space:nowrap;padding:4px 8px">${esc(l.Ts?.slice(0,16)||'—')}</td>
+                        <td style="padding:4px 8px"><span class="${dnsTypeClass(d.qtype)}">${esc(d.qtype)}</span></td>
+                        <td style="padding:4px 8px"><span class="dns-domain">${esc(d.domain)}</span>${extraQs}</td>
+                        <td style="padding:4px 8px"><span class="${rcodeClass(d.rcode)}">${esc(d.rcode)}</span>${flagsHtml}${ednsHtml}</td>
+                        <td style="font-family:monospace;font-size:9px;color:rgba(255,255,255,.22);padding:4px 8px">#${d.msgId}</td>
+                        <td style="font-size:9px;color:rgba(255,255,255,.28);padding:4px 8px"><div style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.Ua||'')}">${esc((l.Ua||'N/A').slice(0,30))}</div></td>
+                    </tr>`;
+                }).join('');
+                const pagerBtns=[];
+                const ab2=(lbl,p,active,dis)=>{pagerBtns.push(`<button class="tbl-pager-btn${active?' on':''}" onclick="dnsPage(${p})" ${dis?'disabled':''}>${lbl}</button>`);};
+                ab2('‹',pg-1,false,pg===1);
+                for(let p=1;p<=tp;p++){if(p===1||p===tp||(p>=pg-2&&p<=pg+2))ab2(p,p,p===pg,false);else if(pagerBtns[pagerBtns.length-1]!=='…')pagerBtns.push('<span class="tbl-pager-btn" style="cursor:default">…</span>');}
+                ab2('›',pg+1,false,pg===tp);
+                return `${summaryHtml}
+                    <div style="padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.05)">${typeBreakdown}</div>
+                    <div class="tbl-search">
+                        <input type="text" id="dns-search" placeholder="Filter domain, type, rcode…" value="${esc(q)}" oninput="dnsSearch(this.value)">
+                        <span class="tbl-info">${total} rows</span>
+                    </div>
+                    <div class="tbl-wrap" style="max-height:400px;overflow-y:auto">
+                    <table class="dns-tbl" style="min-width:500px">
+                    <thead><tr><th>Time ↓</th><th>Type</th><th>Domain / Query</th><th>RCode</th><th>Msg ID</th><th>UA</th></tr></thead>
+                    <tbody>${trs||'<tr><td colspan="6" style="text-align:center;padding:20px;color:rgba(255,255,255,.2)">No results</td></tr>'}</tbody>
+                    </table></div>
+                    <div class="tbl-pager">${pagerBtns.join('')}<span class="tbl-pager-info">Page ${pg}/${tp}</span></div>`;
+            }
+            let _dnsPage=1,_dnsQ='';
+            window.dnsPage=p=>{_dnsPage=p;document.getElementById('tab-dns').innerHTML=renderDNSTable(parsedDNS,p,_dnsQ);};
+            window.dnsSearch=q=>{_dnsQ=q.toLowerCase();_dnsPage=1;document.getElementById('tab-dns').innerHTML=renderDNSTable(parsedDNS,1,_dnsQ);};
+            document.getElementById('tab-dns').innerHTML=renderDNSTable(parsedDNS,1,'');
+        }
+
+        /* ── FINGERPRINTS — deep telemetry + cross-analysis ── */
+        if(uniqueFUs.length===0){
+            document.getElementById('sidebar-fingerprints').innerHTML='<div class="empty">No HTTP fingerprints for this IP</div>';
+        } else {
+            document.getElementById('sidebar-fingerprints').innerHTML='<div class="skel"></div><div class="skel" style="width:70%"></div>';
+            const fuDetails=[];
+            for(const fu of uniqueFUs.slice(0,20)){
+                try{
+                    const r=await fetch(`/api/getfinger/${fu}`);
+                    if(!r.ok)continue;
+                    const fuData=await r.json();
+                    const fuLogs=httpLogs.filter(l=>l.Fu===fu).sort((a,b)=>new Date(b.Ts)-new Date(a.Ts));
+                    const lastEntry=fuData[0]||{};
+
+                    // Collect all visited URLs (deduplicated)
+                    const visitedURLs=[...new Set(fuLogs.map(l=>extractURL(l)).filter(Boolean))];
+
+                    // Collect all unique dealers
+                    const fuDealers=[...new Set(fuLogs.map(l=>l.Dl).filter(Boolean))];
+
+                    // Parse Jd (device data) — try from fuData entries too
+                    let jdDevice={};
+                    for(const e of fuData){
+                        try{const j=JSON.parse(atob(e.Jd||''));if(j&&typeof j==='object'&&(j.os||j.browser||j.screenWidth)){jdDevice=j;break;}}catch{}
+                    }
+
+                    // Parse all IPs this FU has been seen from (cross-IP)
+                    const seenIPs=[...new Set(fuData.map(e=>e.Ip).filter(Boolean))];
+                    const otherIPs=seenIPs.filter(ip=>ip!==IP_ADDR);
+
+                    // Collect all timestamps to build activity timeline
+                    const allTs=fuData.map(e=>e.Ts).filter(Boolean).sort();
+                    const firstSeen=allTs[allTs.length-1]||'';
+                    const lastSeen=allTs[0]||'';
+
+                    // Unique UAs seen for this FU
+                    const fuUAs=[...new Set([
+                        ...fuLogs.map(l=>l.Ua),
+                        ...fuData.map(e=>e.Ua)
+                    ].filter(ua=>ua&&ua!=='N/A'&&ua!=='—'))];
+
+                    // Language from entry
+                    const langs=lastEntry.La||'—';
+
+                    // Timezone
+                    const tz=lastEntry.Tz||jdDevice.timezone||'';
+
+                    // Canvas/WebGL fingerprint if available
+                    const canvas=jdDevice.canvas||lastEntry.Ca||'';
+                    const webgl=jdDevice.webgl||lastEntry.Wg||'';
+                    const fonts=jdDevice.fonts||[];
+
+                    // Intel from fuData
+                    const fuEmails=new Set(),fuJWTs=new Set(),fuAPIKeys=new Set();
+                    fuData.forEach(e=>{
+                        if(e.INTEL)try{const a=JSON.parse(e.INTEL);(Array.isArray(a)?a:[a]).forEach(x=>{
+                            (x.emails||[]).forEach(em=>fuEmails.add(em));
+                            (x.jwtTokens||[]).forEach(j=>fuJWTs.add(j));
+                            if(x.apiKs)Object.values(x.apiKs).forEach(v=>fuAPIKeys.add(v));
+                        });}catch{}
+                    });
+
+                    // Total requests across all IPs (not just this one)
+                    const totalFuRequests=fuData.length;
+
+                    fuDetails.push({
+                        fu,fuLogs,fuData,lastEntry,jdDevice,
+                        visitedURLs,fuDealers,seenIPs,otherIPs,
+                        firstSeen,lastSeen,fuUAs,langs,tz,
+                        canvas,webgl,fonts,
+                        fuEmails:[...fuEmails],fuJWTs:[...fuJWTs],fuAPIKeys:[...fuAPIKeys],
+                        totalFuRequests
+                    });
+                }catch{}
+            }
+
+            if(!fuDetails.length){
+                document.getElementById('sidebar-fingerprints').innerHTML='<div class="empty">Could not load fingerprint details</div>';
+                return;
+            }
+
+            /* ── CROSS-ANALYSIS: find matching attributes between FUs ── */
+            // Group FUs by shared attributes
+            function groupBy(details, getter){
+                const m=new Map();
+                details.forEach(d=>{const v=getter(d);if(v&&v!=='—'&&v!=='N/A'){if(!m.has(v))m.set(v,[]);m.get(v).push(d.fu);}});
+                return [...m.entries()].filter(([,fus])=>fus.length>1).sort((a,b)=>b[1].length-a[1].length);
+            }
+            const sharedUA     =groupBy(fuDetails,d=>d.fuUAs[0]||'');
+            const sharedTZ     =groupBy(fuDetails,d=>d.tz);
+            const sharedScreen =groupBy(fuDetails,d=>d.jdDevice.screenWidth?`${d.jdDevice.screenWidth}×${d.jdDevice.screenHeight||'?'}`:'');
+            const sharedOS     =groupBy(fuDetails,d=>d.jdDevice.os||'');
+            const sharedLang   =groupBy(fuDetails,d=>d.langs);
+            const sharedCanvas =groupBy(fuDetails,d=>d.canvas);
+
+            // Mark FUs that appear from multiple IPs
+            const multiIPFUs=fuDetails.filter(d=>d.otherIPs.length>0);
+
+            /* ── SUMMARY STATS ── */
+            const totalReqs=fuDetails.reduce((s,d)=>s+d.fuLogs.length,0);
+            const totalGlobal=fuDetails.reduce((s,d)=>s+d.totalFuRequests,0);
+            const allOS=[...new Set(fuDetails.map(d=>d.jdDevice.os).filter(Boolean))];
+            const allBrowsers=[...new Set(fuDetails.map(d=>d.jdDevice.browser).filter(Boolean))];
+            const allTZs=[...new Set(fuDetails.map(d=>d.tz).filter(Boolean))];
+            const allScreens=[...new Set(fuDetails.map(d=>d.jdDevice.screenWidth?`${d.jdDevice.screenWidth}×${d.jdDevice.screenHeight}`:null).filter(Boolean))];
+            const hasIntel=fuDetails.some(d=>d.fuEmails.length||d.fuJWTs.length||d.fuAPIKeys.length);
+            const crossMatches=sharedUA.length+sharedTZ.length+sharedScreen.length+sharedCanvas.length;
+
+            const summaryCards=[
+                {num:uniqueFUs.length,lbl:'Fingerprints',color:'#c4b0ff'},
+                {num:totalReqs,lbl:'Reqs (this IP)',color:'#7eb8ff'},
+                {num:totalGlobal,lbl:'Global reqs',color:'rgba(255,255,255,.5)'},
+                {num:allOS.length||'—',lbl:'Unique OS',color:'#5fffb0'},
+                {num:allBrowsers.length||'—',lbl:'Browsers',color:'#5fffb0'},
+                {num:allTZs.length||'—',lbl:'Timezones',color:'rgba(255,255,255,.5)'},
+                {num:multiIPFUs.length||'0',lbl:'Multi-IP FUs',color:multiIPFUs.length?'#c87070':'rgba(255,255,255,.35)'},
+                {num:crossMatches||'0',lbl:'Cross-matches',color:crossMatches?'#c8c050':'rgba(255,255,255,.35)'},
+            ].map(s=>`<div class="fp-sum-card"><div class="fp-sum-num" style="color:${s.color}">${s.num}</div><div class="fp-sum-label">${s.lbl}</div></div>`).join('');
+
+            /* ── CROSS-ANALYSIS SECTION ── */
+            let crossHtml='';
+            if(crossMatches>0){
+                const renderGroup=(label,groups,cls)=>groups.slice(0,4).map(([val,fus])=>
+                    `<tr><td style="padding:4px 8px"><span class="match-badge ${cls}">${label}</span></td>
+                     <td style="padding:4px 8px;font-size:9px;color:rgba(255,255,255,.6);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(val)}">${esc(val.slice(0,40))}</td>
+                     <td style="padding:4px 8px;font-family:monospace;font-size:9px;color:#7eb8ff">${fus.map(f=>esc(f.slice(0,12))+'…').join(', ')}</td></tr>`
+                ).join('');
+                crossHtml=`<div style="margin-bottom:14px">
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.28);margin-bottom:6px;display:flex;align-items:center;gap:6px">
+                        Cross-FU Attribute Matches
+                        <span class="fp-match">⚡ ${crossMatches} shared attrs</span>
+                        ${multiIPFUs.length?`<span class="fp-alert">⚠ ${multiIPFUs.length} multi-IP</span>`:''}
+                    </div>
+                    <table class="cross-tbl">
+                    <thead><tr><th>Attr</th><th>Value</th><th>Shared by FUs</th></tr></thead>
+                    <tbody>
+                        ${renderGroup('UA',sharedUA,'match-ua')}
+                        ${renderGroup('TZ',sharedTZ,'match-tz')}
+                        ${renderGroup('Screen',sharedScreen,'match-screen')}
+                        ${renderGroup('OS',sharedOS,'match-os')}
+                        ${renderGroup('Lang',sharedLang,'match-lang')}
+                        ${sharedCanvas.length?renderGroup('Canvas',sharedCanvas,'match-ua'):''}
+                    </tbody></table>
+                    ${multiIPFUs.length?`<div style="margin-top:8px;padding:6px 8px;background:rgba(200,80,80,.06);border:1px solid rgba(200,80,80,.15);border-radius:3px;font-size:10px;color:rgba(255,255,255,.6)">
+                        <span style="color:#c87070;font-weight:700">⚠ VPN/Multi-IP fingerprints:</span>
+                        ${multiIPFUs.map(d=>`<div style="margin-top:3px;font-family:monospace;font-size:9px;color:#7eb8ff">${esc(d.fu.slice(0,20))}… <span style="color:rgba(255,255,255,.4)">also from: ${d.otherIPs.slice(0,3).map(esc).join(', ')}</span></div>`).join('')}
+                    </div>`:''}
+                </div>`;
+            }
+
+            /* ── INDIVIDUAL FU CARDS ── */
+            const fCards=fuDetails.map(d=>{
+                const {fu,fuLogs,jdDevice,visitedURLs,fuDealers,otherIPs,firstSeen,lastSeen,fuUAs,langs,tz,fuEmails,fuJWTs,fuAPIKeys,totalFuRequests}=d;
+                const isShared=otherIPs.length>0;
+                const hasMatches=
+                    sharedUA.some(([,fus])=>fus.includes(fu))||
+                    sharedTZ.some(([,fus])=>fus.includes(fu))||
+                    sharedScreen.some(([,fus])=>fus.includes(fu));
+
+                // Activity hours for this FU
+                const fuHours=new Array(24).fill(0);
+                fuLogs.forEach(l=>{try{fuHours[new Date(l.Ts).getHours()]++;}catch{}});
+                const fuPeakH=fuHours.indexOf(Math.max(...fuHours));
+                const maxFuH=Math.max(...fuHours,1);
+                const miniHist=fuHours.map((v,h)=>{
+                    const pct=Math.round(v/maxFuH*100);
+                    return`<div style="flex:1;height:${Math.max(2,pct)}%;background:${h===fuPeakH?'#7eb8ff':'rgba(126,184,255,.3)'};border-radius:1px 1px 0 0;min-height:${v?2:0}px" title="${h}:00 — ${v}"></div>`;
+                }).join('');
+
+                // Matching badges for this FU
+                const matchBadges=[];
+                if(sharedUA.some(([,fus])=>fus.includes(fu)))matchBadges.push('<span class="match-badge match-ua">UA↔</span>');
+                if(sharedTZ.some(([,fus])=>fus.includes(fu)))matchBadges.push('<span class="match-badge match-tz">TZ↔</span>');
+                if(sharedScreen.some(([,fus])=>fus.includes(fu)))matchBadges.push('<span class="match-badge match-screen">Screen↔</span>');
+                if(sharedOS.some(([,fus])=>fus.includes(fu)))matchBadges.push('<span class="match-badge match-os">OS↔</span>');
+                if(sharedLang.some(([,fus])=>fus.includes(fu)))matchBadges.push('<span class="match-badge match-lang">Lang↔</span>');
+
+                return`<div class="fp-card${isShared?' shared':''}">
+                    <div class="fp-card-header">
+                        <a href="/web/dashboard#${esc(fu)}" class="fp-card-hash" target="_blank">${esc(fu.slice(0,26))}…</a>
+                        ${isShared?'<span class="fp-alert">MULTI-IP</span>':''}
+                        ${matchBadges.join('')}
+                        <a href="/web/info?id=${esc(fu)}" target="_blank" class="act-btn blue" style="font-size:8px;height:17px;padding:0 6px;flex-shrink:0;margin-left:4px">→</a>
+                    </div>
+                    <div class="fp-card-meta">
+                        <span class="fu-stat">📡 ${fuLogs.length} here</span>
+                        <span class="fu-stat">🌐 ${totalFuRequests} global</span>
+                        <span class="fu-stat">🕐 ${esc(lastSeen.slice(0,16)||'—')}</span>
+                        ${langs&&langs!=='—'?`<span class="fu-stat">💬 ${esc(langs.slice(0,12))}</span>`:''}
+                    </div>
+                    <div class="fp-card-body">
+                        ${fuUAs.length?`<div class="fp-card-kv"><span class="fp-card-k">UA</span><span class="fp-card-v" title="${esc(fuUAs[0])}">${esc(fuUAs[0].slice(0,60))}${fuUAs[0].length>60?'…':''}</span></div>`:''}
+                        ${fuUAs.length>1?`<div class="fp-card-kv"><span class="fp-card-k">UA (+${fuUAs.length-1})</span><span class="fp-card-v" style="color:rgba(255,255,255,.45);font-size:9px">${esc(fuUAs.slice(1).map(u=>u.slice(0,30)).join(' | ').slice(0,80))}</span></div>`:''}
+                        ${jdDevice.os||jdDevice.browser?`<div class="fp-card-kv"><span class="fp-card-k">Device</span><span class="fp-card-v">${esc([jdDevice.brand,jdDevice.os,jdDevice.browser].filter(Boolean).join(' / '))}</span></div>`:''}
+                        ${jdDevice.screenWidth?`<div class="fp-card-kv"><span class="fp-card-k">Screen</span><span class="fp-card-v mono">${jdDevice.screenWidth}×${jdDevice.screenHeight||'?'} ${jdDevice.colorDepth?'·'+jdDevice.colorDepth+'bit':''}</span></div>`:''}
+                        ${tz?`<div class="fp-card-kv"><span class="fp-card-k">Timezone</span><span class="fp-card-v">${esc(tz)}</span></div>`:''}
+                        ${jdDevice.platform?`<div class="fp-card-kv"><span class="fp-card-k">Platform</span><span class="fp-card-v">${esc(jdDevice.platform)}</span></div>`:''}
+                        ${jdDevice.cpuCores?`<div class="fp-card-kv"><span class="fp-card-k">CPU cores</span><span class="fp-card-v mono">${jdDevice.cpuCores}</span></div>`:''}
+                        ${jdDevice.memory?`<div class="fp-card-kv"><span class="fp-card-k">RAM</span><span class="fp-card-v mono">${jdDevice.memory} GB</span></div>`:''}
+                        ${d.canvas?`<div class="fp-card-kv"><span class="fp-card-k">Canvas</span><span class="fp-card-v mono" style="font-size:9px;color:rgba(255,255,255,.45)">${esc(String(d.canvas).slice(0,24))}…</span></div>`:''}
+                        ${otherIPs.length?`<div class="fp-card-kv"><span class="fp-card-k">Other IPs</span><span class="fp-card-v" style="color:#c87070">${otherIPs.slice(0,3).map(esc).join(', ')}${otherIPs.length>3?' +'+( otherIPs.length-3)+'…':''}</span></div>`:''}
+                        ${fuDealers.length?`<div class="fp-card-kv"><span class="fp-card-k">Dealers</span><span class="fp-card-v" style="font-size:9px">${fuDealers.map(esc).join(', ').slice(0,50)}</span></div>`:''}
+                        ${firstSeen&&firstSeen!==lastSeen?`<div class="fp-card-kv"><span class="fp-card-k">First seen</span><span class="fp-card-v" style="color:rgba(255,255,255,.4)">${esc(firstSeen.slice(0,16))}</span></div>`:''}
+                        ${fuEmails.length?`<div class="fp-section"><div class="fp-section-title">📧 Emails (${fuEmails.length})</div>${fuEmails.slice(0,3).map(e=>`<div class="fp-url-item" style="color:#5fffb0">${esc(e)}</div>`).join('')}</div>`:''}
+                        ${fuJWTs.length?`<div class="fp-section"><div class="fp-section-title">🔐 JWT Tokens (${fuJWTs.length})</div><div class="fp-url-item" style="color:#c8a050;font-family:monospace">${esc(fuJWTs[0].slice(0,40))}…</div></div>`:''}
+                        ${fuAPIKeys.length?`<div class="fp-section"><div class="fp-section-title">🔑 API Keys (${fuAPIKeys.length})</div></div>`:''}
+                        ${visitedURLs.length?`<div class="fp-section"><div class="fp-section-title">URLs visited from this IP (${visitedURLs.length})</div>${visitedURLs.slice(0,4).map(u=>`<div class="fp-url-item" title="${esc(u)}">${esc(u.slice(0,60))}${u.length>60?'…':''}</div>`).join('')}${visitedURLs.length>4?`<div style="font-size:9px;color:rgba(255,255,255,.2);margin-top:2px">+ ${visitedURLs.length-4} more</div>`:''}</div>`:''}
+                        <div class="fp-section">
+                            <div class="fp-section-title">Hourly activity (${fuLogs.length} requests)</div>
+                            <div style="display:flex;align-items:flex-end;gap:1px;height:20px;margin-top:3px">${miniHist}</div>
+                            <div style="display:flex;justify-content:space-between;font-size:7px;color:rgba(255,255,255,.18);margin-top:1px"><span>0h</span><span>12h</span><span>23h</span></div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('fp-badge').textContent=uniqueFUs.length+' FUs';
+            document.getElementById('sec-fingerprints').style.display='block';
+            document.getElementById('nav-fp').style.display='';
+            document.getElementById('sidebar-fingerprints').innerHTML=`
+                <div class="fp-summary">${summaryCards}</div>
+                ${crossHtml}
+                <div class="fp-cards-grid">${fCards}</div>
+                ${uniqueFUs.length>20?`<div class="empty" style="margin-top:8px">+ ${uniqueFUs.length-20} more fingerprints not loaded</div>`:''}`;
+        }
+
+        /* ── INTEL TAB — extract from all FU data ── */
+        let allEmails=[],allJWT=[],allAPIKeys=[],allFiles=[];
+        const seen={emails:new Set(),jwt:new Set(),api:new Set()};
+        const fuDataCache={};
+        for(const fu of allFUs.slice(0,12)){
+            try{
+                const r=await fetch(`/api/getfinger/${fu}`);
+                if(!r.ok)continue;
+                const fd=await r.json();
+                fuDataCache[fu]=fd;
+                fd.forEach(e=>{
+                    if(e.INTEL)try{const a=JSON.parse(e.INTEL);(Array.isArray(a)?a:[a]).forEach(x=>{
+                        (x.emails||[]).forEach(em=>{if(!seen.emails.has(em)){seen.emails.add(em);allEmails.push({val:em,fu});}});
+                        (x.jwtTokens||[]).forEach(j=>{if(!seen.jwt.has(j)){seen.jwt.add(j);allJWT.push({val:j,fu});}});
+                        if(x.apiKs)Object.entries(x.apiKs).forEach(([k,v])=>{const key=k+':'+v;if(!seen.api.has(key)){seen.api.add(key);allAPIKeys.push({k,v,fu});}});
+                    });}catch{}
+                    if(e.PWD)try{JSON.parse(e.PWD).forEach(p=>{
+                        (p.links||[]).forEach(l=>allFiles.push({type:'link',val:l,fu}));
+                        (p.jsFiles||[]).forEach(f=>allFiles.push({type:'js',val:f,fu}));
+                        (p.other||[]).forEach(f=>allFiles.push({type:'file',val:f,fu}));
+                    });}catch{}
+                });
+            }catch{}
+        }
+
+        let intelHtml='';
+        if(allEmails.length) intelHtml+=`<div style="margin-bottom:10px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:5px">📧 Captured Emails (${allEmails.length})</div>${allEmails.slice(0,30).map(e=>`<div class="intel-item"><b>${esc(e.val)}</b><span style="font-size:9px;color:rgba(255,255,255,.25);margin-left:8px">fu:${esc(e.fu.slice(0,12))}…</span></div>`).join('')}</div>`;
+        if(allJWT.length) intelHtml+=`<div style="margin-bottom:10px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:5px">🔐 JWT Tokens (${allJWT.length})</div>${allJWT.slice(0,5).map(j=>`<div class="intel-item jwt"><b>JWT</b> <span style="font-family:monospace;font-size:9px;word-break:break-all">${esc(j.val.slice(0,100))}…</span></div>`).join('')}</div>`;
+        if(allAPIKeys.length) intelHtml+=`<div style="margin-bottom:10px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:5px">🔑 API Keys (${allAPIKeys.length})</div>${allAPIKeys.slice(0,10).map(a=>`<div class="intel-item api"><b>${esc(a.k)}</b>: ${esc(String(a.v).slice(0,80))}</div>`).join('')}</div>`;
+        if(allFiles.length) intelHtml+=`<div style="margin-bottom:10px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:5px">📂 Captured Files/Links (${allFiles.length})</div>${allFiles.slice(0,20).map(f=>`<div class="intel-item file"><b>${f.type.toUpperCase()}</b> <span style="font-size:10px">${esc(f.val.slice(0,120))}</span></div>`).join('')}</div>`;
+        if(!intelHtml) intelHtml='<div class="empty" style="padding:16px">No captured intel (emails, JWT, API keys, files) for this IP</div>';
+        document.getElementById('tab-intel').innerHTML=`<div style="padding:10px">${intelHtml}</div>`;
+
+        /* ── TRAFFIC ANALYSIS — full panel above header ── */
+        const analysisItems=[];
+
+        // Hour histogram across all logs
+        const hourMap=new Array(24).fill(0);
+        const hourHttp=new Array(24).fill(0);
+        const hourDns=new Array(24).fill(0);
+        logs.forEach(l=>{
+            try{const h=new Date(l.Ts).getHours();if(h>=0&&h<24){hourMap[h]++;(l.Dl||'').toUpperCase()==='DNS.LOG'?hourDns[h]++:hourHttp[h]++;}}catch{}
         });
-    } catch (error) {
-        console.error('Error fetching or displaying browser data:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while fetching or displaying the browser data.',
-        });
+        const maxHour=Math.max(...hourMap,1);
+        const peakH=hourMap.indexOf(Math.max(...hourMap));
+        const nightReqs=hourMap.slice(0,6).reduce((a,b)=>a+b,0);
+        const dayReqs=hourMap.slice(8,20).reduce((a,b)=>a+b,0);
+
+        // ratio
+        const total=logs.length||1;
+        const httpPct=Math.round(httpLogs.length/total*100);
+        const dnsPct=100-httpPct;
+
+        // 1. Big stats + ratio + histogram
+        analysisItems.push(`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px">
+            <div class="ta-stat"><div class="ta-stat-num">${logs.length}</div><div class="ta-stat-label">Total Events</div><div class="ta-stat-sub">${httpLogs.length} HTTP · ${dnsLogs.length} DNS</div></div>
+            <div class="ta-stat"><div class="ta-stat-num" style="color:#7eb8ff">${httpLogs.length}</div><div class="ta-stat-label">HTTP Requests</div><div class="ta-stat-sub">${[...new Set(httpLogs.map(l=>extractURL(l)).filter(Boolean))].length} unique URLs</div></div>
+            <div class="ta-stat"><div class="ta-stat-num" style="color:#5fffb0">${dnsLogs.length}</div><div class="ta-stat-label">DNS Queries</div><div class="ta-stat-sub">${[...new Set(dnsLogs.map(l=>l.Fu).filter(Boolean))].length} domains</div></div>
+            <div class="ta-stat"><div class="ta-stat-num" style="color:#c4b0ff">${uniqueFUs.length}</div><div class="ta-stat-label">Fingerprints</div><div class="ta-stat-sub">HTTP sessions</div></div>
+            <div class="ta-stat"><div class="ta-stat-num" style="color:${nightReqs>dayReqs?'#c87070':'#5fffb0'}">${peakH}:00</div><div class="ta-stat-label">Peak Hour</div><div class="ta-stat-sub">${hourMap[peakH]} events${nightReqs>dayReqs?' · ⚠ night-heavy':''}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+            <div>
+                <div class="ta-section-title"><span style="width:4px;height:4px;border-radius:50%;background:#7eb8ff;display:inline-block"></span>HTTP / DNS Ratio</div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px">
+                    <span style="color:#7eb8ff">HTTP ${httpPct}%</span>
+                    <span style="color:#5fffb0">DNS ${dnsPct}%</span>
+                </div>
+                <div class="ratio-bar">
+                    <div class="ratio-http" style="width:${httpPct}%"></div>
+                    <div class="ratio-dns" style="width:${dnsPct}%"></div>
+                </div>
+                ${dnsLogs.length>httpLogs.length?'<div style="margin-top:5px;font-size:9px;color:#c87070;font-weight:700">⚠ DNS-heavy traffic — possible automated/bot activity</div>':''}
+            </div>
+            <div>
+                <div class="ta-section-title"><span style="width:4px;height:4px;border-radius:50%;background:#9090b0;display:inline-block"></span>Activity Timeline (all sources)</div>
+                <div class="hist-wrap">
+                    ${hourMap.map((v,h)=>{
+                        const hpct=Math.round(v/maxHour*100);
+                        const hp=Math.round(hourHttp[h]/maxHour*100);
+                        const dp=Math.round(hourDns[h]/maxHour*100);
+                        return `<div class="hist-bar" style="background:transparent;position:relative" data-tip="${h}:00 — ${v} total (${hourHttp[h]} HTTP, ${hourDns[h]} DNS)">
+                            <div style="position:absolute;bottom:0;left:0;right:0;height:${dp}%;background:#5fffb0;opacity:.7;border-radius:1px 1px 0 0"></div>
+                            <div style="position:absolute;bottom:${dp}%;left:0;right:0;height:${hp}%;background:#7eb8ff;opacity:.8;border-radius:1px 1px 0 0"></div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="hist-labels"><span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>23h</span></div>
+                <div style="display:flex;gap:8px;margin-top:4px;font-size:8px;color:rgba(255,255,255,.35)">
+                    <span><span style="display:inline-block;width:8px;height:8px;background:#7eb8ff;border-radius:1px;margin-right:3px;vertical-align:middle"></span>HTTP</span>
+                    <span><span style="display:inline-block;width:8px;height:8px;background:#5fffb0;border-radius:1px;margin-right:3px;vertical-align:middle"></span>DNS</span>
+                </div>
+            </div>
+        </div>`);
+
+        // 2+3. UA + Top paths combined
+        const uaMap=new Map();
+        httpLogs.forEach(l=>{if(l.Ua&&l.Ua!=='N/A'&&l.Ua!==''){uaMap.set(l.Ua,(uaMap.get(l.Ua)||0)+1);}});
+        const topUAs=[...uaMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);
+        const botUARe=/go-http|curl\/|python-|masscan|nmap|zgrab|scanner|spider|bot\b|censys|shodan/i;
+        const hasBotUA=topUAs.some(([ua])=>botUARe.test(ua));
+        const urlMap=new Map();
+        httpLogs.forEach(l=>{const u=extractURL(l);if(u){try{const p=new URL(u).pathname;urlMap.set(p,(urlMap.get(p)||0)+1);}catch{urlMap.set(u.slice(0,60),(urlMap.get(u.slice(0,60))||0)+1);}}});
+        const topURLs=[...urlMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+        const maxUA=topUAs[0]?.[1]||1;
+        const maxURL=topURLs[0]?.[1]||1;
+        if(topUAs.length||topURLs.length){
+            analysisItems.push(`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                    <div class="ta-section-title"><span style="width:4px;height:4px;border-radius:50%;background:#c4b0ff;display:inline-block"></span>Top User-Agents${hasBotUA?' <span class="stat-chip hi" style="margin-left:6px;font-size:8px">⚠ BOT DETECTED</span>':''}</div>
+                    ${topUAs.map(([ua,cnt])=>`<div class="top-row"><span style="font-size:9px;color:rgba(255,255,255,.35);min-width:24px;text-align:right;flex-shrink:0">${cnt}</span><div class="top-row-bar"><div class="top-row-fill" style="width:${Math.round(cnt/maxUA*100)}%;background:#c4b0ff;opacity:.55"></div></div><span class="top-row-label" title="${esc(ua)}">${esc(ua.slice(0,48))}</span></div>`).join('')}
+                </div>
+                <div>
+                    <div class="ta-section-title"><span style="width:4px;height:4px;border-radius:50%;background:#5fffb0;display:inline-block"></span>Most Requested Paths</div>
+                    ${topURLs.map(([path,cnt])=>`<div class="top-row"><span style="font-size:9px;color:rgba(255,255,255,.35);min-width:24px;text-align:right;flex-shrink:0">${cnt}</span><div class="top-row-bar"><div class="top-row-fill" style="width:${Math.round(cnt/maxURL*100)}%;background:#5fffb0;opacity:.55"></div></div><span class="top-row-label" style="font-family:monospace;font-size:9px" title="${esc(path)}">${esc(path.slice(0,42))}</span></div>`).join('')}
+                </div>
+            </div></div>`);
+        }
+
+        // 4. FU cross-reference — same Fu appearing with other IPs (detect shared sessions)
+        const fuIPMap=new Map();
+        httpLogs.forEach(l=>{if(l.Fu)fuIPMap.set(l.Fu,(fuIPMap.get(l.Fu)||new Set()).add(l.Ip||IP_ADDR));});
+        // Check if any Fu seen from this IP is also in fuDataCache with different IP
+        const sharedFUs=[];
+        for(const [fu,ips] of fuIPMap){
+            if(fuDataCache[fu]){
+                const otherIPs=[...new Set(fuDataCache[fu].map(e=>e.Ip).filter(ip=>ip&&ip!==IP_ADDR))];
+                if(otherIPs.length)sharedFUs.push({fu,otherIPs});
+            }
+        }
+        if(sharedFUs.length){
+            analysisItems.push(`<div class="ta-section" style="margin-bottom:12px"><div class="ta-section-title"><span style="width:4px;height:4px;border-radius:50%;background:#c87070;display:inline-block"></span>⚠ Fingerprints Seen from Multiple IPs <span class="stat-chip hi" style="margin-left:6px">${sharedFUs.length} shared FU</span></div>
+                <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px">These fingerprints were also seen from other IP addresses — possible VPN rotation or shared device.</div>
+                ${sharedFUs.slice(0,5).map(({fu,otherIPs})=>`<div class="ua-match-row"><span class="ua-match-hash">${esc(fu.slice(0,14))}…</span><span class="ua-match-val">also from: ${otherIPs.slice(0,3).map(esc).join(', ')}</span></div>`).join('')}
+            </div>`);
+        }
+
+        // 5. DNS deep analysis
+        if(dnsLogs.length){
+            // parse DNS logs if parseDNSLog is available (defined in DNS tab section)
+            const parsedDNSA=dnsLogs.map(l=>{
+                let er={},ed={};
+                try{er=JSON.parse(atob(l.Er||''));}catch{}
+                try{ed=JSON.parse(atob(l.Ed||''));}catch{}
+                const questions=er.questions||[];
+                const header=ed.header||er.header||{};
+                const domain=questions[0]?.name||er.merca_uri||l.Fu||'?';
+                const qtype=questions[0]?.type||er.method||'?';
+                const rcode=header.rcode||'—';
+                return{domain,qtype,rcode,l};
+            });
+            const dnsTypeMap=new Map(),dnsDomainMap=new Map(),dnsRcodeMap=new Map();
+            parsedDNSA.forEach(({domain,qtype,rcode})=>{
+                dnsTypeMap.set(qtype,(dnsTypeMap.get(qtype)||0)+1);
+                dnsDomainMap.set(domain,(dnsDomainMap.get(domain)||0)+1);
+                dnsRcodeMap.set(rcode,(dnsRcodeMap.get(rcode)||0)+1);
+            });
+            const topDNSDomains=[...dnsDomainMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);
+            const nxCount=dnsRcodeMap.get('NXDOMAIN')||0;
+            const dnsKeyCount=dnsTypeMap.get('DNSKEY')||0;
+            const unknownCount=dnsTypeMap.get('UNKNOWN')||0;
+            /* subdomain enumeration detection: many unique subdomains of same base */
+            const baseMap=new Map();
+            parsedDNSA.forEach(({domain})=>{const parts=domain.split('.');if(parts.length>=2){const base=parts.slice(-2).join('.');baseMap.set(base,(baseMap.get(base)||[]).concat(domain));}});
+            const subEnumCandidates=[...baseMap.entries()].filter(([,doms])=>[...new Set(doms)].length>=3);
+
+            analysisItems.push(`<div class="intel-box">
+                <div class="intel-box-head"><span class="dot" style="background:#5fffb0"></span>DNS Deep Analysis</div>
+                <div style="margin-bottom:7px;display:flex;flex-wrap:wrap;gap:3px">
+                    <span class="stat-chip ok">${dnsLogs.length} queries</span>
+                    <span class="stat-chip info">${dnsDomainMap.size} domains</span>
+                    <span class="stat-chip">${dnsTypeMap.size} types</span>
+                    ${nxCount?`<span class="stat-chip hi">⚠ ${nxCount}× NXDOMAIN</span>`:''}
+                    ${dnsKeyCount?`<span class="stat-chip hi">⚠ DNSSEC probe (DNSKEY ×${dnsKeyCount})</span>`:''}
+                    ${unknownCount?`<span class="stat-chip">UNKNOWN type ×${unknownCount}</span>`:''}
+                    ${subEnumCandidates.length?`<span class="stat-chip hi">⚠ Subdomain enum detected</span>`:''}
+                </div>
+                ${[...dnsTypeMap.entries()].sort((a,b)=>b[1]-a[1]).map(([t,n])=>
+                    `<span class="stat-chip" style="margin-bottom:3px">${t} ×${n}</span>`
+                ).join(' ')}
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.25);margin:7px 0 3px">Top queried domains</div>
+                ${topDNSDomains.map(([d,n])=>`<div class="ua-match-row"><span class="stat-chip" style="flex-shrink:0">${n}×</span><span class="ua-match-val" style="font-family:monospace;font-size:10px">${esc(d)}</span></div>`).join('')}
+                ${subEnumCandidates.length?`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.25);margin:7px 0 3px">Subdomain enum targets</div>${subEnumCandidates.slice(0,4).map(([base,doms])=>`<div class="ua-match-row"><span class="ua-match-hash">${esc(base)}</span><span class="ua-match-val">${[...new Set(doms)].length} subdomains probed</span></div>`).join('')}`:''}
+                ${[...dnsRcodeMap.entries()].length?`<div style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.25);margin:7px 0 3px">Response codes</div>${[...dnsRcodeMap.entries()].map(([r,n])=>`<span class="stat-chip" style="margin:2px">${r} ×${n}</span>`).join('')}`:''}
+            </div>`);
+        }
+
+
+
+        /* render full analysis panel above header */
+        document.getElementById('ta-panel-wrap').style.display='block';
+        document.getElementById('ta-ip-label').textContent=IP_ADDR;
+        document.getElementById('ta-panel-content').innerHTML=analysisItems.join('');
+
+    } catch(e){
+        console.error(e);
+        document.getElementById('tab-requests').innerHTML=`<div class="empty" style="color:#c87070;padding:16px">Error loading traffic: ${esc(e.message)}</div>`;
+        document.getElementById('traffic-summary-body').innerHTML='<div class="empty">Error loading traffic</div>';
     }
 }
 
 
-        // Fetch data on page load
-        document.addEventListener("DOMContentLoaded", fetchData);
-    </script>
+/* ── ACTIONS ── */
+async function runAction(endpoint,label){
+    let timedOut=false;
+    Swal.fire({title:label,html:`Processing <b>${esc(IP_ADDR)}</b>…`,allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading()});
+    const timer=setTimeout(()=>{timedOut=true;Swal.fire({title:'Running in background',html:`<b>${label}</b> is taking longer. Close and refresh later.`,icon:'info',confirmButtonText:'OK'});},30000);
+    try{
+        const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({IP:IP_ADDR})});
+        if(!res.ok)throw new Error(res.statusText);
+        clearTimeout(timer);
+        if(!timedOut)Swal.fire({title:'Done',html:`<b>${label}</b> completed for <b>${esc(IP_ADDR)}</b>`,icon:'success',confirmButtonText:'Reload'}).then(()=>location.reload());
+    }catch(e){clearTimeout(timer);if(!timedOut)Swal.fire({title:'Error',html:`Failed: ${esc(e.message)}`,icon:'error'});}
+}
+
+async function deleteRecord(){
+    const c=await Swal.fire({title:'Delete this record?',text:`IP: ${IP_ADDR}`,icon:'warning',showCancelButton:true,confirmButtonText:'Yes, delete',cancelButtonText:'Cancel'});
+    if(!c.isConfirmed)return;
+    try{
+        const res=await fetch('/api/ips/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ID})});
+        if(!res.ok)throw new Error(res.statusText);
+        Swal.fire('Deleted','Record removed.','success').then(()=>window.location.href='/web/scanners');
+    }catch(e){Swal.fire('Error','Failed to delete.','error');}
+}
+
+async function showRawData(){
+    const sections=Object.keys(parsed);
+    if(!sections.length){Swal.fire({icon:'info',title:'No data',text:'No OSINT data stored yet.'});return;}
+    const html=sections.map(k=>{
+        const content=typeof parsed[k]==='object'?JSON.stringify(parsed[k],null,2):String(parsed[k]);
+        return`<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.07)">${esc(k)}</div><pre style="margin:0;font-size:9px;font-family:Consolas,monospace;color:rgba(255,255,255,.6);white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto">${esc(content.slice(0,3000))}${content.length>3000?'\n… (truncated)':''}</pre></div>`;
+    }).join('');
+    Swal.fire({title:`Raw Data · ${IP_ADDR}`,html:`<div style="text-align:left;max-height:70vh;overflow-y:auto">${html}</div>`,width:'82%',confirmButtonText:'Close'});
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>

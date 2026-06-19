@@ -1,0 +1,67 @@
+services:
+
+  5elg:
+    build: .
+    image: 5elg:latest
+    container_name: 5elg
+    restart: unless-stopped
+
+    # Host networking is required for:
+    #   - ICMP listener (pcap needs the real interface)
+    #   - DNS server on port 53
+    #   - Raw sockets
+    # With host mode, the ports below are informational only.
+    network_mode: host
+
+    # Required for pcap (ICMP), raw-socket, and nmap SYN scans
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - no-new-privileges:false   # needed so nmap can raise caps
+
+    env_file:
+      - .env
+
+    # Override specific env vars for Docker:
+    #   HOST=0.0.0.0  → listen on all interfaces inside the container
+    #   (with network_mode:host this means the actual host interfaces)
+    environment:
+      HOST: "0.0.0.0"
+
+    # Persistent data — bind-mount the Sources and Dealers directories
+    # so the database, configs, certs, and uploaded files survive rebuilds.
+    volumes:
+      # SQLite database
+      - ./Sources/5elg.db:/app/Sources/5elg.db
+      # JSON config files (dealers, domains, users, configs, blacklist…)
+      - ./Sources/data:/app/Sources/data
+      # SSL certificates (generate or replace before first run)
+      - ./Sources/ssl-key.pem:/app/Sources/ssl-key.pem:ro
+      - ./Sources/ssl-cert.pem:/app/Sources/ssl-cert.pem:ro
+      # Runtime-generated content
+      - ./Sources/files:/app/Sources/files
+      - ./Sources/backups:/app/Sources/backups
+      - ./Sources/screenshotsB64:/app/Sources/screenshotsB64
+      # Dealer payloads and templates
+      - ./Dealers:/app/Dealers
+
+    # Start with SSL + DNS enabled.
+    # Remove -dns if you don't need the DNS server.
+    # Add -icmp to enable the ICMP listener.
+    command: ["node", "main.js", "-ssl", "-dns"]
+
+    healthcheck:
+      test: ["CMD", "node", "-e",
+             "require('http').get('http://localhost:80/health',r=>{process.exit(r.statusCode<500?0:1)}).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"

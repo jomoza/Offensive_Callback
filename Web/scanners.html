@@ -1,393 +1,1529 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>5ELG - IP Scanning</title>
-    <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="assets/css/index.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <style>
-    
-        th, td {
-            text-align: left;
-            padding: 5px; /* Reducir el padding */
-        }
+<meta charset="UTF-8">
+<title>5ELG — IP Intelligence</title>
+<link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="assets/css/index.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+    --blue:#7eb8ff; --green:#5fffb0; --amber:#ffd070; --red:#ff7070; --pur:#c4b0ff;
+    --bdr:rgba(255,255,255,.07); --bdr2:rgba(126,184,255,.15);
+    --bg1:#090909; --bg2:#0c0c0c;
+    --dim:rgba(255,255,255,.65); --dim2:rgba(255,255,255,.35); --dim3:rgba(255,255,255,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0e0e0e;font-family:Consolas,'Menlo',monospace}
 
-        .small-column {
-            width:300px; /* Hacer las columnas de "Actions" y "Commands" más pequeñas */
-            text-align: right; /* Centrar el contenido */
-        }
+/* loading */
+#overlay{position:fixed;inset:0;z-index:9999;background:#060606;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.ld-bar{width:200px;height:1px;background:var(--bdr);position:relative;overflow:hidden}
+.ld-bar::after{content:'';position:absolute;left:-50%;top:0;width:50%;height:100%;background:var(--blue);animation:ldslide 1.1s ease-in-out infinite}
+@keyframes ldslide{to{left:100%}}
+.ld-lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2)}
 
-        table {
-            width: 100%;
-            margin-top: 20px;
-            font-size: 16px; /* Reducir el tamaño del texto para mayor compacidad */
-        }
+/* search bar */
+.search-wrap{border-bottom:1px solid var(--bdr);padding:10px 0}
+.search-inner{display:flex;align-items:center;gap:8px;max-width:1400px;margin:0 auto;padding:0 18px}
+.search-box{flex:1;display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.search-box input{flex:1;padding:7px 12px;font-size:12px;background:transparent;color:#fff;border:none;outline:none;font-family:Consolas,monospace}
+.search-box input::placeholder{color:var(--dim2)}
+.search-box button{padding:0 14px;background:rgba(126,184,255,.12);border:none;border-left:1px solid rgba(255,255,255,.08);color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;transition:background .1s;font-family:Consolas,monospace}
+.search-box button:hover{background:rgba(126,184,255,.22)}
+.search-stats{font-size:10px;color:var(--dim2);white-space:nowrap;display:flex;align-items:center;gap:8px}
+.search-stats b{color:#fff;font-size:14px}
 
-        table, th, td {
-            border: 1px solid #ddd;
-        }
+/* layout */
+.main-layout{display:grid;grid-template-columns:210px 1fr;gap:0;max-width:1400px;margin:0 auto;padding:0 18px;min-height:calc(100vh - 110px)}
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: transparent;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 34px;
-            color: whitesmoke;
-        }
-    </style>
+/* sidebar */
+.sidebar{padding:14px 14px 14px 0;border-right:1px solid var(--bdr)}
+.sb-section{margin-bottom:18px}
+.sb-title{font-size:8px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--dim2);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bdr)}
+.sb-pill{display:flex;align-items:center;padding:4px 6px;border-radius:2px;cursor:pointer;transition:background .08s;margin-bottom:2px;gap:6px;user-select:none}
+.sb-pill:hover{background:var(--dim3)}.sb-pill input{display:none}
+.sb-pill.active{background:rgba(126,184,255,.06)}
+.sb-pill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-pill-label{font-size:10px;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-pill.active .sb-pill-label{color:#fff}
+.sb-bar-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;cursor:pointer}
+.sb-bar-row:hover .sb-bar-label{color:var(--dim)}
+.sb-bar-label{font-size:9px;color:var(--dim2);min-width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.sb-bar-track{flex:1;height:2px;background:var(--bdr);border-radius:1px;overflow:hidden}
+.sb-bar-fill{height:100%;border-radius:1px;transition:width .3s}
+.sb-bar-n{font-size:9px;color:var(--dim2);min-width:20px;text-align:right;font-family:Consolas,monospace}
+.sb-btn{width:100%;margin-bottom:4px;padding:6px 10px;font-size:9px;font-weight:700;letter-spacing:.07em;border:1px solid;border-radius:3px;background:transparent;cursor:pointer;text-align:left;transition:all .1s;font-family:Consolas,monospace}
+.sb-btn.blue{border-color:rgba(126,184,255,.28);color:var(--blue)}.sb-btn.blue:hover{background:rgba(126,184,255,.07)}
+.sb-btn.pur{border-color:rgba(196,176,255,.28);color:var(--pur)}.sb-btn.pur:hover{background:rgba(196,176,255,.07)}
+.sb-btn.amb{border-color:rgba(255,208,112,.28);color:var(--amber)}.sb-btn.amb:hover{background:rgba(255,208,112,.07)}
+.page-sel{width:100%;padding:4px 8px;font-size:10px;border:1px solid var(--bdr);border-radius:2px;background:rgba(255,255,255,.03);color:var(--dim);outline:none;cursor:pointer;font-family:Consolas,monospace}
+
+/* results area */
+.results-area{padding:14px 0 14px 18px}
+.rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.rh-count{font-size:10px;color:var(--dim2)}.rh-count b{color:#fff}
+
+/* ── IP CARDS ── */
+.ip-card{
+    background:#060606;border:1px solid var(--bdr);border-radius:5px;
+    margin-bottom:8px;overflow:hidden;transition:border-color .12s;
+}
+.ip-card:hover{border-color:rgba(126,184,255,.18)}
+
+/* card header row */
+.ipc-head{
+    display:flex;align-items:flex-start;gap:10px;padding:9px 14px 7px;
+    background:rgba(255,255,255,.015);border-bottom:1px solid var(--bdr);
+    flex-wrap:wrap;
+}
+.ipc-ip{font-family:Consolas,monospace;font-size:15px;font-weight:700;color:var(--blue);line-height:1.1}
+.ipc-host{font-size:9px;color:var(--dim2);margin-top:1px;font-family:Consolas,monospace}
+.ipc-geo{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:10px;color:var(--dim)}
+.ipc-org{font-size:9px;color:var(--dim2);margin-top:1px}
+
+/* threat block */
+.ipc-threat{text-align:center;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:46px}
+.ipc-threat-n{font-size:22px;font-weight:900;line-height:1;font-family:Consolas,monospace}
+.ipc-threat-l{font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+
+/* action buttons */
+.ipc-btns{display:flex;flex-direction:column;gap:3px;margin-left:auto;flex-shrink:0;align-self:flex-start}
+.ib{display:inline-flex;align-items:center;height:20px;padding:0 9px;border:1px solid;border-radius:2px;font-size:8px;font-weight:700;letter-spacing:.05em;cursor:pointer;background:transparent;transition:all .1s;white-space:nowrap;text-decoration:none;font-family:Consolas,monospace}
+.ib.blue{border-color:rgba(126,184,255,.3);color:var(--blue)}.ib.blue:hover{background:rgba(126,184,255,.08)}
+.ib.grn{border-color:rgba(95,255,176,.28);color:var(--green)}.ib.grn:hover{background:rgba(95,255,176,.07)}
+.ib.amb{border-color:rgba(255,208,112,.28);color:var(--amber)}.ib.amb:hover{background:rgba(255,208,112,.07)}
+.ib.pur{border-color:rgba(196,176,255,.28);color:var(--pur)}.ib.pur:hover{background:rgba(196,176,255,.07)}
+.ib.red{border-color:rgba(255,112,112,.25);color:var(--red)}.ib.red:hover{background:rgba(255,112,112,.07)}
+.ib.dim{border-color:rgba(255,255,255,.12);color:var(--dim2)}.ib.dim:hover{background:var(--dim3);color:var(--dim)}
+
+/* stats row */
+.ipc-stats{display:flex;align-items:center;gap:0;padding:5px 14px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;row-gap:2px}
+.ipc-stat{display:inline-flex;align-items:center;gap:4px;padding:0 10px 0 0;border-right:1px solid rgba(255,255,255,.06);margin-right:10px}
+.ipc-stat:last-child{border-right:none;margin-right:0}
+.ipc-stat-n{font-size:12px;font-weight:800;font-family:Consolas,monospace;line-height:1}
+.ipc-stat-l{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim2)}
+.ipc-stat.wide{flex:1;min-width:0;border-right:none;margin-right:0}
+
+/* source checks */
+.src-row{display:flex;gap:3px;flex-wrap:wrap}
+.src{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:2px;font-size:8px;font-weight:700}
+.src-ok{background:rgba(95,255,176,.07);color:var(--green)}
+.src-no{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
+
+/* port pills */
+.port-pills{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:7px 14px;border-bottom:1px solid var(--bdr)}
+.pp{display:inline-flex;align-items:center;gap:3px;background:rgba(95,255,176,.04);border:1px solid rgba(95,255,176,.12);border-radius:2px;padding:2px 7px;font-size:9px}
+.pp.udp{background:rgba(196,176,255,.04);border-color:rgba(196,176,255,.12)}
+.pp.banner{border-color:rgba(126,184,255,.2);background:rgba(126,184,255,.04)}
+.pp-n{font-weight:700;color:var(--green);font-size:10px}
+.pp.udp .pp-n{color:var(--pur)}
+.pp.banner .pp-n{color:var(--blue)}
+.pp-s{color:var(--dim2);font-size:8px}
+.pp-more{font-size:9px;color:var(--dim2)}
+
+/* CVE strip */
+.ipc-cve-strip{padding:6px 14px;border-bottom:1px solid var(--bdr);display:flex;flex-direction:column;gap:3px}
+.ipc-cve-row{display:flex;align-items:baseline;gap:8px;font-size:9px}
+.ipc-cve-id{font-family:Consolas,monospace;font-weight:700;color:var(--red);min-width:110px;flex-shrink:0}
+.ipc-cve-cvss{font-size:8px;font-weight:700;padding:1px 5px;border-radius:2px;flex-shrink:0}
+.ipc-cve-desc{color:var(--dim2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+
+/* flag tags */
+.ftag{font-size:7px;font-weight:700;background:rgba(200,112,112,.1);color:#a07070;border-radius:2px;padding:1px 4px;letter-spacing:.04em}
+
+/* banner preview */
+
+/* ── EXPANDABLE DETAIL ── */
+.ipc-detail{border-top:1px solid rgba(126,184,255,.12);display:none}
+.ip-card.open .ipc-detail{display:block}
+
+.det-strip{display:flex;align-items:center;gap:4px;padding:7px 14px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+.det-sep{color:var(--bdr);margin:0 2px;font-size:12px}
+
+.det-tabs{display:flex;background:rgba(0,0,0,.15);border-bottom:1px solid var(--bdr)}
+.det-tab{padding:6px 13px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim2);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;user-select:none}
+.det-tab:hover{color:var(--dim)}.det-tab.act{color:var(--blue);border-bottom-color:rgba(126,184,255,.6)}
+.tab-pane{display:none}.tab-pane.act{display:block}
+
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--bdr)}
+.panel-grid.full{grid-template-columns:1fr}
+.det-panel{background:#050505;padding:12px 14px}
+.ph{font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim2);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.ph .phd{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.kl{font-size:9px;color:var(--dim2);white-space:nowrap;flex-shrink:0;letter-spacing:.04em;text-transform:uppercase}
+.kv-v{font-size:10px;color:rgba(255,255,255,.75);text-align:right;word-break:break-all}
+.kv-v.mono{color:var(--blue);font-size:9px}
+.no-data{font-size:10px;color:var(--dim2);font-style:italic}
+.cve-item{background:rgba(180,80,80,.03);border:1px solid rgba(180,80,80,.1);border-radius:3px;padding:7px 10px;margin-bottom:5px}
+.cve-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.cve-id{font-size:11px;font-weight:700;color:var(--red)}
+.cve-score{font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px}
+.cve-desc{font-size:9px;color:var(--dim2);line-height:1.6}
+.pe-grid{display:flex;flex-wrap:wrap;gap:3px}
+.pe{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:2px;padding:3px 8px}
+.pe.hb{border-color:rgba(126,184,255,.15)}
+.pe-port{font-weight:700;color:var(--green);font-size:11px}
+.pe.udp .pe-port{color:var(--pur)}
+.pe-proto{font-size:8px;color:var(--dim2)}
+.pe-svc{font-size:9px;color:rgba(255,255,255,.5)}
+.pe-ver{font-size:9px;color:var(--blue)}
+.pe-src{font-size:7px;color:var(--dim2);border-left:1px solid var(--bdr);margin-left:2px;padding-left:4px}
+.pe-banner{font-size:8px;color:rgba(255,255,255,.25);border-left:1px solid var(--bdr);margin-left:2px;padding-left:4px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc-item{background:rgba(126,184,255,.02);border:1px solid rgba(126,184,255,.07);border-radius:3px;padding:8px 10px;margin-bottom:5px}
+.svc-head{display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap}
+.svc-port{font-size:15px;font-weight:700;color:var(--blue)}
+.svc-mod{font-size:8px;background:rgba(126,184,255,.08);color:var(--blue);padding:1px 4px;border-radius:2px;font-weight:700}
+.svc-banner{font-size:9px;color:rgba(255,255,255,.35);background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:2px;padding:5px 7px;margin-top:5px;white-space:pre-wrap;word-break:break-all;max-height:80px;overflow:hidden;line-height:1.5}
+.ssl-ok{color:var(--green);font-weight:700}.ssl-exp{color:var(--red);font-weight:700}
+.comp-tag{display:inline-block;background:rgba(196,176,255,.06);color:var(--pur);border-radius:2px;padding:1px 4px;font-size:8px;margin:1px 2px 1px 0}
+.issues-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:8px}
+.ip-pill{display:flex;align-items:center;justify-content:center;gap:2px;padding:4px;border-radius:2px;font-size:7px;font-weight:700;letter-spacing:.04em}
+.ip-t{background:rgba(180,80,80,.1);color:var(--red)}
+.ip-f{background:var(--dim3);color:rgba(255,255,255,.2)}
+.whois-entry{background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:2px;padding:6px 9px;margin-bottom:5px}
+.wf{display:flex;gap:8px;margin-bottom:2px;font-size:9px}
+.wk{color:var(--dim2);min-width:80px;flex-shrink:0;text-transform:uppercase;letter-spacing:.04em}
+.wv{color:rgba(255,255,255,.65);word-break:break-all}
+
+/* pagination */
+.pag-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;font-size:10px;color:var(--dim2);flex-wrap:wrap;gap:8px}
+.pag-pages{display:flex;gap:3px}
+.pag-btn{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;padding:0 5px;border:1px solid var(--bdr);border-radius:2px;font-size:10px;cursor:pointer;background:transparent;color:var(--dim2);transition:all .1s;font-family:Consolas,monospace}
+.pag-btn:hover:not(:disabled){background:var(--dim3);color:#fff}
+.pag-btn.active{background:rgba(126,184,255,.1);border-color:rgba(126,184,255,.4);color:var(--blue);font-weight:700}
+.pag-btn:disabled{opacity:.2;cursor:default}
+.no-results{padding:60px;text-align:center;font-size:11px;color:var(--dim2)}
+
+/* ── COMMAND BAR ── */
+.cbar-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 14px;gap:2px;cursor:default}
+.cs-n{font-size:18px;font-weight:900;font-family:Consolas,monospace;line-height:1}
+.cs-l{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3)}
+
+/* ── VIEW BUTTONS ── */
+.vbtn{padding:5px 13px;font-size:9px;font-weight:700;letter-spacing:.08em;border:1px solid;border-radius:3px;background:transparent;cursor:pointer;font-family:Consolas,monospace;transition:all .1s;opacity:.5}
+.vbtn:hover{opacity:1}
+.vbtn.active{opacity:1}
+
+/* ── INTEL ACTION BUTTONS ── */
+.intel-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:16px 12px;border:1px solid;border-radius:6px;background:#060606be;cursor:pointer;font-family:Consolas,monospace;transition:all .15s;text-align:center}
+.intel-btn:hover{background:rgba(255,255,255,.05);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.ib-icon{font-size:20px;line-height:1;opacity:.9}
+.ib-label{font-size:11px;font-weight:700;letter-spacing:.06em;line-height:1}
+.ib-sub{font-size:9px;color:rgba(255,255,255,.35);line-height:1.3}
+
+/* ── PANEL STAT ── */
+.ps-l{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ps-n{font-size:20px;font-weight:900;font-family:Consolas,monospace;line-height:1}
+
+/* ── INTEL BRIEFS ── */
+.brief-container{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-8px 0 14px}
+.intel-brief{background:rgba(126,184,255,.03);border:1px solid rgba(126,184,255,.1);border-radius:4px;padding:11px 14px}
+.intel-brief.pur{background:rgba(196,176,255,.03);border-color:rgba(196,176,255,.1)}
+.intel-brief.pur .intel-brief-title{color:var(--pur)}
+.intel-brief-title{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
+.intel-brief p{font-size:10px;color:rgba(255,255,255,.45);line-height:1.6;margin:0}
+.intel-brief p b{color:rgba(255,255,255,.75);font-weight:700}
+
+/* ── DASHBOARD ROW ── */
+.dash-row{display:grid;gap:8px;margin-bottom:10px}
+.dr-map{grid-template-columns:1.8fr 1fr}
+.panel{background:#060606;border:1px solid #060606;border-radius:5px;overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:7px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.07);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.ph-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ph-right{margin-left:auto;font-weight:400;color:rgba(255,255,255,.22);font-size:9px}
+.panel-body{padding:10px 12px}
+.kv-l{font-size:10px;color:rgba(255,255,255,.38)}
+.kv-v{font-size:11px;font-weight:700;color:#e0e0e0}
+.kv-v.red{color:var(--red)}
+.kv-v.amber{color:var(--amber)}
+.kv-v.blue{color:var(--blue)}
+.sdiv{font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:rgba(255,255,255,.2);margin:8px 0 5px;display:flex;align-items:center;gap:6px}
+.sdiv::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05)}
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.bar-lbl{font-size:10px;color:rgba(255,255,255,.5);min-width:54px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.bar-n{font-size:10px;color:rgba(255,255,255,.28);min-width:26px;text-align:right}
+.skel{height:14px;border-radius:2px;background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:sh 1.4s infinite;margin-bottom:5px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── MAP ── */
+#cmd-map{height:320px;width:100%;display:block;background:#0a0a0a;position:relative}
+.leaflet-container{background:#080808 !important}
+.leaflet-popup-content-wrapper{background:#111;border:1px solid rgba(255,255,255,.12);color:#ddd;border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.8)}
+.leaflet-popup-tip{background:#111}
+.leaflet-popup-content{margin:7px 10px;font-size:11px;font-family:Consolas,monospace}
+.leaflet-tile{filter:brightness(.5) saturate(.3)}
+
+/* ── TICKER ── */
+.ticker-wrap{border-top:1px solid rgba(255,255,255,.05);padding:5px 12px;overflow:hidden;white-space:nowrap}
+.ticker-inner{display:inline-flex;gap:24px;animation:tick 90s linear infinite}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tick-item{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.04em;flex-shrink:0}
+.tick-item span{color:rgba(255,255,255,.6)}
+
+/* filter chips */
+.fchips{display:flex;flex-wrap:wrap;gap:4px;max-width:1400px;margin:0 auto;padding:4px 18px 6px}
+.fchips:empty{padding:0}
+.fchip{display:inline-flex;align-items:center;gap:3px;background:rgba(126,184,255,.09);border:1px solid rgba(126,184,255,.22);border-radius:2px;padding:2px 7px;font-size:9px;color:var(--blue);font-family:Consolas,monospace}
+.fchip-k{color:rgba(126,184,255,.5);font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.fchip-x{cursor:pointer;color:rgba(255,255,255,.25);margin-left:3px;line-height:1;font-size:10px}
+.fchip-x:hover{color:var(--red)}
+.srch-hint{font-size:8px;color:var(--dim2);max-width:1400px;margin:0 auto;padding:0 18px 6px;line-height:1.8}
+.srch-hint b{color:rgba(126,184,255,.55);font-weight:400}
+</style>
 </head>
 <body>
-    <div id="loading-overlay" class="loading-overlay">Loading... </div>
-    <nav>
-        <div class="nav-container">
-            <div class="brand">
-                <a href="/web/index">5ELG</a>
-                <a href="https://github.com/jomoza/5ELG" target="_blank">GITHUB</a>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/web/callback">CALLBACK</a>|</li>
-                <li><a href="/web/dashboard">BROWSERS_DASHBOARD</a>
-                <a href="/web/scanners" >IPs_DASHBOARD</a>|</li>
-                <li><a href="/web/files">FILES</a>|</li>
-                <li><a href="/web/options">OPTIONS</a></li>
-            </ul>
+
+<div id="overlay">
+    <div class="ld-bar"></div>
+</div>
+
+<nav>
+    <div class="nav-container">
+        <div class="brand">
+            <a href="/web/index" class="brand-logo">Offensive Callback <span class="brand-tag">0FC4</span></a>
+                <a href="/run/logout" class="brand-logout">LOG OUT</a>
+    <span class="brand-user" id="nav-user"></span>
+
         </div>
-    </nav>
-
-    <h1>IP SCANNERS ANALYSIS</h1>
-    <p>
-        Welcome to the OSINT PAGE! Here, you can examine detailed information about IP scanning activity, open services, OSINT results, and related links. Below, you can navigate to view detailed statistics or access data from the APIs used for OSINT analysis.
-    </p>
-<!-- <ul>
-        <li><a href="/stats">View IP Statistics</a></li><br>
-        <li><a href="/map">IPs MAP</a></li>
-    </ul>
-    <hr>
-
-    <div class="action-buttons">
-        <button id="download-all">Download All</button>
-        <button id="delete-all">Delete All</button>
-        <button id="scan-all">Scan All <span style="color: red;">(Slow!)</span></button>
-        <button id="osint-all">OSINT All <span style="color: red;">(Slow!)</span></button>
+        <script>fetch('/run/whoami').then(r=>r.json()).then(d=>{var e=document.getElementById('nav-user');if(e&&d.username)e.textContent=d.username;}).catch(function(){});</script>
+        <ul class="nav-links">
+            <li><a href="/web/callback" class="nav-btn nav-callback">CALLBACK</a></li>
+            <li><a href="/web/dashboard" class="nav-btn nav-browsers">BROWSERS</a></li>
+            <li><a href="/web/scanners" class="nav-btn nav-panel">PANEL</a></li>
+            <li><a href="/web/options" class="nav-btn nav-app">APP</a></li>
+        </ul>
     </div>
--->
-    <hr>
+</nav>
+<script>
+(function(){
+    var p=location.pathname;
+    var a=p.includes('/callback')?'nav-callback'
+         :p.includes('/dashboard')||p.includes('/browsers')?'nav-browsers'
+         :p.includes('/scanners')||p.includes('/scope')||p.includes('/infoIPX')?'nav-panel'
+         :p.includes('/options')?'nav-app'
+         :'nav-app';
+    var el=document.querySelector('.'+a);
+    if(el)el.classList.add('active');
+})();
+</script>
 
-    <table id="logsTable" class="display">
-        <thead>
-            <tr>
-                <th>IP/Domain</th>
-                <th>Whois</th>
-                <th>Services</th>
-                <th>#</th>
-                <th>Commands</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Dynamic content will be injected here -->
-        </tbody>
-    </table>
+<!-- ── COMMAND BAR ── -->
+<div style="display:flex;align-items:center;gap:0;margin-bottom:12px;background:black;border:1px solid rgba(255,255,255,.1);border-radius:6px;overflow:hidden">
+    <!-- title block -->
+    <div style="padding:10px 16px;border-right:1px solid rgba(255,255,255,.08);flex-shrink:0">
+        <div style="font-size:8px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.14em;margin-bottom:2px">OSINT · 5ELG</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.7);font-weight:700;letter-spacing:.06em">IP Intelligence</div>
+    </div>
+    <!-- live stats -->
+    <div style="display:flex;align-items:stretch;flex:1;overflow:hidden">
+        <div class="cbar-stat" id="cs-total" style="border-right:1px solid rgba(255,255,255,.06)"><span class="cs-n" style="color:#fff">—</span><span class="cs-l">IPs</span></div>
+        <div class="cbar-stat" id="cs-crit"  style="border-right:1px solid rgba(255,255,255,.06)"><span class="cs-n" style="color:#ff7070">—</span><span class="cs-l">Critical</span></div>
+        <div class="cbar-stat" id="cs-cve"   style="border-right:1px solid rgba(255,255,255,.06)"><span class="cs-n" style="color:#ffd070">—</span><span class="cs-l">CVEs</span></div>
+        <div class="cbar-stat" id="cs-scan"  style="border-right:1px solid rgba(255,255,255,.06)"><span class="cs-n" style="color:#ff7070">—</span><span class="cs-l">Scanners</span></div>
+        <div class="cbar-stat" id="cs-ports" style="border-right:1px solid rgba(255,255,255,.06)"><span class="cs-n" style="color:#7eb8ff">—</span><span class="cs-l">Avg Ports</span></div>
+        <div class="cbar-stat" id="cs-vpn"                                                       ><span class="cs-n" style="color:#ffd070">—</span><span class="cs-l">VPN/Tor</span></div>
+    </div>
+    <!-- view toggles -->
+    <div style="display:flex;align-items:center;gap:4px;padding:0 12px;border-left:1px solid rgba(255,255,255,.08);flex-shrink:0">
+        <button id="btn-map"    onclick="toggleSection('map-section','btn-map')"    class="vbtn" style="color:var(--green);border-color:rgba(95,255,176,.25)">◉ MAP</button>
+        <button id="btn-search" onclick="toggleSection('search-section','btn-search')" class="vbtn active" style="color:var(--blue);border-color:rgba(126,184,255,.25)">◉ SEARCH</button>
+        <button id="btn-intel-actions" onclick="toggleSection('intel-actions','btn-intel-actions')" class="vbtn" style="color:var(--pur);border-color:rgba(196,176,255,.25)">◉ ACTIONS</button>
+    </div>
+    <!-- bulk action buttons -->
+    <div style="display:flex;align-items:center;gap:4px;padding:0 12px;border-left:1px solid rgba(255,255,255,.08);flex-shrink:0">
+        <button class="vbtn" onclick="runAll('scan')"     style="color:var(--green);border-color:rgba(95,255,176,.25)">⚡ NMAP ALL</button>
+        <button class="vbtn" onclick="runAll('osint')"    style="color:var(--amber);border-color:rgba(255,208,112,.25)">◈ OSINT ALL</button>
+        <button class="vbtn" onclick="intelExportCSV()"  style="color:var(--pur);border-color:rgba(196,176,255,.25)">↓ EXPORT DATA</button>
+    </div>
+</div>
 
-    <script>
-        function isValidJSON(data) {
-            try {
-                JSON.parse(data);
-                return true;
-            } catch {
-                return false;
-            }
-        }
+<!-- ── INTELLIGENCE ACTIONS ── -->
+<div style="display:none;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px" id="intel-actions">
 
-        async function fetchData() {
-            try {
-                const response = await fetch('/api/ips/lists');
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch data: ${response.statusText}`);
-                }
-                const data = await response.json();
-                populateTable(data);
-            } catch (error) {
-                console.error("Error fetching IP data:", error);
-            } finally {
-                $('#loading-overlay').hide(); // Hide the loading overlay after data fetch
-            }
-        }
+    <button class="intel-btn" onclick="intelCritical()" style="border-color:rgba(255,112,112,.3);color:var(--red)">
+        <span class="ib-icon">⚠</span>
+        <span class="ib-label">Critical IPs</span>
+        <span class="ib-sub">Threat ≥70 · full report</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelCVEMatrix()" style="border-color:rgba(255,208,112,.3);color:var(--amber)">
+        <span class="ib-icon">◈</span>
+        <span class="ib-label">CVE Matrix</span>
+        <span class="ib-sub">Cross IPs by vulnerability</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelScanners()" style="border-color:rgba(196,176,255,.3);color:var(--pur)">
+        <span class="ib-icon">⬡</span>
+        <span class="ib-label">Active Scanners</span>
+        <span class="ib-sub">IPs probing your infra</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelASNCluster()" style="border-color:rgba(126,184,255,.3);color:var(--blue)">
+        <span class="ib-icon">◎</span>
+        <span class="ib-label">ASN Clusters</span>
+        <span class="ib-sub">Group IPs by network origin</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelPortMatrix()" style="border-color:rgba(95,255,176,.3);color:var(--green)">
+        <span class="ib-icon">▤</span>
+        <span class="ib-label">Port Matrix</span>
+        <span class="ib-sub">Services across all hosts</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelGeoCluster()" style="border-color:rgba(126,184,255,.3);color:var(--blue)">
+        <span class="ib-icon">⊕</span>
+        <span class="ib-label">Geo Clusters</span>
+        <span class="ib-sub">Origin country analysis</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelCorrelate()" style="border-color:rgba(196,176,255,.3);color:var(--pur)">
+        <span class="ib-icon">⊞</span>
+        <span class="ib-label">Correlate</span>
+        <span class="ib-sub">CVE + Scanner + Inbound</span>
+    </button>
+
+    <button class="intel-btn" onclick="intelExportCSV()" style="border-color:rgba(255,255,255,.15);color:rgba(255,255,255,.5)">
+        <span class="ib-icon">↓</span>
+        <span class="ib-label">Export Intel</span>
+        <span class="ib-sub">CSV full OSINT dataset</span>
+    </button>
+
+</div>
+
+<!-- ── MAP SECTION (hidden by default) ── -->
+<div id="map-section" style="display:none">
+
+<div class="panel" style="margin-bottom:12px;overflow:hidden">
+    <div class="panel-head">
+        <span class="ph-dot" style="background:var(--green)"></span>IP Geolocation Map
+        <span class="ph-right" id="map-count">loading…</span>
+    </div>
+    <div id="cmd-map" style="height:340px;width:100%;display:block"></div>
+    <div class="ticker-wrap"><div class="ticker-inner" id="ticker-inner"><span class="tick-item">Loading geo data…</span></div></div>
+</div>
+</div><!-- /map-section -->
+
+<!-- ── SEARCH SECTION (hidden by default) ── -->
+<div id="search-section">
+<div class="search-wrap">
+    <div class="search-inner">
+        <div class="search-box">
+            <input id="srch" type="text" placeholder="ip:1.2.3.4  port:80  country:Spain  cve:CVE-…  flag:scanner  threat:>=40  org:…" oninput="applyFilters()">
+            <button onclick="clearSearch()" title="Clear filters" style="color:rgba(255,255,255,.35)">✕</button>
+            <button onclick="applyFilters()">SEARCH</button>
+        </div>
+        <div class="search-stats">
+            <b id="s-total">0</b> hosts &nbsp;·&nbsp;
+            <span id="s-scanned">0</span> scanned &nbsp;·&nbsp;
+            <span id="s-cves" style="color:var(--red)">0</span> CVEs
+        </div>
+    </div>
+    <div id="fchips" class="fchips"></div>
+    <div class="srch-hint">
+        <b>ip</b> &nbsp;<b>port</b> &nbsp;<b>country</b> &nbsp;<b>city</b> &nbsp;<b>org</b> &nbsp;<b>asn</b> &nbsp;<b>cve</b> &nbsp;<b>host</b> &nbsp;<b>flag</b> &nbsp;<b>inbound</b> &nbsp;<b>threat:&gt;=N</b> &nbsp;<b>service</b> &nbsp;<b>banner</b> &mdash; separate with <b>,</b>
+    </div>
+</div>
+</div><!-- /search-section -->
+
+<div class="main-layout">
+<div class="sidebar">
     
-        function populateTable(data) {
-            const tableBody = $('#logsTable tbody');
-            tableBody.empty();
+    <div class="sb-section">
+        <div class="sb-title">Results / page</div>
+        <select class="page-sel" id="page-sel" onchange="currentPage=1;render()" style="width:100%;margin-top:4px">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="0">All</option>
+        </select>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Sort by</div>
+        <label class="sb-pill active" id="sp-threat"><input type="radio" name="sort" value="threat" checked onchange="applyFilters()"><span class="sb-pill-dot" style="background:var(--red)"></span><span class="sb-pill-label">Threat Score</span></label>
+        <label class="sb-pill" id="sp-cve"><input type="radio" name="sort" value="cve" onchange="applyFilters()"><span class="sb-pill-dot" style="background:var(--red)"></span><span class="sb-pill-label">CVEs</span></label>
+        <label class="sb-pill" id="sp-inbound"><input type="radio" name="sort" value="inbound" onchange="applyFilters()"><span class="sb-pill-dot" style="background:#9090b0"></span><span class="sb-pill-label">Inbound Score</span></label>
+        <label class="sb-pill" id="sp-ports"><input type="radio" name="sort" value="ports" onchange="applyFilters()"><span class="sb-pill-dot" style="background:var(--green)"></span><span class="sb-pill-label">Open Ports</span></label>
+        <label class="sb-pill" id="sp-ip"><input type="radio" name="sort" value="ip" onchange="applyFilters()"><span class="sb-pill-dot" style="background:var(--blue)"></span><span class="sb-pill-label">IP Address</span></label>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Filter</div>
+        <label class="sb-pill" id="fp-scan"><input type="checkbox" onchange="this.closest('.sb-pill').classList.toggle('active',this.checked);applyFilters()"><span class="sb-pill-dot" style="background:var(--green)"></span><span class="sb-pill-label">Scanned only</span></label>
+        <label class="sb-pill" id="fp-vuln"><input type="checkbox" onchange="this.closest('.sb-pill').classList.toggle('active',this.checked);applyFilters()"><span class="sb-pill-dot" style="background:var(--red)"></span><span class="sb-pill-label">Has CVEs</span></label>
+        <label class="sb-pill" id="fp-risk"><input type="checkbox" onchange="this.closest('.sb-pill').classList.toggle('active',this.checked);applyFilters()"><span class="sb-pill-dot" style="background:#9090b0"></span><span class="sb-pill-label">High Risk (≥40)</span></label>
+        <label class="sb-pill" id="fp-clean"><input type="checkbox" onchange="this.closest('.sb-pill').classList.toggle('active',this.checked);applyFilters()"><span class="sb-pill-dot" style="background:var(--blue)"></span><span class="sb-pill-label">Clean IPs</span></label>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Top Countries</div>
+        <div id="sb-countries"></div>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Top Ports</div>
+        <div id="sb-ports"></div>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Inbound Risk</div>
+        <div id="sb-scores"></div>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Flags</div>
+        <div id="sb-flags"></div>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Top CVEs</div>
+        <div id="sb-cves"></div>
+    </div>
+    <div class="sb-section">
+        <div class="sb-title">Banners</div>
+        <div id="sb-banners"></div>
+    </div>
+</div>
 
-            let openPortsList;
-            let org;
+<div class="results-area">
+    <div class="rh">
+        <div>
+            <span class="rh-count" id="rh-count"></span>
+            <span style="font-size:9px;color:var(--dim2);margin-left:8px" id="rh-time"></span>
+        </div>
+    </div>
+    <div id="cards"></div>
+    <div class="pag-bar"><span id="pag-info"></span><div class="pag-pages" id="pag-pages"></div></div>
+</div>
+</div>
 
-            data.forEach(ipData => {
-                let dataresultIP = {};
-                let openPortsList = 'N/A';
-                let org = 'N/A';
+<script>
+/* ══ HELPERS ══ */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-                // Validar si DATA es un JSON válido
-                if (isValidJSON(ipData.DATA)) {
-                    dataresultIP = JSON.parse(JSON.parse(ipData.DATA));
-                } else {
-                    dataresultIP = {}; // Si no es válido, inicializar como un objeto vacío
-                }
+/* FLAG — always wrapped in explicit emoji font span so Consolas doesn't block rendering */
+function flag(cc){
+    if(!cc||cc.length!==2)return'';
+    const c=cc.toLowerCase();
+    return`<img src="https://flagcdn.com/16x12/${c}.png" srcset="https://flagcdn.com/32x24/${c}.png 2x" width="16" height="12" alt="${cc}" title="${cc}" style="vertical-align:middle;border-radius:1px;flex-shrink:0;margin-right:2px" onerror="this.style.display='none'">`;
+}
+function flagCol(cc){
+    if(!cc||cc.length!==2)return'';
+    const c=cc.toLowerCase();
+    return`<div style="flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0 12px 0 0;margin-right:4px;border-right:1px solid rgba(255,255,255,.06)"><img src="https://flagcdn.com/24x18/${c}.png" srcset="https://flagcdn.com/48x36/${c}.png 2x" width="24" height="18" alt="${cc}" title="${cc}" style="border-radius:2px;display:block" onerror="this.parentElement.style.display='none'"></div>`;
+}
 
-                console.log(dataresultIP);
+function scoreColor(s){return({Critical:'#ff7070',High:'#9090b0',Moderate:'#7eb8ff',Low:'rgba(255,255,255,.35)',Safe:'#5fffb0'})[s]||'rgba(255,255,255,.2)';}
+function cvssColor(n){return n>=9?'#ff7070':n>=7?'#9090b0':n>=4?'#7eb8ff':'rgba(255,255,255,.35)';}
+function threatColor(t){return t>=70?'#ff7070':t>=40?'#9090b0':t>=15?'#7eb8ff':'#5fffb0';}
+function threatLabel(t){return t>=70?'CRITICAL':t>=40?'HIGH':t>=15?'MEDIUM':'LOW';}
+function parseData(r){if(!r)return{};try{let d=r;for(let i=0;i<3;i++){if(typeof d==='string')d=JSON.parse(d);else break;}return(typeof d==='object'&&d)?d:{};}catch{return{};}}
+function parseGeo(r){if(!r)return{};try{return typeof r==='string'?JSON.parse(r):r;}catch{return{};}}
 
-                // Validar datos en dataresultIP
-                if (dataresultIP && typeof dataresultIP === 'object') {
-                    // Verificar si existe el campo nmap
-                    if (dataresultIP.nmap) {
-                        const openPorts = dataresultIP.nmap[0]?.openPorts || [];
-                        openPortsList = openPorts.length > 0
-                            ? openPorts.map(port => `${port.port} => ${port.service}`).join(', ')
-                            : 'N/A';
-                    }
+/* ══ DATA EXTRACT ══ */
+function collectCVEs(p){
+    const c=[],seen=new Set();
+    const validCVE=id=>typeof id==='string'&&id.toUpperCase().startsWith('CVE-');
+    (p.criminalip?.vulnerability?.data||[]).forEach(x=>{if(validCVE(x.cve_id)&&!seen.has(x.cve_id)){seen.add(x.cve_id);c.push(x);}});
+    if(p.shodan?.vulns)Object.entries(p.shodan.vulns).forEach(([id,i])=>{if(validCVE(id)&&!seen.has(id)){seen.add(id);c.push({cve_id:id,cvssv3_score:i.cvss||0,cve_description:i.summary||'',list_cwe:[]});}});
+    return c.sort((a,b)=>(b.cvssv3_score||0)-(a.cvssv3_score||0));
+}
+function collectPorts(p){
+    const pm=new Map();
+    (p.nmap||[]).forEach(h=>(h.openPorts||[]).forEach(pt=>{const k=pt.port+'/'+(pt.protocol||'tcp');if(!pm.has(k))pm.set(k,{port:pt.port,proto:pt.protocol||'tcp',service:pt.service||'',version:pt.product||'',banner:'',source:'nmap',score:1+(pt.service?1:0)+(pt.product?1:0)});}));
+    (p.shodan?.data||[]).forEach(s=>{const proto=(s.transport||'tcp').toLowerCase(),k=s.port+'/'+proto,bn=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').trim().slice(0,80);const ex=pm.get(k),sc=2+(bn?2:0)+(s.product?1:0)+(s.version?1:0);if(!ex||sc>ex.score)pm.set(k,{port:s.port,proto,service:s.product||s._shodan?.module||ex?.service||'',version:s.version||'',banner:bn,source:'shodan',score:sc});});
+    (p.shodan?.ports||[]).forEach(pt=>{const k=pt+'/tcp';if(!pm.has(k))pm.set(k,{port:pt,proto:'tcp',service:'',version:'',banner:'',source:'shodan',score:0});});
+    (p.criminalip?.open_port_no||[]).forEach(pt=>{const k=pt.port+'/'+(pt.socket||'tcp');if(!pm.has(k))pm.set(k,{port:pt.port,proto:pt.socket||'tcp',service:'',version:'',banner:'',source:'cip',score:0});});
+    (p.criminalip?.vulnerability?.data||[]).forEach(v=>(v.open_port_no||[]).forEach(pt=>{const k=pt.port+'/'+(pt.socket||'tcp');if(!pm.has(k))pm.set(k,{port:pt.port,proto:pt.socket||'tcp',service:v.app_name||'',version:v.app_version||'',banner:'',source:'cip',score:0.5});}));
+    return[...pm.values()].sort((a,b)=>a.port-b.port);
+}
+function collectHostnames(p){
+    const s=new Set();
+    (p.nmap||[]).forEach(h=>{if(h.hostname)s.add(h.hostname);});
+    (p.shodan?.hostnames||[]).forEach(h=>s.add(h));
+    (p.criminalip?.hostname?.data||[]).forEach(h=>{if(h.domain||h.hostname)s.add(h.domain||h.hostname);});
+    return[...s];
+}
+function collectWhois(p){
+    const a=[];const cw=p.criminalip?.whois;
+    if(cw){if(Array.isArray(cw.data)&&cw.data.length)cw.data.forEach(e=>a.push(e));else if(typeof cw==='object'&&Object.keys(cw).some(k=>!['count','data'].includes(k)))a.push(cw);}
+    if(p.whois){if(Array.isArray(p.whois))p.whois.forEach(e=>a.push(e));else if(typeof p.whois==='object')a.push(p.whois);}
+    return a;
+}
+function computeThreat(p,cves){
+    let s=0;const iss=p.criminalip?.issues||{};
+    if(iss.is_scanner)s+=30;if(iss.is_darkweb)s+=35;if(iss.is_tor)s+=25;
+    if(iss.is_vpn)s+=15;if(iss.is_proxy)s+=10;if(iss.is_hosting)s+=8;if(iss.is_cloud)s+=4;if(iss.is_snort)s+=20;
+    const ib=p.criminalip?.score?.inbound||'';
+    if(ib==='Critical')s+=40;else if(ib==='High')s+=25;else if(ib==='Moderate')s+=10;
+    s+=Math.round(cves.reduce((m,c)=>Math.max(m,c.cvssv3_score||0),0)*3);
+    if(p.shodan?.vulns)s+=Object.keys(p.shodan.vulns).length*8;
+    return Math.min(100,s);
+}
 
-                    // Verificar si existe el campo whois
-                    if (dataresultIP.whois) {
-                        org = dataresultIP.whois.netName || dataresultIP.whois.netname || 'N/A';
-                    } else {
-                        // Si no hay WHOIS, verificar en GEO
-                        const geoData = isValidJSON(ipData.GEO) ? JSON.parse(ipData.GEO) : {};
-                        org = geoData?.org || 'N/A';
-                    }
-                }
+/* ══ SIDEBAR ══ */
+const _SB={countries:[],ports:[],scores:[],sbflags:[],cves:[],banners:[]};
 
-                // Generar la fila
-                const row = `
-                    <tr>
-                        <td class='small-column'>${ipData.IP || 'N/A'}</td>
-                        <td>${org}</td>
-                        <td>${openPortsList}</td>
-                        <td class='small-column'>
-                            <button id="small-button" class="scan-btn" data-ip="${ipData.IP}">SCAN</button> 
-                            <button id="small-button" class="geo-btn" data-ip="${ipData.IP}">WHOIS</button> 
-                            <button id="small-button" class="osint-btn" data-ip="${ipData.IP}">OSINT</button>
-                        </td>
-                        <td style="text-align: right;">
-                            <a style="display: inline-block;" href="/web/ipdata?id=${ipData.ID}" class="line">👀</a> <br>
-                            <a style="display: inline-block;" onclick="downloadIPInfo('${ipData.IP}')" class="line">💾</a> <br>
-                            <a style="display: inline-block;" class="delete-btn line" onclick="deleteIDEl(${ipData.ID  })">🗑️</a>
-                        </td>
-                    </tr>
-                `;
-                tableBody.append(row);
-            });
+function _sbClick(type,i){
+    if(type==='country') addFilter('country:'+_SB.countries[i].name);
+    else if(type==='port')    addFilter('port:'+_SB.ports[i].port);
+    else if(type==='inbound') addFilter('inbound:'+_SB.scores[i].name);
+    else if(type==='flag')    addFilter('flag:'+_SB.sbflags[i].name);
+    else if(type==='cve')     addFilter('cve:'+_SB.cves[i].id);
+    else if(type==='banner')  addFilter('banner:'+_SB.banners[i].key);
+}
 
-            // Inicializar DataTable
-            $('#logsTable').DataTable({
-                destroy: true,
-                pageLength: 50,
-                lengthMenu: [[10, 50, 100, -1], [10, 50, 100, "All"]],
-                dom: 'lfrtip',
-            });
-
-            // Adjuntar eventos
-            attachEventListeners();
-
-        }
-    
-        async function downloadIPInfo(ip) {
-        try {
-            const response = await fetch('/api/ips/out/ip', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ IP: ip })
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const ipInfo = await response.json();
-            const blob = new Blob([JSON.stringify(ipInfo, null, 2)], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = `ip_${ip}_info.json`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading IP info:', error);
-        }
+function extractBannerFP(s){
+    // HTTP Server header
+    if(s.http?.server)return'Server: '+s.http.server.slice(0,55);
+    const raw=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').trim();
+    if(raw){
+        // Look for Server: line in raw data (HTTP responses)
+        const srv=raw.match(/^Server:\s*(.+)$/mi);
+        if(srv)return'Server: '+srv[1].trim().slice(0,55);
+        // First non-empty line (SSH, FTP, SMTP, etc.)
+        const first=raw.split('\n')[0].trim().slice(0,55);
+        if(first.length>3)return first;
     }
-        async function deleteIDEl(id) {
-                
-                if (!id) {
-                    Swal.fire('Error!', 'The ID is missing or invalid.', 'error');
-                    return;
-                }
-                
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: `This action will delete the record with ID: ${id}`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel',
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/api/ips/delete`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded', // Content-Type clásico
-                                },
-                                body: `ID=${encodeURIComponent(id)}`, // Enviar el ID como una clave-valor
-                            });
-                            
-                            if (!response.ok) {
-                                throw new Error(`Failed to delete: ${response.statusText}`);
-                            }
+    // Fallback: product/version from Shodan parsing
+    if(s.product)return(s.product+(s.version?'/'+s.version:'')).slice(0,55);
+    return null;
+}
 
-                            Swal.fire('Deleted!', `The record with ID: ${id} has been deleted.`, 'success').then(() => {
-                                location.reload();
-                            });
-                        } catch (error) {
-                            console.error('Error deleting record:', error);
-                            Swal.fire('Error!', `Failed to delete the record.`, 'error');
-                        }
-                    }
-                });
-            }
+function buildSidebar(data){
+    const total=data.length;
 
-        function attachEventListeners() {
-            $('.scan-btn').on('click', async function () {
-                const ip = $(this).data('ip');
-                await handleAction('/api/ips/run/scann', ip, 'Scanning');
-            });
-    
-            $('.geo-btn').on('click', async function () {
-                const ip = $(this).data('ip');
-                await handleAction('/api/ips/run/geo', ip, 'Geolocating');
-            });
-    
-            $('.osint-btn').on('click', async function () {
-                const ip = $(this).data('ip');
-                await handleAction('/api/ips/run/osint', ip, 'Performing OSINT');
-            });
+    // Countries — full English name as key
+    const cm=new Map();
+    data.forEach(d=>{
+        const name=d._geo.country||d._geo.countryCode||'??';
+        const cc=d._geo.countryCode||'';
+        if(!cm.has(name))cm.set(name,{count:0,cc});
+        cm.get(name).count++;
+    });
+    _SB.countries=[...cm.entries()].sort((a,b)=>b[1].count-a[1].count).slice(0,8).map(([name,{count,cc}])=>({name,count,cc}));
+    const maxC=_SB.countries[0]?.count||1;
+    document.getElementById('sb-countries').innerHTML=_SB.countries.map((item,i)=>
+        `<div class="sb-bar-row" onclick="_sbClick('country',${i})"><span class="sb-bar-label" style="display:inline-flex;align-items:center;gap:4px">${flag(item.cc)}${esc(item.name)}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/maxC*100)}%;background:var(--green)"></div></div><span class="sb-bar-n">${item.count}</span></div>`
+    ).join('');
 
+    // Ports
+    const pm=new Map();
+    data.forEach(d=>d._ports.forEach(pt=>{const k=String(pt.port)+(pt.service?'/'+pt.service.slice(0,8):'');pm.set(k,(pm.get(k)||0)+1);}));
+    _SB.ports=[...pm.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label,count])=>({label,port:label.split('/')[0],count}));
+    const maxP=_SB.ports[0]?.count||1;
+    document.getElementById('sb-ports').innerHTML=_SB.ports.map((item,i)=>
+        `<div class="sb-bar-row" onclick="_sbClick('port',${i})"><span class="sb-bar-label" style="font-size:9px">${esc(item.label)}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/maxP*100)}%;background:var(--pur)"></div></div><span class="sb-bar-n">${item.count}</span></div>`
+    ).join('');
 
+    // Inbound scores
+    const sm={Critical:0,High:0,Moderate:0,Low:0,Safe:0};
+    data.forEach(d=>{const s=d._parsed.criminalip?.score?.inbound;if(s&&s in sm)sm[s]++;});
+    _SB.scores=Object.entries(sm).filter(([,v])=>v>0).map(([name,count])=>({name,count}));
+    document.getElementById('sb-scores').innerHTML=_SB.scores.map((item,i)=>
+        `<div class="sb-bar-row" onclick="_sbClick('inbound',${i})"><span class="sb-bar-label" style="color:${scoreColor(item.name)}">${item.name}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/total*100)}%;background:${scoreColor(item.name)}"></div></div><span class="sb-bar-n">${item.count}</span></div>`
+    ).join('');
 
-            $('#delete-all').on('click', async function () {
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This action will delete all records!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete all!',
-                    cancelButtonText: 'Cancel',
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch('/api/ips/purge', { method: 'POST' });
-                            if (!response.ok) {
-                                throw new Error(`Failed to delete all records: ${response.statusText}`);
-                            }
-                            Swal.fire('Deleted!', 'All records have been deleted.', 'success').then(() => {
-                                location.reload();
-                            });
-                        } catch (error) {
-                            Swal.fire('Error!', 'Failed to delete all records.', 'error');
-                        }
-                    }
-                });
-            });
-        }
-        async function handleAction(endpoint, ip, actionName) {
-    let swalInstance;
-    let timeoutTriggered = false;
+    // Flags
+    const flagNames={scanner:0,tor:0,vpn:0,hosting:0,darkweb:0,proxy:0,snort:0};
+    data.forEach(d=>{const iss=d._parsed.criminalip?.issues||{};Object.keys(flagNames).forEach(k=>{if(iss['is_'+k])flagNames[k]++;});});
+    _SB.sbflags=Object.entries(flagNames).filter(([,v])=>v>0).map(([name,count])=>({name,count}));
+    document.getElementById('sb-flags').innerHTML=_SB.sbflags.map((item,i)=>
+        `<div class="sb-bar-row" onclick="_sbClick('flag',${i})"><span class="sb-bar-label">${item.name.toUpperCase()}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/total*100)}%;background:var(--red)"></div></div><span class="sb-bar-n">${item.count}</span></div>`
+    ).join('')||'<span class="no-data">No flags</span>';
 
-    try {
-        swalInstance = Swal.fire({
-            title: `${actionName} in progress`,
-            html: `Processing IP: <strong>${ip}</strong>. Please wait...`,
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
+    // CVEs — top by severity × frequency
+    const cveMap=new Map();
+    data.forEach(d=>{d._cves.forEach(c=>{
+        if(!cveMap.has(c.cve_id))cveMap.set(c.cve_id,{id:c.cve_id,cvss:c.cvssv3_score||0,count:0});
+        cveMap.get(c.cve_id).count++;
+    });});
+    _SB.cves=[...cveMap.values()].sort((a,b)=>(b.count*(b.cvss||1))-(a.count*(a.cvss||1))).slice(0,6);
+    const maxCV=_SB.cves[0]?.count||1;
+    document.getElementById('sb-cves').innerHTML=_SB.cves.map((item,i)=>{
+        const cc=item.cvss>=9?'var(--red)':item.cvss>=7?'#9090b0':item.cvss>=4?'var(--blue)':'rgba(255,255,255,.35)';
+        return`<div class="sb-bar-row" onclick="_sbClick('cve',${i})" title="${esc(item.id)} — CVSS ${item.cvss.toFixed(1)}"><span class="sb-bar-label" style="font-size:8px;min-width:100px;color:var(--red)">${esc(item.id)}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/maxCV*100)}%;background:${cc}"></div></div><span class="sb-bar-n">${item.count}</span></div>`;
+    }).join('')||'<span class="no-data">No CVEs</span>';
+
+    // Banners — first line of Shodan banner per service
+    const banMap=new Map();
+    data.forEach(d=>{
+        (d._parsed.shodan?.data||[]).forEach(s=>{
+            const fp=extractBannerFP(s);
+            if(!fp)return;
+            // Use trimmed first ~30 chars as grouping key (avoid minor version noise)
+            const key=fp.slice(0,40);
+            if(!banMap.has(key))banMap.set(key,{text:fp,key,count:0});
+            banMap.get(key).count++;
         });
+    });
+    _SB.banners=[...banMap.values()].sort((a,b)=>b.count-a.count).slice(0,6);
+    const maxBan=_SB.banners[0]?.count||1;
+    document.getElementById('sb-banners').innerHTML=_SB.banners.map((item,i)=>
+        `<div class="sb-bar-row" onclick="_sbClick('banner',${i})" title="${esc(item.text)}"><span class="sb-bar-label" style="font-size:8px;min-width:100px">${esc(item.text.slice(0,22))}</span><div class="sb-bar-track"><div class="sb-bar-fill" style="width:${Math.round(item.count/maxBan*100)}%;background:var(--blue)"></div></div><span class="sb-bar-n">${item.count}</span></div>`
+    ).join('')||'<span class="no-data">No banners</span>';
 
-        // Establecer un temporizador de 60 segundos
-        const timeout = setTimeout(() => {
-            timeoutTriggered = true;
-            Swal.close();
-            Swal.fire({
-                title: 'Working in background',
-                html: `The ${actionName} process for IP: <strong>${ip}</strong> is taking longer than expected.<br>The page will reload to check the status later.`,
-                icon: 'info',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                location.reload();
+    document.getElementById('s-total').textContent=total;
+    document.getElementById('s-scanned').textContent=data.filter(d=>Object.keys(d._parsed).length>0).length;
+    document.getElementById('s-cves').textContent=data.reduce((s,d)=>s+d._cves.length,0);
+}
+
+/* ══ SHODAN SERVICE ══ */
+function renderSvc(s){
+    const ssl=s.ssl,http=s.http,mod=s._shodan?.module||'';
+    let sslH='';
+    if(ssl?.cert){const cert=ssl.cert,cn=cert.subject?.CN||cert.subject?.O||'',exp=cert.expires?cert.expires.replace(/(\d{4})(\d{2})(\d{2}).*/,'$1-$2-$3'):'';
+        sslH=`<div style="margin-top:5px;font-size:9px;color:rgba(255,255,255,.4)"><span class="${cert.expired?'ssl-exp':'ssl-ok'}">${cert.expired?'⚠ EXPIRED':'✓ VALID'}</span>${cn?` <span style="color:var(--dim)">${esc(cn)}</span>`:''}${exp?` <span style="color:var(--dim2)">${esc(exp)}</span>`:''}${ssl.cipher?.name?` <span style="font-size:8px;color:var(--dim2)">${esc(ssl.cipher.name)}</span>`:''}</div>`;}
+    let httpH='';
+    if(http){const comps=Object.keys(http.components||{});httpH=`<div>${http.title?`<div style="font-size:11px;color:#d0d0d0;margin-bottom:4px;font-weight:600">${esc(http.title)}</div>`:''}${http.server?`<div style="font-size:9px;color:var(--dim2)">Server: ${esc(http.server)}</div>`:''}${comps.map(c=>`<span class="comp-tag">${esc(c)}</span>`).join('')}</div>`;}
+    const banner=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').slice(0,300);
+    return`<div class="svc-item"><div class="svc-head"><span class="svc-port">${s.port}</span><span style="font-size:8px;background:rgba(126,184,255,.08);color:var(--blue);padding:1px 4px;border-radius:2px;font-weight:700">${esc((s.transport||'tcp').toUpperCase())}</span>${mod?`<span class="svc-mod">${esc(mod)}</span>`:''}${s.product?`<span style="font-size:10px;color:rgba(255,255,255,.65)">${esc(s.product)}</span>`:''}${s.version?`<span style="font-size:9px;color:var(--dim2)">${esc(s.version)}</span>`:''}${s.timestamp?`<span style="font-size:8px;color:var(--dim2);margin-left:auto">${esc(s.timestamp.slice(0,10))}</span>`:''}</div>${httpH}${banner&&!http?`<div class="svc-banner">${esc(banner)}</div>`:''}${sslH}</div>`;
+}
+function renderWhois(w){
+    if(!w||typeof w!=='object')return'';
+    const f=[['Netname',w.netName||w.netname||w.NetName||''],['Org',w.OrgName||w.organisation||w.org||''],['Country',w.country||w.Country||''],['CIDR',w.CIDR||w.inetnum||''],['Abuse',w.abuse||w.OrgAbuseEmail||''],['Updated',w.updated||w.Updated||'']].filter(([,v])=>v);
+    if(!f.length){const ks=Object.keys(w).filter(k=>!['count','data','status'].includes(k));if(!ks.length)return'';return`<div class="whois-entry">${ks.slice(0,6).map(k=>`<div class="wf"><span class="wk">${esc(k)}</span><span class="wv">${esc(String(w[k]).slice(0,120))}</span></div>`).join('')}</div>`;}
+    return`<div class="whois-entry">${f.map(([k,v])=>`<div class="wf"><span class="wk">${k}</span><span class="wv">${esc(String(v).slice(0,120))}</span></div>`).join('')}</div>`;
+}
+
+/* ══ BUILD CARD ══ */
+function buildCard(ip){
+    const geo=ip._geo,p=ip._parsed,cves=ip._cves,threat=ip._threat;
+    const iss=p.criminalip?.issues||{};
+    const ib=p.criminalip?.score?.inbound||'—';
+    const ibColor=scoreColor(ib);
+    const tc=threatColor(threat);
+    const tl=threatLabel(threat);
+    const host=ip._hostnames.length?ip._hostnames[0]:'';
+    const org=(geo.org||geo.isp||p.shodan?.org||'').slice(0,36);
+    const activeFlags=Object.entries(iss).filter(([,v])=>v).map(([k])=>k.replace('is_',''));
+
+    /* source checks */
+    const hasNmap=!!(p.nmap?.length&&(p.nmap[0].openPorts?.length||p.nmap[0].hostname));
+    const hasShodan=!!p.shodan;
+    const hasCIP=!!p.criminalip;
+    const hasWhois=ip._whois.length>0;
+    const src=(l,ok)=>`<span class="${ok?'src-ok':'src-no'} src">${ok?'✓':'○'} ${l}</span>`;
+
+    /* ports preview */
+    const preview=[...ip._ports].sort((a,b)=>b.score-a.score).slice(0,8).sort((a,b)=>a.port-b.port);
+    const portHtml=preview.map(pt=>
+        `<span class="pp ${pt.proto==='udp'?'udp':''} ${pt.banner?'banner':''}" title="${esc(pt.service||'')}${pt.version?' '+esc(pt.version):''}${pt.banner?'\n'+esc(pt.banner):''}"><span class="pp-n">${pt.port}</span>${pt.service?`<span class="pp-s">${esc(pt.service.slice(0,10))}</span>`:''}</span>`
+    ).join('')+(ip._ports.length>8?`<span class="pp-more">+${ip._ports.length-8}</span>`:'');
+
+
+    /* top CVEs for card strip (max 3) */
+    const topCVEs=cves.slice(0,3);
+
+    /* shodan OS + last update */
+    const sOS=p.shodan?.os||'';
+    const sLast=p.shodan?.last_update?.slice(0,10)||'';
+
+    return`<div class="ip-card" id="card-${ip.ID}">
+<!-- HEADER -->
+<div class="ipc-head">
+    <div style="flex:1;min-width:0">
+        <div class="ipc-ip">${esc(ip.IP)}</div>
+        ${host?`<div class="ipc-host">${esc(host)}</div>`:''}
+        <div class="ipc-geo">
+            ${flag(geo.countryCode||geo.country)}
+            <span>${esc(geo.country||geo.countryCode||'—')}</span>
+            ${geo.city?`<span style="color:var(--dim2)">· ${esc(geo.city)}</span>`:''}
+            ${geo.regionName?`<span style="color:var(--dim2);font-size:9px">${esc(geo.regionName)}</span>`:''}
+        </div>
+        ${org?`<div class="ipc-org">${esc(org)}${geo.as?` <span style="color:rgba(255,255,255,.25)">${esc(geo.as)}</span>`:''}</div>`:''}
+    </div>
+    <!-- threat score -->
+    <div class="ipc-threat">
+        <div class="ipc-threat-n" style="color:${tc}">${threat}</div>
+        <div class="ipc-threat-l" style="color:${tc}">${tl}</div>
+        ${ib!=='—'?`<div style="font-size:8px;color:${ibColor};margin-top:3px;font-weight:700">${esc(ib)}</div>`:''}
+    </div>
+    <!-- action buttons -->
+    <div class="ipc-btns" onclick="event.stopPropagation()">
+        <a class="ib blue" href="/web/ipdata?id=${ip.ID}" target="_blank">⊞ FULL DATA</a>
+        <div style="display:flex;gap:3px">
+            <button class="ib grn" onclick="runAction('/api/ips/run/scann','${esc(ip.IP)}','Nmap')">⬡ NMAP</button>
+            <button class="ib pur" onclick="runAction('/api/ips/run/osint','${esc(ip.IP)}','OSINT')">◈ OSINT</button>
+        </div>
+        <div style="display:flex;gap:3px">
+            <button class="ib amb" onclick="runAction('/api/ips/run/geo','${esc(ip.IP)}','Geo')">◎ GEO</button>
+            <button class="ib red" onclick="deleteIP(${ip.ID},event)">✕ DEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- STATS ROW: compact inline -->
+<div class="ipc-stats">
+    <div class="ipc-stat">
+        <span class="ipc-stat-n" style="color:var(--green)">${ip._ports.length}</span>
+        <span class="ipc-stat-l">ports</span>
+    </div>
+    <div class="ipc-stat">
+        <span class="ipc-stat-n" style="color:${cves.length?'var(--red)':'rgba(255,255,255,.2)'}">${cves.length}</span>
+        <span class="ipc-stat-l">CVEs</span>
+    </div>
+    <div class="ipc-stat">
+        <span class="ipc-stat-n" style="color:${ibColor}">${esc(ib)}</span>
+        <span class="ipc-stat-l">inbound</span>
+    </div>
+    ${sOS?`<div class="ipc-stat"><span class="ipc-stat-n" style="color:rgba(255,255,255,.5)">${esc(sOS)}</span><span class="ipc-stat-l">OS</span></div>`:''}
+    <div class="ipc-stat wide">
+        <div class="src-row">
+            ${src('nmap',hasNmap)}${src('shodan',hasShodan)}${src('cip',hasCIP)}${src('whois',hasWhois)}
+        </div>
+        ${activeFlags.length?`<span style="margin-left:6px">${activeFlags.map(f=>`<span class="ftag">${f}</span>`).join('')}</span>`:''}
+    </div>
+</div>
+
+<!-- PORTS -->
+${ip._ports.length?`<div class="port-pills">${portHtml}</div>`:''}
+
+<!-- CVE STRIP (top 3) -->
+${topCVEs.length?`<div class="ipc-cve-strip">${topCVEs.map(c=>{const sc=c.cvssv3_score||0;const cc=cvssColor(sc);return`<div class="ipc-cve-row"><span class="ipc-cve-id">${esc(c.cve_id)}</span><span class="ipc-cve-cvss" style="background:${cc}18;color:${cc}">CVSS ${sc.toFixed(1)}</span><span class="ipc-cve-desc">${esc((c.cve_description||'').slice(0,80))}${(c.cve_description||'').length>80?'…':''}</span></div>`;}).join('')}${cves.length>3?`<div style="font-size:9px;color:var(--dim2);margin-top:2px">+${cves.length-3} more CVEs — expand for full list</div>`:''}</div>`:''}
+
+
+<!-- TOGGLE BUTTON -->
+<div style="padding:5px 14px;border-top:1px solid var(--bdr);display:flex;align-items:center;gap:8px;cursor:pointer;background:rgba(255,255,255,.01)" onclick="toggleCard(${ip.ID})">
+    <span id="arr-${ip.ID}" style="font-size:9px;color:var(--dim2);transition:transform .14s">▶</span>
+    <span style="font-size:9px;color:var(--dim2);letter-spacing:.06em;text-transform:uppercase">Geo + Intel · Ports (${ip._ports.length}) · Shodan · CVEs (${cves.length}) · Nmap · WHOIS</span>
+</div>
+
+<!-- EXPANDABLE DETAIL -->
+<div class="ipc-detail" id="det-${ip.ID}"></div>
+</div>`;
+}
+
+/* ══ BUILD DETAIL ══ */
+function buildDetail(ip){
+    const geo=ip._geo,p=ip._parsed,cves=ip._cves,threat=ip._threat;
+    const iss=p.criminalip?.issues||{};
+    const ib=p.criminalip?.score?.inbound||'';const ob=p.criminalip?.score?.outbound||'';
+    const shodanData=p.shodan,shodanSvcs=shodanData?.data||[];
+    const nmapHosts=p.nmap||[];const ipVal=esc(ip.IP);
+    const tc=threatColor(threat);const tl=threatLabel(threat);
+    const kv=(l,v,cls='')=>(!v||v==='—')?'':`<div class="kv"><span class="kl">${l}</span><span class="kv-v ${cls}">${v}</span></div>`;
+
+    /* full port map */
+    const pmAll=new Map();
+    (p.nmap||[]).forEach(h=>(h.openPorts||[]).forEach(pt=>{const k=`${pt.port}/${pt.protocol||'tcp'}`;pmAll.set(k,{port:pt.port,proto:pt.protocol||'tcp',service:pt.service||'',version:pt.product||'',banner:'',source:'nmap',score:1+(pt.service?1:0)+(pt.product?1:0)});}));
+    shodanSvcs.forEach(s=>{const proto=(s.transport||'tcp').toLowerCase(),k=`${s.port}/${proto}`,bn=(s.data||'').replace(/[\x00-\x08\x0b\x0e-\x1f\x7f]/g,'').trim().slice(0,80);const ex=pmAll.get(k),sc=2+(bn?2:0)+(s.product?1:0)+(s.version?1:0);if(!ex||sc>ex.score)pmAll.set(k,{port:s.port,proto,service:s.product||s._shodan?.module||ex?.service||'',version:s.version||'',banner:bn,source:'shodan',score:sc});});
+    (p.shodan?.ports||[]).forEach(pt=>{const k=`${pt}/tcp`;if(!pmAll.has(k))pmAll.set(k,{port:pt,proto:'tcp',service:'',version:'',banner:'',source:'shodan',score:0});});
+    (p.criminalip?.open_port_no||[]).forEach(pt=>{const k=`${pt.port}/${pt.socket||'tcp'}`;if(!pmAll.has(k))pmAll.set(k,{port:pt.port,proto:pt.socket||'tcp',service:'',version:'',banner:'',source:'cip',score:0});});
+    const allPorts=[...pmAll.values()].sort((a,b)=>a.port-b.port);
+
+    const geoTab=`<div class="panel-grid">
+<div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--green)"></span>Geolocation</div>
+${geo.country?kv('Country',flag(geo.countryCode||geo.country)+' '+esc(geo.country)):kv('Code',esc(geo.countryCode||'—'))}
+${kv('Region',esc(geo.regionName||geo.region||''))}${kv('City',esc(geo.city||''))}
+${geo.lat?kv('Coords',`${geo.lat}, ${geo.lon}`):''}
+${kv('ISP',esc(geo.isp||''))}${geo.org&&geo.org!==geo.isp?kv('Org',esc(geo.org)):''}
+${kv('ASN',esc(geo.as||geo.asn||''),'mono')}
+${ip._hostnames.length?`<div class="kv" style="flex-direction:column;align-items:flex-start;gap:3px"><span class="kl">Hostnames</span>${ip._hostnames.slice(0,5).map(h=>`<span class="kv-v mono">${esc(h)}</span>`).join('')}</div>`:''}
+${!geo.country?`<span class="no-data">No geo — run GEO</span>`:''}
+</div>
+<div class="det-panel">
+<div class="ph"><span class="phd" style="background:#9090b0"></span>Threat Intelligence</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <div style="font-size:28px;font-weight:900;color:${tc};font-family:Consolas,monospace;line-height:1">${threat}</div>
+    <div><span style="font-size:9px;font-weight:700;color:${tc};letter-spacing:.08em">${tl}</span><div style="font-size:8px;color:var(--dim2);margin-top:2px">threat / 100</div></div>
+    <div style="flex:1;height:3px;background:var(--dim3);border-radius:2px;overflow:hidden"><div style="width:${threat}%;height:100%;background:${tc};border-radius:2px"></div></div>
+</div>
+${ib?kv('Inbound',`<span style="color:${scoreColor(ib)};font-weight:700">${esc(ib)}</span>`):''}
+${ob?kv('Outbound',`<span style="color:${scoreColor(ob)};font-weight:700">${esc(ob)}</span>`):''}
+${p.criminalip?.user_search_count!=null?kv('Searches',String(p.criminalip.user_search_count)):''}
+${Object.keys(iss).length?`<div class="issues-grid">${Object.entries(iss).map(([k,v])=>`<div class="ip-pill ${v?'ip-t':'ip-f'}">${v?'●':'○'} ${esc(k.replace('is_','').toUpperCase())}</div>`).join('')}</div>`:`<span class="no-data">No CriminalIP — run OSINT</span>`}
+</div></div>`;
+
+    const portsTab=`<div class="panel-grid full"><div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--blue)"></span>Open Ports — ${pmAll.size} total · all sources</div>
+${pmAll.size===0?`<span class="no-data">No ports — run SCAN</span>`:`<div class="pe-grid">${allPorts.map(pt=>`<div class="pe ${pt.proto==='udp'?'udp':''} ${pt.banner?'hb':''}" title="${esc(pt.service||'')}${pt.version?'\n'+esc(pt.version):''}${pt.banner?'\n'+esc(pt.banner):''}"><span class="pe-port">${pt.port}</span><span class="pe-proto">${pt.proto.toUpperCase()}</span>${pt.service?`<span class="pe-svc">${esc(pt.service.slice(0,14))}</span>`:''}${pt.version&&pt.version!==pt.service?`<span class="pe-ver">${esc(pt.version.slice(0,12))}</span>`:''}<span class="pe-src">${pt.source}</span>${pt.banner?`<span class="pe-banner">${esc(pt.banner)}</span>`:''}</div>`).join('')}</div>`}
+</div></div>`;
+
+    const shodanTab=shodanData?`<div class="panel-grid">
+<div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--blue)"></span>Shodan Summary</div>
+${kv('Org',esc(shodanData.org||''))}${kv('ISP',esc(shodanData.isp||''))}${kv('OS',esc(shodanData.os||''))}
+${kv('ASN',esc(shodanData.asn||''),'mono')}${kv('Last seen',esc(shodanData.last_update?.slice(0,10)||''))}
+${(shodanData.tags||[]).length?`<div style="margin-top:6px">${shodanData.tags.map(t=>`<span style="background:rgba(126,184,255,.08);color:var(--blue);padding:1px 5px;border-radius:2px;font-size:8px;margin:2px;display:inline-block">${esc(t)}</span>`).join('')}</div>`:''}
+${(shodanData.ports||[]).length?kv('All ports',`<span style="font-size:9px">${shodanData.ports.join(', ')}</span>`):''}
+</div>
+<div class="det-panel" style="grid-column:1/-1">
+<div class="ph"><span class="phd" style="background:var(--blue)"></span>Services (${shodanSvcs.length})</div>
+${shodanSvcs.length?shodanSvcs.map(renderSvc).join(''):`<span class="no-data">No banners</span>`}
+</div></div>`:`<div class="panel-grid full"><div class="det-panel"><div class="ph"><span class="phd" style="background:var(--blue)"></span>Shodan</div><span class="no-data">No data — run SCAN</span></div></div>`;
+
+    const cvesTab=`<div class="panel-grid full"><div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--red)"></span>Vulnerabilities (${cves.length})</div>
+${cves.length?cves.map(c=>{const sc=c.cvssv3_score||0,cc=cvssColor(sc);return`<div class="cve-item"><div class="cve-head"><span class="cve-id">${esc(c.cve_id)}</span>${sc?`<span class="cve-score" style="background:${cc}18;color:${cc}">CVSS ${sc.toFixed(1)}</span>`:''}${c.app_name?`<span style="font-size:9px;color:var(--pur);margin-left:auto">${esc(c.app_name)}</span>`:''}</div><div class="cve-desc">${esc((c.cve_description||'').slice(0,300))}${(c.cve_description||'').length>300?'…':''}</div></div>`;}).join(''):`<span class="no-data">No CVEs</span>`}
+</div></div>`;
+
+    const nmapTab=`<div class="panel-grid full"><div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--pur)"></span>Nmap</div>
+${nmapHosts.length?nmapHosts.map(h=>`${h.hostname?kv('Hostname',`<span class="kv-v mono">${esc(h.hostname)}</span>`):''}`+`${h.mac?kv('MAC',`<span class="kv-v mono">${esc(h.mac)}</span>`):''}`+`${h.osNmap?kv('OS',esc(h.osNmap)):''}${(h.openPorts||[]).length?`<div class="pe-grid" style="margin-top:6px">${h.openPorts.map(pt=>`<div class="pe" style="border-color:rgba(196,176,255,.15)"><span class="pe-port" style="color:var(--pur)">${pt.port}</span><span class="pe-proto">${(pt.protocol||'tcp').toUpperCase()}</span>${pt.service?`<span class="pe-svc">${esc(pt.service)}</span>`:''}${pt.product?`<span class="pe-ver">${esc(pt.product)}</span>`:''}</div>`).join('')}</div>`:''}`).join(''):`<span class="no-data">No Nmap — run SCAN</span>`}
+</div></div>`;
+
+    const whoisTab=`<div class="panel-grid full"><div class="det-panel">
+<div class="ph"><span class="phd" style="background:var(--amber)"></span>WHOIS (${ip._whois.length})</div>
+${ip._whois.length?ip._whois.map(renderWhois).join(''):`<span class="no-data">No WHOIS — run GEO</span>`}
+</div></div>`;
+
+    return`<div class="det-strip">
+<button class="ib grn" onclick="runAction('/api/ips/run/scann','${ipVal}','Nmap')">⬡ NMAP</button>
+<button class="ib amb" onclick="runAction('/api/ips/run/geo','${ipVal}','Geo')">◎ GEO</button>
+<button class="ib pur" onclick="runAction('/api/ips/run/osint','${ipVal}','OSINT')">◈ OSINT</button>
+<button class="ib red" onclick="deleteIP(${ip.ID},event)">✕ DEL</button>
+<span class="det-sep">|</span>
+<a class="ib blue" href="/web/ipdata?id=${ip.ID}" target="_blank">⊞ FULL PAGE →</a>
+<span class="det-sep">|</span>
+${[['IPINFO',`https://ipinfo.io/${ipVal}`],['SHODAN',`https://www.shodan.io/host/${ipVal}`],['VT',`https://www.virustotal.com/gui/ip-address/${ipVal}`],['CRIP',`https://www.criminalip.io/asset/report/${ipVal}`],['ABUSE',`https://www.abuseipdb.com/check/${ipVal}`],['CENSYS',`https://search.censys.io/hosts/${ipVal}`]].map(([l,u])=>`<a class="ib dim" href="${u}" target="_blank">${l} ↗</a>`).join('')}
+</div>
+<div class="det-tabs">
+    <div class="det-tab act" onclick="switchTab(this,'tgeo-${ip.ID}')">Geo + Intel</div>
+    <div class="det-tab" onclick="switchTab(this,'tports-${ip.ID}')">Ports (${pmAll.size})</div>
+    <div class="det-tab" onclick="switchTab(this,'tshodan-${ip.ID}')">Shodan${shodanSvcs.length?` (${shodanSvcs.length})`:''}</div>
+    <div class="det-tab" onclick="switchTab(this,'tcves-${ip.ID}')">${cves.length?`CVEs <span style="background:rgba(255,112,112,.15);color:var(--red);padding:1px 5px;border-radius:2px;font-size:8px;margin-left:3px">${cves.length}</span>`:'CVEs'}</div>
+    <div class="det-tab" onclick="switchTab(this,'tnmap-${ip.ID}')">Nmap</div>
+    <div class="det-tab" onclick="switchTab(this,'twhois-${ip.ID}')">WHOIS</div>
+</div>
+<div id="tgeo-${ip.ID}"    class="tab-pane act">${geoTab}</div>
+<div id="tports-${ip.ID}"  class="tab-pane">${portsTab}</div>
+<div id="tshodan-${ip.ID}" class="tab-pane">${shodanTab}</div>
+<div id="tcves-${ip.ID}"   class="tab-pane">${cvesTab}</div>
+<div id="tnmap-${ip.ID}"   class="tab-pane">${nmapTab}</div>
+<div id="twhois-${ip.ID}"  class="tab-pane">${whoisTab}</div>`;
+}
+
+/* ══ TOGGLE ══ */
+const openCards=new Set();
+function toggleCard(id){
+    const card=document.getElementById('card-'+id);
+    const det=document.getElementById('det-'+id);
+    const arr=document.getElementById('arr-'+id);
+    if(openCards.has(id)){
+        card.classList.remove('open');det.style.display='none';arr.style.transform='';openCards.delete(id);
+    }else{
+        if(!det.innerHTML){const ip=ALL.find(x=>x.ID===id);if(ip)det.innerHTML=buildDetail(ip);}
+        card.classList.add('open');det.style.display='';arr.style.transform='rotate(90deg)';openCards.add(id);
+    }
+}
+function switchTab(el,paneId){
+    const det=el.closest('.ipc-detail');
+    det.querySelectorAll('.det-tab').forEach(t=>t.classList.remove('act'));
+    det.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('act'));
+    el.classList.add('act');document.getElementById(paneId)?.classList.add('act');
+}
+
+/* ══ MULTI-KEY SEARCH ══ */
+function parseQuery(raw){
+    if(!raw.trim())return[];
+    return raw.split(',').map(s=>s.trim()).filter(Boolean).map(part=>{
+        const m=part.match(/^(\w+)\s*:\s*(.+)$/i);
+        return m?{key:m[1].toLowerCase(),value:m[2].trim().toLowerCase()}:{key:'*',value:part.toLowerCase()};
+    });
+}
+
+function matchThreatOp(threat,val){
+    const m=val.match(/^([><=!]{1,2})?(\d+)$/);
+    if(!m)return String(threat).includes(val);
+    const op=m[1]||'>=',n=+m[2];
+    if(op==='>='||op==='=>')return threat>=n;
+    if(op==='>')return threat>n;
+    if(op==='<='||op==='=<')return threat<=n;
+    if(op==='<')return threat<n;
+    return threat===n;
+}
+
+function matchTokens(ip,tokens){
+    if(!tokens.length)return true;
+    const geo=ip._geo,p=ip._parsed;
+    return tokens.every(({key,value})=>{
+        switch(key){
+            case 'ip':         return ip.IP.toLowerCase().includes(value);
+            case 'port':       return ip._ports.some(pt=>String(pt.port).includes(value));
+            case 'country':    return(geo.country||'').toLowerCase().includes(value)||(geo.countryCode||'').toLowerCase()===value;
+            case 'city':       return(geo.city||'').toLowerCase().includes(value);
+            case 'org':        return(geo.org||geo.isp||p.shodan?.org||'').toLowerCase().includes(value);
+            case 'asn': case 'as': return(geo.as||geo.asn||p.shodan?.asn||'').toLowerCase().includes(value);
+            case 'cve':        return ip._cves.some(c=>c.cve_id.toLowerCase().includes(value));
+            case 'host': case 'hostname': return ip._hostnames.some(h=>h.toLowerCase().includes(value));
+            case 'flag':       return Object.entries(p.criminalip?.issues||{}).some(([k,v])=>v&&k.replace('is_','').includes(value));
+            case 'inbound': case 'ib': return(p.criminalip?.score?.inbound||'').toLowerCase().includes(value);
+            case 'threat':     return matchThreatOp(ip._threat,value);
+            case 'service': case 'svc': return ip._ports.some(pt=>(pt.service||'').toLowerCase().includes(value));
+            case 'banner': return(ip._parsed.shodan?.data||[]).some(s=>{
+                const fp=extractBannerFP(s)||'';
+                return fp.toLowerCase().includes(value)||(s.data||'').toLowerCase().includes(value)||(s.http?.server||'').toLowerCase().includes(value);
             });
-        }, 30000); // 1 minuto (60,000 ms)
-
-        // Realizar la solicitud POST al servidor
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ IP: ip }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Error: ${response.statusText}`);
+            default:
+                return[ip.IP,geo.country||'',geo.countryCode||'',geo.city||'',geo.org||'',geo.isp||'',geo.as||'',
+                    ...ip._cves.map(c=>c.cve_id),...ip._hostnames,...(p.shodan?.domains||[]),
+                    p.shodan?.org||'',...Object.entries(p.criminalip?.issues||{}).filter(([,v])=>v).map(([k])=>k.replace('is_',''))
+                ].join(' ').toLowerCase().includes(value);
         }
+    });
+}
 
-        const result = await response.json();
+function renderChips(tokens){
+    const el=document.getElementById('fchips');if(!el)return;
+    if(!tokens.length){el.innerHTML='';return;}
+    el.innerHTML=tokens.map((t,i)=>
+        `<span class="fchip"><span class="fchip-k">${t.key==='*'?'':t.key+':'}</span>${esc(t.value)}<span class="fchip-x" onclick="removeChip(${i})">✕</span></span>`
+    ).join('');
+}
 
-        // Si el temporizador no se ha activado, mostrar el mensaje de éxito
-        if (!timeoutTriggered) {
-            clearTimeout(timeout); // Cancelar el temporizador
-            Swal.close();
-            Swal.fire({
-                title: 'Success!',
-                html: `<strong>${actionName}</strong> completed successfully for IP: <strong>${ip}</strong>`,
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                location.reload(); // Recargar la página para actualizar los datos
-            });
+function removeChip(idx){
+    const inp=document.getElementById('srch');
+    const parts=inp.value.split(',').map(s=>s.trim()).filter(Boolean);
+    parts.splice(idx,1);inp.value=parts.join(', ');applyFilters();
+}
+
+function addFilter(tag){
+    const inp=document.getElementById('srch');
+    const key=tag.split(':')[0].toLowerCase();
+    const parts=inp.value.split(',').map(s=>s.trim()).filter(Boolean);
+    const kept=parts.filter(p=>{const m=p.match(/^(\w+)\s*:/i);return!m||m[1].toLowerCase()!==key;});
+    kept.push(tag);inp.value=kept.join(', ');applyFilters();
+}
+
+function clearSearch(){document.getElementById('srch').value='';applyFilters();}
+
+/* ══ FILTER + RENDER ══ */
+let ALL=[],filtered=[],currentPage=1;
+document.querySelectorAll('[name="sort"]').forEach(r=>r.addEventListener('change',()=>{
+    document.querySelectorAll('[id^="sp-"]').forEach(p=>p.classList.remove('active'));
+    document.getElementById('sp-'+r.value)?.classList.add('active');
+}));
+
+function applyFilters(){
+    const tokens=parseQuery(document.getElementById('srch').value);
+    renderChips(tokens);
+    const fScan=document.querySelector('#fp-scan input').checked;
+    const fVuln=document.querySelector('#fp-vuln input').checked;
+    const fRisk=document.querySelector('#fp-risk input').checked;
+    const fClean=document.querySelector('#fp-clean input').checked;
+    const sort=document.querySelector('[name="sort"]:checked')?.value||'threat';
+    const SM={Critical:4,High:3,Moderate:2,Low:1,Safe:0};
+    filtered=ALL.filter(ip=>{
+        if(fScan&&Object.keys(ip._parsed).length===0)return false;
+        if(fVuln&&ip._cves.length===0)return false;
+        if(fRisk&&ip._threat<40)return false;
+        if(fClean&&(ip._threat>15||ip._cves.length>0||Object.values(ip._parsed.criminalip?.issues||{}).some(Boolean)))return false;
+        return matchTokens(ip,tokens);
+    });
+    filtered.sort((a,b)=>{
+        switch(sort){
+            case 'ip':return a.IP.split('.').map(n=>n.padStart(3,'0')).join('').localeCompare(b.IP.split('.').map(n=>n.padStart(3,'0')).join(''));
+            case 'cve':return b._cves.length-a._cves.length;
+            case 'inbound':return(SM[b._parsed.criminalip?.score?.inbound]||0)-(SM[a._parsed.criminalip?.score?.inbound]||0);
+            case 'ports':return b._ports.length-a._ports.length;
+            default:return b._threat-a._threat;
         }
-    } catch (error) {
-        // Manejar errores
-        console.error(`${actionName} Error for IP ${ip}:`, error);
+    });
+    currentPage=1;openCards.clear();render();
+}
 
-        // Si ocurre un error, cerrar el SweetAlert y mostrar el mensaje de error
-        if (!timeoutTriggered) {
-            Swal.close();
-        }
-        Swal.fire({
-            title: 'Error!',
-            html: `<strong>${actionName}</strong> failed for IP: <strong>${ip}</strong><br>Error: ${error.message}`,
-            icon: 'error',
-            confirmButtonText: 'OK'
-        });
+function render(){
+    const pageSize=parseInt(document.getElementById('page-sel').value)||0;
+    const total=filtered.length;
+    const page=pageSize===0?filtered:filtered.slice((currentPage-1)*pageSize,currentPage*pageSize);
+    document.getElementById('rh-count').innerHTML=`<b>${total}</b> results`;
+    const cards=document.getElementById('cards');
+    cards.innerHTML=total===0?`<div class="no-results">No IPs match filters.</div>`:page.map(ip=>buildCard(ip)).join('');
+    page.forEach(ip=>{const d=document.getElementById('det-'+ip.ID);if(d)d.style.display='none';});
+    document.getElementById('pag-info').textContent=pageSize===0?`${total} hosts`:`${(currentPage-1)*pageSize+1}–${Math.min(currentPage*pageSize,total)} of ${total}`;
+    const pages=document.getElementById('pag-pages');pages.innerHTML='';
+    if(pageSize>0&&total>pageSize){
+        const tp=Math.ceil(total/pageSize);
+        const ab=(l,pg,act,dis)=>{const btn=document.createElement('button');btn.className='pag-btn'+(act?' active':'');btn.textContent=l;btn.disabled=dis;if(!dis&&!act)btn.onclick=()=>{currentPage=pg;render();scrollTo(0,0);};pages.appendChild(btn);};
+        ab('‹',currentPage-1,false,currentPage===1);
+        for(let p=1;p<=tp;p++){if(p===1||p===tp||(p>=currentPage-2&&p<=currentPage+2))ab(p,p,p===currentPage,false);else if(pages.lastChild?.textContent!=='…'){const sp=document.createElement('span');sp.className='pag-btn';sp.style.cursor='default';sp.textContent='…';pages.appendChild(sp);}}
+        ab('›',currentPage+1,false,currentPage===tp);
     }
 }
 
-    
-        $(document).ready(function () {
-            fetchData();
+/* ══ ACTIONS ══ */
+async function runAction(endpoint,ip,label){
+    let tout=false;
+    Swal.fire({title:label,html:`Processing <b>${ip}</b>…`,allowOutsideClick:false,allowEscapeKey:false,didOpen:()=>Swal.showLoading()});
+    const timer=setTimeout(()=>{tout=true;Swal.fire({title:'Running in background',html:`<b>${label}</b> still running.`,icon:'info',confirmButtonText:'OK'}).then(()=>location.reload());},30000);
+    try{const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({IP:ip})});if(!res.ok)throw new Error(res.statusText);clearTimeout(timer);if(!tout)Swal.fire({title:'Done',html:`<b>${label}</b> done for <b>${ip}</b>`,icon:'success',confirmButtonText:'Reload'}).then(()=>location.reload());}
+    catch(e){clearTimeout(timer);if(!tout)Swal.fire({title:'Error',html:esc(e.message),icon:'error'});}
+}
+async function deleteIP(id,ev){
+    ev&&ev.stopPropagation();
+    const c=await Swal.fire({title:'Delete?',text:`ID: ${id}`,icon:'warning',showCancelButton:true,confirmButtonText:'Delete'});
+    if(!c.isConfirmed)return;
+    try{const res=await fetch('/api/ips/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ID:id})});if(!res.ok)throw new Error(res.statusText);Swal.fire('Deleted','','success').then(()=>location.reload());}
+    catch(e){Swal.fire('Error','Failed.','error');}
+}
+async function runAll(type){
+    const ep={scan:'/api/ips/run/scann',osint:'/api/ips/run/osint',geo:'/api/ips/run/geo'};
+    const lb={scan:'NMAP ALL',osint:'OSINT ALL',geo:'WHOIS ALL'};
+    if(!(await Swal.fire({title:lb[type],text:`Run on ${ALL.length} IPs?`,icon:'question',showCancelButton:true,confirmButtonText:'Run'})).isConfirmed)return;
+    const st=document.getElementById('bulk-status');let done=0;st.textContent=`0/${ALL.length}`;
+    for(const ip of ALL){try{await fetch(ep[type],{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({IP:ip.IP})});}catch(_){}st.textContent=`${++done}/${ALL.length}`;}
+    st.textContent='Done.';setTimeout(()=>location.reload(),1200);
+}
+
+/* ══ INIT ══ */
+/* ══ GEO CACHE + LEAFLET MAP ══ */
+const _geoCache=new Map();
+let _map=null;
+
+async function loadGeo(ips){
+    const toFetch=[...new Set(ips)].filter(ip=>ip&&!_geoCache.has(ip));
+    if(!toFetch.length)return;
+    const CHUNK=50;
+    for(let i=0;i<toFetch.length;i+=CHUNK){
+        const chunk=toFetch.slice(i,i+CHUNK);
+        try{
+            const res=await fetch('/api/geo/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ips:chunk})});
+            if(!res.ok)throw new Error('geo batch '+res.status);
+            const data=await res.json();
+            const found=new Set();
+            data.forEach(e=>{
+                if(!e.query)return;found.add(e.query);
+                _geoCache.set(e.query,{
+                    countryCode:e.countryCode||'',country:e.country||'',
+                    city:e.city||'',regionName:e.regionName||'',
+                    org:e.org||'',isp:e.isp||'',as:e.as||'',
+                    lat:e.lat||null,lon:e.lon||null
+                });
+            });
+            chunk.filter(ip=>!found.has(ip)).forEach(ip=>_geoCache.set(ip,{countryCode:'',country:'',city:'',lat:null,lon:null}));
+        }catch(e){
+            chunk.forEach(ip=>_geoCache.set(ip,{countryCode:'',country:'',city:'',lat:null,lon:null}));
+        }
+    }
+}
+
+function initMap(data){
+    if(!window.L){console.warn('Leaflet not loaded');return;}
+    const mapEl=document.getElementById('cmd-map');
+    if(!mapEl){console.warn('cmd-map not found');return;}
+
+    // Destroy previous instance if any
+    if(_map){_map.remove();_map=null;}
+
+    _map=L.map('cmd-map',{
+        zoomControl:true,
+        attributionControl:false,
+        scrollWheelZoom:true,
+        center:[20,10],zoom:2
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+        maxZoom:19,subdomains:'abcd'
+    }).addTo(_map);
+
+    let plotted=0;
+    const ticker=[];
+
+    data.forEach(ip=>{
+        const geo=ip._geo;
+        // lat/lon come directly from GEO field parsed by parseGeo
+        const lat=parseFloat(geo.lat||geo.latitude);
+        const lon=parseFloat(geo.lon||geo.longitude||geo.lng);
+        if(!lat||!lon||isNaN(lat)||isNaN(lon))return;
+
+        plotted++;
+
+        // Color: red if critical threat or CVEs, amber if high, blue otherwise
+        const hasCVE=ip._cves&&ip._cves.length>0;
+        const isScanner=ip._parsed?.criminalip?.issues?.is_scanner;
+        let col='#5fffb0'; // green = safe
+        if(ip._threat>=70||hasCVE)col='#ff7070';
+        else if(ip._threat>=40||isScanner)col='#ffd070';
+        else if(ip._threat>=15)col='#7eb8ff';
+
+        const size=hasCVE?10:8;
+        const icon=L.divIcon({
+            className:'',
+            html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${col};border:1.5px solid rgba(255,255,255,.4);box-shadow:0 0 ${hasCVE?8:5}px ${col}99;cursor:pointer"></div>`,
+            iconSize:[size,size],iconAnchor:[size/2,size/2]
         });
-    </script>
+
+        const country=geo.country||geo.countryCode||'—';
+        const city=geo.city?`, ${geo.city}`:'';
+        const org=(geo.org||geo.isp||'').slice(0,38);
+        const cveStr=hasCVE?`<br>⚠ <span style="color:#ff7070">${ip._cves.length} CVE${ip._cves.length>1?'s':''}</span>`:'';
+        const iss=ip._parsed?.criminalip?.issues||{};
+        const flags=Object.entries(iss).filter(([,v])=>v).map(([k])=>k.replace('is_','')).join(' · ')||'';
+
+        L.marker([lat,lon],{icon}).addTo(_map).bindPopup(
+            `<b style="color:${col};font-size:13px">${esc(ip.IP)}</b><br>`+
+            `${flag(geo.countryCode||'')} ${esc(country)}${esc(city)}<br>`+
+            (org?`<span style="color:rgba(255,255,255,.5);font-size:10px">${esc(org)}</span><br>`:'')+ 
+            `Threat <b style="color:${col}">${ip._threat}</b> · Ports <b>${ip._ports.length}</b>${cveStr}`+
+            (flags?`<br><span style="color:#ffd070;font-size:9px">${esc(flags)}</span>`:'')+
+            `<br><a href="/web/ipdata?id=${ip.ID}" target="_blank" style="color:#7eb8ff;font-size:10px">⊞ Full data →</a>`
+        );
+
+        if(ticker.length<50)ticker.push(
+            `<span class="tick-item">${flag(geo.countryCode||'')} <span>${esc(ip.IP)}</span> ${esc(country)}${esc(city)} — threat <span style="color:${col}">${ip._threat}</span></span>`
+        );
+    });
+
+    document.getElementById('map-count').textContent=`${plotted} / ${data.length} IPs plotted`;
+
+    // Ticker
+    const ti=document.getElementById('ticker-inner');
+    if(ti&&ticker.length){
+        const doubled=[...ticker,...ticker].join('');
+        ti.innerHTML=doubled;
+    }
+
+    // Force size recalc
+    setTimeout(()=>_map.invalidateSize(),50);
+    setTimeout(()=>_map.invalidateSize(),300);
+}
+
+
+
+function buildThreatOverview(data){
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+    set('t-crit', data.filter(d=>d._threat>=70).length);
+    set('t-high', data.filter(d=>d._threat>=40).length);
+    set('t-cve',  data.filter(d=>d._cves.length>0).length);
+    set('t-vpn',  data.filter(d=>{const iss=d._parsed.criminalip?.issues||{};return iss.is_vpn||iss.is_tor;}).length);
+    set('t-scan', data.filter(d=>d._parsed.criminalip?.issues?.is_scanner).length);
+    const avgPorts=data.length?Math.round(data.reduce((s,d)=>s+d._ports.length,0)/data.length):0;
+    set('t-ports', avgPorts);
+
+    // top CVEs
+    const cveMap=new Map();
+    data.forEach(d=>d._cves.forEach(c=>{if(!cveMap.has(c.cve_id))cveMap.set(c.cve_id,{...c,count:0});cveMap.get(c.cve_id).count++;}));
+    const topCVEs=[...cveMap.values()].sort((a,b)=>(b.cvssv3_score||0)-(a.cvssv3_score||0)).slice(0,4);
+    const cveEl=document.getElementById('cve-list');
+    if(cveEl)cveEl.innerHTML=topCVEs.length
+        ?topCVEs.map(c=>`<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px;font-size:9px"><span style="font-family:Consolas,monospace;color:var(--red);min-width:100px">${esc(c.cve_id)}</span><span style="color:#9090b0">CVSS ${(c.cvssv3_score||0).toFixed(1)}</span><span style="color:rgba(255,255,255,.2)">${c.count}×</span></div>`).join('')
+        :'<span style="color:rgba(255,255,255,.2);font-size:10px">No CVEs</span>';
+
+    // geo list
+    const cm=new Map();
+    data.forEach(d=>{const c=d._geo.countryCode||d._geo.country||'??';cm.set(c,(cm.get(c)||0)+1);});
+    const topC=[...cm.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);const maxC=topC[0]?.[1]||1;
+    const geoEl=document.getElementById('geo-list');
+    if(geoEl)geoEl.innerHTML=topC.map(([cc,n])=>
+        `<div class="bar-row"><span class="bar-lbl" style="display:inline-flex;align-items:center;gap:4px">${flag(cc)}<span>${esc(cc)}</span></span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxC*100)}%;background:var(--green)"></div></div><span class="bar-n">${n}</span></div>`
+    ).join('');
+}
+
+/* ══ INTELLIGENCE FUNCTIONS ══ */
+
+function swalTable(title,html,icon){
+    Swal.fire({
+        title:`<span style="font-size:13px;letter-spacing:.06em">${title}</span>`,
+        html:`<div style="text-align:left;font-family:Consolas,monospace;font-size:11px">${html}</div>`,
+        width:'82%',confirmButtonText:'Close',
+        customClass:{htmlContainer:'swal-intel'},
+        icon:icon||undefined
+    });
+}
+
+function intelCritical(){
+    if(!ALL||!ALL.length){swalTable('No data','Load IPs first');return;}
+    const crit=ALL.filter(d=>d._threat>=70).sort((a,b)=>b._threat-a._threat);
+    if(!crit.length){swalTable('Critical IPs','<span style="color:rgba(255,255,255,.4)">No IPs with threat ≥70</span>');return;}
+    const rows=crit.map(ip=>{
+        const geo=ip._geo,iss=ip._parsed?.criminalip?.issues||{};
+        const flags=Object.entries(iss).filter(([,v])=>v).map(([k])=>`<span style="background:rgba(255,112,112,.1);color:#ff9090;border-radius:2px;padding:1px 4px;font-size:8px">${k.replace('is_','')}</span>`).join(' ');
+        const g=flag(geo.countryCode||'');
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
+            <td style="padding:5px 8px;color:#ff7070;font-weight:700">${esc(ip.IP)}</td>
+            <td style="padding:5px 8px;font-size:16px;font-weight:900;color:#ff7070">${ip._threat}</td>
+            <td style="padding:5px 8px">${g} ${esc(geo.city||geo.country||'—')}</td>
+            <td style="padding:5px 8px;color:#ffd070">${ip._cves.length} CVEs</td>
+            <td style="padding:5px 8px;color:#5fffb0">${ip._ports.length} ports</td>
+            <td style="padding:5px 8px">${flags}</td>
+            <td style="padding:5px 8px"><a href="/web/ipdata?id=${ip.ID}" target="_blank" style="color:#7eb8ff;text-decoration:none">→ open</a></td>
+        </tr>`;
+    }).join('');
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    swalTable(`⚠ Critical IPs (${crit.length})`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}">IP</th><th style="${th}">Score</th><th style="${th}">Location</th><th style="${th}">CVEs</th><th style="${th}">Ports</th><th style="${th}">Flags</th><th style="${th}"></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelCVEMatrix(){
+    if(!ALL||!ALL.length){return;}
+    const cveMap=new Map();
+    ALL.forEach(ip=>{ip._cves.forEach(c=>{if(!cveMap.has(c.cve_id))cveMap.set(c.cve_id,{cve:c,ips:[]});cveMap.get(c.cve_id).ips.push(ip);});});
+    if(!cveMap.size){swalTable('CVE Matrix','<span style="color:rgba(255,255,255,.4)">No CVEs found. Run OSINT on IPs first.</span>');return;}
+    const sorted=[...cveMap.entries()].sort((a,b)=>b[1].ips.length-a[1].ips.length);
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    const rows=sorted.map(([id,{cve,ips}])=>{
+        const sc=cve.cvssv3_score||0;
+        const cc=sc>=9?'#ff7070':sc>=7?'#9090b0':sc>=4?'#7eb8ff':'rgba(255,255,255,.4)';
+        const ipList=ips.slice(0,4).map(ip=>`<span style="background:rgba(126,184,255,.08);color:#7eb8ff;border-radius:2px;padding:1px 5px">${esc(ip.IP)}</span>`).join(' ')+
+            (ips.length>4?`<span style="color:rgba(255,255,255,.3)"> +${ips.length-4}</span>`:'');
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:5px 8px;color:#ff7070;font-weight:700;white-space:nowrap">${esc(id)}</td>
+            <td style="padding:5px 8px"><span style="background:${cc}18;color:${cc};padding:1px 6px;border-radius:2px;font-weight:700">${sc.toFixed(1)}</span></td>
+            <td style="padding:5px 8px;font-size:10px;color:rgba(255,255,255,.5);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((cve.cve_description||'').slice(0,80))}</td>
+            <td style="padding:5px 8px;font-weight:700;color:#ffd070;text-align:center">${ips.length}</td>
+            <td style="padding:5px 8px">${ipList}</td>
+        </tr>`;
+    }).join('');
+    swalTable(`◈ CVE Matrix — ${cveMap.size} unique vulnerabilities`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}">CVE</th><th style="${th}">CVSS</th><th style="${th}">Description</th><th style="${th}">Affected IPs</th><th style="${th}">IPs</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelScanners(){
+    if(!ALL||!ALL.length)return;
+    const scanners=ALL.filter(d=>{
+        const iss=d._parsed?.criminalip?.issues||{};
+        return iss.is_scanner||iss.is_darkweb||iss.is_snort;
+    }).sort((a,b)=>b._threat-a._threat);
+    if(!scanners.length){swalTable('Active Scanners','<span style="color:rgba(255,255,255,.4)">No scanners flagged. Run OSINT first.</span>');return;}
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    const rows=scanners.map(ip=>{
+        const geo=ip._geo,iss=ip._parsed?.criminalip?.issues||{};
+        const ib=ip._parsed?.criminalip?.score?.inbound||'';
+        const ibC=({Critical:'#ff7070',High:'#9090b0',Moderate:'#7eb8ff'})[ib]||'rgba(255,255,255,.4)';
+        const org=(geo.org||geo.isp||'').slice(0,30);
+        const hostnames=ip._hostnames.slice(0,1).join('');
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:5px 8px;color:#ff7070;font-weight:700">${esc(ip.IP)}</td>
+            <td style="padding:5px 8px">${flag(geo.countryCode||'')} ${esc(geo.country||'—')}</td>
+            <td style="padding:5px 8px;color:rgba(255,255,255,.5);font-size:10px">${esc(org)}</td>
+            <td style="padding:5px 8px;color:rgba(255,255,255,.4);font-size:9px">${esc(hostnames)}</td>
+            <td style="padding:5px 8px;color:${ibC};font-weight:700">${esc(ib||'—')}</td>
+            <td style="padding:5px 8px">${iss.is_darkweb?'<span style="color:#ff7070">darkweb</span> ':''} ${iss.is_snort?'<span style="color:#ffd070">snort</span>':''}</td>
+            <td style="padding:5px 8px"><a href="/web/ipdata?id=${ip.ID}" target="_blank" style="color:#7eb8ff;text-decoration:none">→</a></td>
+        </tr>`;
+    }).join('');
+    swalTable(`⬡ Active Scanners (${scanners.length})`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}">IP</th><th style="${th}">Country</th><th style="${th}">Org</th><th style="${th}">Hostname</th><th style="${th}">Inbound</th><th style="${th}">Extra</th><th style="${th}"></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelASNCluster(){
+    if(!ALL||!ALL.length)return;
+    const asnMap=new Map();
+    ALL.forEach(ip=>{
+        const as=ip._geo.as||ip._geo.asn||ip._parsed?.shodan?.asn||'Unknown';
+        const key=as.split(' ')[0]||'Unknown';
+        if(!asnMap.has(key))asnMap.set(key,{asn:as,ips:[],threat:0,cves:0});
+        const e=asnMap.get(key);e.ips.push(ip);e.threat=Math.max(e.threat,ip._threat);e.cves+=ip._cves.length;
+    });
+    const sorted=[...asnMap.entries()].sort((a,b)=>b[1].ips.length-a[1].ips.length);
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    const rows=sorted.slice(0,30).map(([asn,d])=>{
+        const tc=d.threat>=70?'#ff7070':d.threat>=40?'#9090b0':d.threat>=15?'#7eb8ff':'#5fffb0';
+        const ipPills=d.ips.slice(0,3).map(ip=>`<span style="background:rgba(126,184,255,.07);color:#7eb8ff;border-radius:2px;padding:1px 4px;font-size:9px">${esc(ip.IP)}</span>`).join(' ')+
+            (d.ips.length>3?`<span style="color:rgba(255,255,255,.3);font-size:9px"> +${d.ips.length-3}</span>`:'');
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:5px 8px;color:#c4b0ff;font-weight:700">${esc(asn)}</td>
+            <td style="padding:5px 8px;color:rgba(255,255,255,.5);font-size:10px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.asn)}</td>
+            <td style="padding:5px 8px;font-weight:700;text-align:center">${d.ips.length}</td>
+            <td style="padding:5px 8px;color:${tc};font-weight:700;text-align:center">${d.threat}</td>
+            <td style="padding:5px 8px;color:#ffd070;text-align:center">${d.cves||'—'}</td>
+            <td style="padding:5px 8px">${ipPills}</td>
+        </tr>`;
+    }).join('');
+    swalTable(`◎ ASN Clusters (${asnMap.size} networks)`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}">ASN</th><th style="${th}">Network</th><th style="${th}">IPs</th><th style="${th}">Max Threat</th><th style="${th}">CVEs</th><th style="${th}">IPs</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelPortMatrix(){
+    if(!ALL||!ALL.length)return;
+    const portMap=new Map();
+    ALL.forEach(ip=>{ip._ports.forEach(pt=>{
+        const k=`${pt.port}${pt.service?'/'+pt.service.slice(0,8):''}`;
+        if(!portMap.has(k))portMap.set(k,{port:pt.port,service:pt.service||'',ips:[],proto:pt.proto});
+        portMap.get(k).ips.push(ip);
+    });});
+    const sorted=[...portMap.entries()].sort((a,b)=>b[1].ips.length-a[1].ips.length);
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    const rows=sorted.slice(0,40).map(([k,d])=>{
+        const ipPills=d.ips.slice(0,4).map(ip=>`<span style="background:rgba(95,255,176,.05);color:#5fffb0;border-radius:2px;padding:1px 4px;font-size:9px">${esc(ip.IP)}</span>`).join(' ')+
+            (d.ips.length>4?`<span style="color:rgba(255,255,255,.3);font-size:9px"> +${d.ips.length-4}</span>`:'');
+        const pct=Math.round(d.ips.length/ALL.length*100);
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:5px 8px;color:#5fffb0;font-weight:700;font-size:13px">${d.port}</td>
+            <td style="padding:5px 8px;color:rgba(255,255,255,.5)">${esc(d.service)||'—'}</td>
+            <td style="padding:5px 8px;font-size:8px;color:rgba(255,255,255,.3)">${(d.proto||'tcp').toUpperCase()}</td>
+            <td style="padding:5px 8px;font-weight:700">${d.ips.length} <span style="font-size:9px;color:rgba(255,255,255,.3)">(${pct}%)</span></td>
+            <td style="padding:5px 8px">${ipPills}</td>
+        </tr>`;
+    }).join('');
+    swalTable(`▤ Port Matrix — ${portMap.size} unique services`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}">Port</th><th style="${th}">Service</th><th style="${th}">Proto</th><th style="${th}">Hosts</th><th style="${th}">IPs</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelGeoCluster(){
+    if(!ALL||!ALL.length)return;
+    const cMap=new Map();
+    ALL.forEach(ip=>{
+        const cc=ip._geo.countryCode||ip._geo.country||'??';
+        if(!cMap.has(cc))cMap.set(cc,{country:ip._geo.country||cc,cc,ips:[],threat:0,cves:0});
+        const e=cMap.get(cc);e.ips.push(ip);e.threat=Math.max(e.threat,ip._threat);e.cves+=ip._cves.length;
+    });
+    const sorted=[...cMap.entries()].sort((a,b)=>b[1].ips.length-a[1].ips.length);
+    const th='padding:5px 8px;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.1)';
+    const rows=sorted.map(([cc,d])=>{
+        const tc=d.threat>=70?'#ff7070':d.threat>=40?'#9090b0':d.threat>=15?'#7eb8ff':'#5fffb0';
+        const bar=`<div style="height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:3px;overflow:hidden"><div style="width:${Math.round(d.ips.length/ALL.length*100)}%;height:100%;background:${tc};border-radius:2px"></div></div>`;
+        return`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:5px 8px">${flag(cc)}</td>
+            <td style="padding:5px 8px;color:rgba(255,255,255,.75)">${esc(d.country)}</td>
+            <td style="padding:5px 8px;font-weight:700;text-align:center">${d.ips.length}${bar}</td>
+            <td style="padding:5px 8px;color:${tc};font-weight:700;text-align:center">${d.threat}</td>
+            <td style="padding:5px 8px;color:#ffd070;text-align:center">${d.cves||'—'}</td>
+        </tr>`;
+    }).join('');
+    swalTable(`⊕ Geo Clusters (${cMap.size} countries)`,
+        `<div style="overflow:auto;max-height:60vh"><table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="${th}"></th><th style="${th}">Country</th><th style="${th}">IPs</th><th style="${th}">Max Threat</th><th style="${th}">CVEs</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`);
+}
+
+function intelCorrelate(){
+    if(!ALL||!ALL.length)return;
+    // IPs that are: scanner AND have CVEs AND inbound=Critical
+    const hot=ALL.filter(ip=>{
+        const iss=ip._parsed?.criminalip?.issues||{};
+        const ib=ip._parsed?.criminalip?.score?.inbound||'';
+        return (iss.is_scanner||iss.is_darkweb)&&ip._cves.length>0&&ib==='Critical';
+    }).sort((a,b)=>b._threat-a._threat);
+
+    const medium=ALL.filter(ip=>{
+        const iss=ip._parsed?.criminalip?.issues||{};
+        const ib=ip._parsed?.criminalip?.score?.inbound||'';
+        return !((iss.is_scanner||iss.is_darkweb)&&ip._cves.length>0&&ib==='Critical')
+            &&(ip._cves.length>0||iss.is_scanner)&&ip._threat>=40;
+    }).sort((a,b)=>b._threat-a._threat);
+
+    const mkSection=(title,list,col)=>{
+        if(!list.length)return`<div style="margin-bottom:12px"><div style="font-size:9px;color:${col};text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">${title} (0)</div><span style="color:rgba(255,255,255,.3);font-size:10px">None found</span></div>`;
+        return`<div style="margin-bottom:16px">
+            <div style="font-size:9px;color:${col};text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">${title} (${list.length})</div>
+            ${list.slice(0,10).map(ip=>{
+                const geo=ip._geo,iss=ip._parsed?.criminalip?.issues||{};
+                const ib=ip._parsed?.criminalip?.score?.inbound||'';
+                return`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid rgba(255,255,255,.07);border-radius:3px;margin-bottom:4px;background:rgba(255,255,255,.02)">
+                    <span style="color:${col};font-weight:700;min-width:110px">${esc(ip.IP)}</span>
+                    ${flag(geo.countryCode||'')} <span style="color:rgba(255,255,255,.5);font-size:10px">${esc(geo.country||'')}</span>
+                    <span style="background:rgba(255,112,112,.1);color:#ff7070;border-radius:2px;padding:1px 5px;font-size:8px">${ip._cves.length} CVEs</span>
+                    <span style="background:rgba(255,208,112,.08);color:#ffd070;border-radius:2px;padding:1px 5px;font-size:8px">${esc(ib)}</span>
+                    ${iss.is_scanner?'<span style="background:rgba(196,176,255,.08);color:#c4b0ff;border-radius:2px;padding:1px 5px;font-size:8px">scanner</span>':''}
+                    <span style="color:${col};font-weight:900;font-size:14px;margin-left:auto">${ip._threat}</span>
+                    <a href="/web/ipdata?id=${ip.ID}" target="_blank" style="color:#7eb8ff;font-size:10px;text-decoration:none">→</a>
+                </div>`;
+            }).join('')}
+            ${list.length>10?`<div style="font-size:9px;color:rgba(255,255,255,.3);padding:4px 8px">+${list.length-10} more</div>`:''}
+        </div>`;
+    };
+    swalTable('⊞ Threat Correlation',
+        mkSection('🔴 HIGHEST RISK — Scanner + CVEs + Critical Inbound', hot, '#ff7070')+
+        mkSection('🟡 ELEVATED — CVEs or Scanner + Threat ≥40', medium, '#ffd070'));
+}
+
+function intelExportCSV(){
+    if(!ALL||!ALL.length)return;
+    const rows=[['ID','IP','Country','City','Org','Threat','Inbound','CVEs','Ports','Scanner','Tor','VPN','Hostnames']];
+    ALL.forEach(ip=>{
+        const geo=ip._geo,iss=ip._parsed?.criminalip?.issues||{};
+        rows.push([
+            ip.ID,ip.IP,
+            geo.country||'',geo.city||'',geo.org||geo.isp||'',
+            ip._threat,ip._parsed?.criminalip?.score?.inbound||'',
+            ip._cves.length,ip._ports.length,
+            iss.is_scanner?1:0,iss.is_tor?1:0,iss.is_vpn?1:0,
+            ip._hostnames.slice(0,2).join('|')
+        ]);
+    });
+    const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ip-intel-'+Date.now()+'.csv';a.click();
+}
+
+/* Update command bar stats */
+function updateCommandBar(data){
+    const s=(id,v)=>{const el=document.getElementById(id);if(el){const n=el.querySelector('.cs-n');if(n)n.textContent=v;}};
+    s('cs-total',data.length);
+    s('cs-crit', data.filter(d=>d._threat>=70).length);
+    s('cs-cve',  data.reduce((t,d)=>t+d._cves.length,0));
+    s('cs-scan', data.filter(d=>d._parsed?.criminalip?.issues?.is_scanner).length);
+    const avgP=data.length?Math.round(data.reduce((t,d)=>t+d._ports.length,0)/data.length):0;
+    s('cs-ports',avgP);
+    s('cs-vpn',  data.filter(d=>{const iss=d._parsed?.criminalip?.issues||{};return iss.is_vpn||iss.is_tor;}).length);
+}
+
+
+/* ══ TOGGLE SECTIONS ══ */
+const _sectionState={};
+function toggleSection(sectionId, btnId) {
+    const el = document.getElementById(sectionId);
+    const btn = document.getElementById(btnId);
+    if (!el) return;
+
+    const isHidden = window.getComputedStyle(el).display === 'none';
+
+    if (isHidden) {
+        el.style.display = el.dataset.originalDisplay || (sectionId === 'intel-actions' ? 'grid' : 'block');
+    } else {
+        if (window.getComputedStyle(el).display !== 'none') {
+            el.dataset.originalDisplay = window.getComputedStyle(el).display;
+        }
+        el.style.display = 'none';
+    }
+
+    if (btn) {
+        const becomingVisible = isHidden;
+        btn.style.opacity = becomingVisible ? '1' : '0.5';
+        btn.textContent = btn.textContent.replace(/[◉○]/, becomingVisible ? '◉' : '○');
+        
+        if (becomingVisible) {
+            const color = btn.style.color;
+            let rgbaColor = '';
+            if (color === 'var(--green)') rgbaColor = 'rgba(95, 255, 176, .1)';
+            else if (color === 'var(--blue)') rgbaColor = 'rgba(126, 184, 255, .1)';
+            else if (color === 'var(--pur)') rgbaColor = 'rgba(196, 176, 255, .1)';
+            btn.style.background = rgbaColor;
+        } else {
+            btn.style.background = 'transparent';
+        }
+    }
+
+    if (isHidden && sectionId === 'map-section' && _map) {
+        setTimeout(() => _map.invalidateSize(), 50);
+    }
+}
+
+
+(async()=>{
+    const t0=Date.now();
+    try{
+        let data=await fetch('/api/ips/lists').then(r=>r.json());
+        if(!Array.isArray(data)){if(Array.isArray(data?.data))data=data.data;else if(Array.isArray(data?.ips))data=data.ips;else throw new Error('Expected array');}
+        ALL=data.map(ip=>{
+            const p=parseData(ip.DATA);
+            const geo=parseGeo(ip.GEO); // GEO field already has lat/lon from /api/ips/lists
+            const cves=collectCVEs(p),ports=collectPorts(p),threat=computeThreat(p,cves);
+            return{...ip,_parsed:p,_geo:geo,_cves:cves,_ports:ports,_threat:threat,_hostnames:collectHostnames(p),_whois:collectWhois(p)};
+        });
+        // Seed _geoCache from GEO fields so sidebar flags work
+        ALL.forEach(ip=>{if(ip._geo&&ip.IP)_geoCache.set(ip.IP,ip._geo);});
+        buildSidebar(ALL);
+        buildThreatOverview(ALL);
+        updateCommandBar(ALL);
+        initMap(ALL);
+        applyFilters();
+        document.getElementById('rh-time').textContent=`loaded in ${Date.now()-t0}ms`;
+    }catch(e){document.getElementById('cards').innerHTML=`<div class="no-results" style="color:var(--red)">Error: ${esc(e.message)}</div>`;}
+    finally{document.getElementById('overlay').style.display='none';}
+})();
+</script>
 </body>
 </html>

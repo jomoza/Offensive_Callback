@@ -2,9 +2,22 @@ const pcap = require('pcap'); // Use the pcap library for packet capture
 const crypto = require('crypto');
 const { Log } = require('../../Functions/db'); // Modelo Sequelize
 
+// ANSI escape codes for colors and styles
+const C = {
+    Reset: "\x1b[0m",
+    Bold: "\x1b[1m",
+    Dim: "\x1b[2m",
+    Red: "\x1b[31m",
+    Green: "\x1b[32m",
+    Yellow: "\x1b[33m",
+    Cyan: "\x1b[36m",
+    Magenta: "\x1b[35m",
+    White: "\x1b[37m",
+};
+
 // Function to start ICMP sniffer
 function startIcmpListener(interface = 'all') {
-    console.log(`[5ELG-ICMP] Starting ICMP sniffer on interface: ${interface || 'ALL'}`);
+    console.log(`${C.Green}[5ELG-ICMP]${C.Reset} Starting ICMP sniffer on interface: ${C.Cyan}${interface || 'ALL'}${C.Reset}`);
 
     // Define filter options
     const optionsICMP = {
@@ -15,7 +28,7 @@ function startIcmpListener(interface = 'all') {
     // Create a pcap session
     const session = pcap.createSession(interface || 'any', optionsICMP);
 
-    console.log(`[5ELG-ICMP] Listening for ICMP packets on interface: ${session.device_name}`);
+    console.log(`${C.Green}[5ELG-ICMP]${C.Reset} Listening for ICMP packets on interface: ${C.Cyan}${session.device_name}${C.Reset}`);
 
     // Handle incoming packets
     session.on('packet', (rawPacket) => {
@@ -33,7 +46,7 @@ function startIcmpListener(interface = 'all') {
                 
                 // Check if it's an ICMP Echo Request (type 8)
                 if (icmpLayer?.payload.type === 8) {
-                    console.log(`[5ELG-ICMP] PING CALLBACK FROM ${clientIP}`);
+                    console.log(`${C.Yellow}[5ELG-ICMP]${C.Reset} PING CALLBACK FROM ${C.Bold}${clientIP}${C.Reset}`);
 
                     const icmpData = icmpLayer?.payload?.data ? icmpLayer.payload.data.toString('utf8') : 'No payload';
 
@@ -70,20 +83,20 @@ function startIcmpListener(interface = 'all') {
                         Html: null,
                         Screen: null,
                     }).then(() => {
-                        console.log(`[5ELG-ICMP] Log entry created for ${clientIP}`);
+                        console.log(`${C.Green}[5ELG-ICMP]${C.Reset} Log entry created for ${C.Bold}${clientIP}${C.Reset}`);
                     }).catch((err) => {
-                        console.error(`[5ELG-ICMP] Failed to create log: ${err.message}`);
+                        console.error(`${C.Red}[5ELG-ICMP] Failed to create log: ${err.message}${C.Reset}`);
                     });
                 }
             }
         } catch (err) {
-            console.error(`[5ELG-ICMP] Error processing packet: ${err.message}`);
+            console.error(`${C.Red}[5ELG-ICMP] Error processing packet: ${err.message}${C.Reset}`);
         }
     });
 
     // Handle errors
     session.on('error', (err) => {
-        console.error(`[5ELG-ICMP] Error: ${err.message}`);
+        console.error(`${C.Red}[5ELG-ICMP] Error: ${err.message}${C.Reset}`);
     });
 }
 

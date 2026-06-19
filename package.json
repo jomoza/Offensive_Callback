@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "node main.js -help",
-    "start": "node main.js"
+    "start": "node --max-old-space-size=512 main.js"
   },
   "repository": {
     "type": "git",
@@ -18,8 +18,10 @@
   },
   "homepage": "https://github.com/jomoza/5ELG-DEV#readme",
   "dependencies": {
+    "archiver": "^7.0.1",
     "axios": "^1.7.9",
     "basic-auth": "^2.0.1",
+    "cjs": "^0.0.11",
     "cors": "^2.8.5",
     "csv-parser": "^3.1.0",
     "dotenv": "^16.4.7",

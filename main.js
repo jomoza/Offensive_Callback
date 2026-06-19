@@ -1,18 +1,31 @@
+// ANSI escape codes for colors and styles
+const C = {
+    Reset: "\x1b[0m",
+    Bold: "\x1b[1m",
+    Dim: "\x1b[2m",
+    Red: "\x1b[31m",
+    Green: "\x1b[32m",
+    Yellow: "\x1b[33m",
+    Cyan: "\x1b[36m",
+    Magenta: "\x1b[35m",
+    White: "\x1b[37m",
+};
+
 // Banner para el servidor
-console.log(`.------. .------. .------. .------.
-|5.--. | |E.--. | |L.--. | |G.--. |
-| (  ) | | (\\/) | | :/\\: | | :/\\: |
-|(_||_)| |  \\/  | | (__) | | :\\/: |
-| '--'5| | '--'E| | '--'L| | '--'G|
-'------' '------' '------' '------'
-[5ELG] Brow5er dEal finGerprinter. FINGERPRINT & OSINT WEB PANEL 
-[5ELG] See more at https://github.com/jomoza/5ELG 
-_________________________________________________`);
+console.log(`${C.Yellow}.------. .------. .------. .------.${C.Reset}`);
+console.log(`${C.Yellow}|0.--. | |F.--. | |C.--. | |4.--. |${C.Reset}`);
+console.log(`${C.Yellow}| (  ) | | (\\/) | | :/\\: | | :/\\: |${C.Reset}`);
+console.log(`${C.Yellow}|(_||_)| |  \\/  | | (__) | | :\\/: |${C.Reset}`);
+console.log(`${C.Yellow}| '--'0| | '--'F| | '--'C| | '--'4|${C.Reset}`);
+console.log(`${C.Yellow}'------' '------' '------' '------'${C.Reset}`);
+console.log(`${C.Bold}[5ELG] Brow5er dEal finGerprinter. FINGERPRINT & OSINT WEB PANEL${C.Reset}`);
+console.log(`${C.Dim}[5ELG] See more at https://github.com/jomoza/5ELG${C.Reset}`);
+console.log(`${C.Dim}_________________________________________________${C.Reset}`);
 
 
 const args = process.argv.slice(2);
 
-if (args.includes('-help')) {
+if (['-help', '--help', '-h', '-?'].some(flag => args.includes(flag))) {
     console.log(`
 Usage: node main.js [options]
 
@@ -44,17 +57,19 @@ Examples:
     process.exit(0);
 }
 
-
+//SERVICES
 const path = require('path');
 const fs = require('fs');
-const { startDnsServer } = require('./Functions/servers/dns'); // Base de datos
-const { startIcmpListener } = require('./Functions/servers/icmp'); // Base de datos
-const { runHTTPService } = require('./Functions/servers/https'); // Base de datos
+const { startDnsServer } = require('./Functions/servers/dns'); 
+const { startIcmpListener } = require('./Functions/servers/icmp'); 
+const { runHTTPService } = require('./Functions/servers/https'); 
 
-const { Log, IPINT, sequelize, Op } = require('./Functions/db'); 
-const { getDomains } = require('./Functions/utils'); 
+const { Log, IPINT, sequelize, Op } = require('./Functions/db');
+const { getDomains } = require('./Functions/utils');
+const { listUsers } = require('./Functions/auth');
 
-require('dotenv').config(); // Cargar variables de entorno
+require('dotenv').config(); // ENV
+
 
 const requiredVars = [
     'INTERFACE',
@@ -62,37 +77,94 @@ const requiredVars = [
     'DOMAIN',
     'VELG_USER',
     'VELG_PWD',
-    'ICMP_LISTENER',
     'SHODAN_API_KEY',
-    'VIRUSTOTAL_KEY',
+    'SSL_KEY_PATH',
+    'SSL_CERT_PATH',
     'INFODB_KEY',
     'CRIMINALIP_API_KEY'
 ];
 
-// Obtener la ruta de la carpeta Dealers
-const dealersFolder = path.join(__dirname, 'Dealers');
-
-fs.readdir(dealersFolder, (err, files) => {
-    if (err) {
-        console.error('[!] Error reading Dealers folder:', err.message);
-    } else {
-        if (files.length === 0) {
-            console.log(' - Dealers folder is empty.');
-        } else {
-            files.forEach((file) => {
-                console.log(`[5ELG-DEALER] Dealer found at: ${process.env.DEALERS_PATH}/${file}`);
-            });
-        }
-    }
-});
 
 function checkEnvVars() {
+    const keysToCensor = ['VELG_PWD', 'SHODAN_API_KEY', 'VIRUSTOTAL_KEY', 'INFODB_KEY', 'CRIMINALIP_API_KEY'];
+    const keysToSkip = ['HOST', 'DOMAIN'];
+
     requiredVars.forEach((varName) => {
+        if (keysToSkip.includes(varName)) return;
+
         const varValue = process.env[varName];
-        if (varValue) {
-            console.log(`[5ELG-CONFIG] ${varName} => ${varValue}`);
-        } 
+        let displayValue = varValue;
+
+        if (keysToCensor.includes(varName) && varValue) {
+            displayValue = `${C.Dim}${varValue.substring(0, 4)}***${C.Reset}`;
+        }
+
+        console.log(`${C.Magenta}[5ELG-CONFIG]${C.Reset} ${C.Cyan}.env:${varName}${C.Reset} => ${displayValue || `${C.Dim}Not Set${C.Reset}`}`);
     });
+
+    const configsPath = path.join(__dirname, 'Sources', 'data', 'configs.json');
+    if (fs.existsSync(configsPath)) {
+        try {
+            const configs = JSON.parse(fs.readFileSync(configsPath, 'utf8'));
+            Object.keys(configs).forEach(key => {
+                if (key === 'dealerdomains') return;
+                console.log(`${C.Magenta}[5ELG-CONFIG]${C.Reset} ${C.Cyan}configs.json:${key.toUpperCase()}${C.Reset} => ${C.White}${JSON.stringify(configs[key])}${C.Reset}`);
+            });
+        } catch (err) {
+            console.error(`${C.Red}[5ELG-CONFIG] Error reading configs.json:${C.Reset}`, err.message);
+        }
+    }
+}
+
+function checkDealers() {
+    const dealersPath = path.join(__dirname, 'Sources', 'data', 'dealers.json');
+    if (fs.existsSync(dealersPath)) {
+        try {
+            const dealersConfig = JSON.parse(fs.readFileSync(dealersPath, 'utf8'));
+            // Handle both {"domains": [...]} and [...]
+            const dealersList = dealersConfig.domains || (Array.isArray(dealersConfig) ? dealersConfig : []);
+            
+            const activeDealers = dealersList.filter(d => d.status === 'active');
+            
+            if (dealersList.length > 0) {
+                console.log(`${C.Green}[5ELG-DEALERS]${C.Reset} Found ${C.Bold}${dealersList.length}${C.Reset} dealers, ${C.Bold}${activeDealers.length}${C.Reset} are active.`);
+                activeDealers.forEach(dealer => {
+                    let info = `  - ${C.Red}${dealer.name}${C.Reset} ${C.Dim}(Type: ${dealer.type || 'N/A'})${C.Reset}`;
+                    if (dealer.isproxy) {
+                        info += ` ${C.Yellow}[PROXY]${C.Reset}`;
+                    }
+                    if (dealer.redirect) {
+                        info += ` -> ${C.Cyan}${dealer.redirect}${C.Reset}`;
+                    }
+                    console.log(info);
+                });
+            } else {
+                console.log(`${C.Green}[5ELG-DEALERS]${C.Reset} ${C.Dim}No dealers found in dealers.json.${C.Reset}`);
+            }
+        } catch (err) {
+            console.error(`${C.Red}[5ELG-DEALERS] Error parsing dealers.json:${C.Reset}`, err.message);
+        }
+    } else {
+        console.log(`${C.Green}[5ELG-DEALERS]${C.Reset} ${C.Dim}dealers.json not found. No dealers loaded.${C.Reset}`);
+    }
+}
+
+function checkUsers() {
+    try {
+        const users = listUsers();
+        if (!users.length) {
+            console.log(`${C.Yellow}[5ELG-USERS]${C.Reset} ${C.Dim}No users found in users.json.${C.Reset}`);
+            return;
+        }
+        console.log(`${C.Yellow}[5ELG-USERS]${C.Reset} ${C.Bold}${users.length}${C.Reset} registered user${users.length !== 1 ? 's' : ''}:`);
+        users.forEach(u => {
+            const roleColor = u.role === 'admin' ? C.Red : C.Cyan;
+            const lastLogin = u.lastLogin ? u.lastLogin.toString().slice(0, 19).replace('T', ' ') : 'never';
+            console.log(`  - ${C.White}${u.username}${C.Reset} ${roleColor}[${u.role || 'user'}]${C.Reset} ${C.Dim}last login: ${lastLogin}${C.Reset}`);
+        });
+    } catch (err) {
+        console.error(`${C.Red}[5ELG-USERS] Error reading users:${C.Reset}`, err.message);
+    }
 }
 
 const isSSL = args.includes('-ssl');
@@ -115,29 +187,59 @@ const IFACE = argIface !== -1 ? args[argIface + 1] : process.env.INTERFACE || 'l
 
 
 (async () => {
+    checkEnvVars();
+
     //RUN HTTP SERVICE TO RUN DASHBOARD, API, 
-    await runHTTPService(isSSL, HOST, PORT, SSL_PORT);
+    await runHTTPService(isSSL, HOST, PORT, SSL_PORT, DOMAIN);
     
     try {
+        // Enable WAL (Write-Ahead Logging) mode for SQLite to improve concurrency.
+        await sequelize.query('PRAGMA journal_mode=WAL;');
+        // Set a busy timeout to make SQLite wait if the database is locked, further reducing contention issues.
+        await sequelize.query('PRAGMA busy_timeout = 5000;'); // 5 seconds timeout
+        console.log(`${C.Green}[5ELG-DB]${C.Reset} WAL mode enabled & busy_timeout set to 5000ms to reduce lock contention.`);
         await sequelize.sync({ force: false, alter: false });
-        console.log("[5ELG-DB] Todas las tablas están sincronizadas.");
+        console.log(`${C.Green}[5ELG-DB]${C.Reset} Todas las tablas están sincronizadas.`);
     } catch (err) {
-        console.error("[5ELG-DB] Error al sincronizar la base de datos:", err);
+        console.error(`${C.Red}[5ELG-DB] Error al sincronizar la base de datos:${C.Reset}`, err);
     }
 
+    checkDealers();
+    checkUsers();
 
+    // Check if DNS ICMP SMTP (TODO) services should be started
     if( useDNS || process.env["DNS_SERVER"].toLowerCase() == "true" ) {
-        console.log("[5ELG-SERVICES] DNS server is running at dns://"+HOST+":53");
         startDnsServer(HOST,DOMAIN,53);                
-        const doms = getDomains();
-        doms.forEach(domain => {
-            console.log(`[5ELG-DOMAIN] ${domain.name} is ${domain.status} | IP: ${domain.ip}`);
-        });
+        const domains = getDomains();
+        if (domains && domains.length > 0) {
+            const totalDomains = domains.length;
+            const activeDomains = domains.filter(d => d.status === 'active').length;
+
+            console.log(`${C.Green}[5ELG-DOMAIN]${C.Reset} Found ${C.Bold}${totalDomains}${C.Reset} domain configurations (${C.Bold}${activeDomains} active).`);
+
+            // Agrupar por dominio raíz para encontrar el más poblado
+            const domainGroups = {};
+            domains.forEach(domain => {
+                const parts = domain.name.split('.');
+                const rootDomain = parts.length > 2 ? parts.slice(-2).join('.') : domain.name;
+                domainGroups[rootDomain] = (domainGroups[rootDomain] || 0) + 1;
+            });
+
+            const mostPopulated = Object.entries(domainGroups).reduce((max, current) => current[1] > max[1] ? current : max, ['', 0]);
+
+            if (mostPopulated[1] > 5) { // Umbral para considerar "muchos" registros
+                console.log(`  - ${C.Dim}: '${C.Reset}${C.Cyan}${mostPopulated[0]}${C.Dim}' has ${C.Reset}${C.Bold}${mostPopulated[1]}${C.Dim} records.${C.Reset}`);
+            }
+        } else {
+            console.log(`${C.Green}[5ELG-DOMAIN]${C.Reset} ${C.Dim}No domains configured.${C.Reset}`);
+        }
+
         process.env["DNS_SERVER"] = "true";
 
     }
+
     if( useICMP || process.env["ICMP_LISTENER"].toLowerCase() == "true" ) {
-        console.log("[5ELG-SERVICES] ICMP LISTENER is running at icmp://"+HOST);
+        console.log(`${C.Green}[5ELG-SERVICES]${C.Reset} ICMP LISTENER is running at ${C.Cyan}icmp://${HOST}${C.Reset}`);
         (async () => {
             try {
                 await startIcmpListener(IFACE);
@@ -148,7 +250,6 @@ const IFACE = argIface !== -1 ? args[argIface + 1] : process.env.INTERFACE || 'l
         })();
 
     }
-    checkEnvVars();
 
 
 })();

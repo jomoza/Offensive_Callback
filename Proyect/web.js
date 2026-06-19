@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Log } = require('../Functions/db'); // Modelo Sequelize
+const { Log, IPINT } = require('../Functions/db'); // Modelos Sequelize
 const { Op } = require('../Functions/db'); // Base de datos
 const sequelize = require('sequelize'); // Asegúrate de importar Sequelize correctamente
 
@@ -26,39 +26,101 @@ const webfuncs = {
         });
     },
     dashboard: async (req, res) => {
+    try {
+        const logs = await Log.findAll({
+            attributes: [
+                'Fb',
+                'Fu',
+                'Ip',
+                'Ua',        // ← faltaba
+                'Dl',
+                'Er',
+                'Ed',
+                'ID',
+                'Fr',
+                'Jd',
+                'html',
+                'screen',
+                // Ts del registro más reciente del grupo
+                [sequelize.fn('MAX', sequelize.col('Ts')), 'Ts'],
+            ],
+            where: {
+                Fu: { [Op.notIn]: ['', 'N/B'] },  // ← fix: filtra ambos valores
+                Fb: { [Op.ne]: '' },
+                Ip: { [Op.ne]: '' },
+                Dl: { [Op.ne]: 'DNS.LOG' },
+            },
+            group: ['Fb', 'Fu', 'Ip', 'Ua', 'Dl', 'Er', 'Ed', 'ID', 'Fr', 'Jd', 'html', 'screen'],
+            order: [[sequelize.fn('MAX', sequelize.col('Ts')), 'DESC']],
+        });
+
+        const safeJsonB = (v) => JSON.stringify(v || [])
+            .replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+            .replace(/&/g, '\\u0026').replace(/'/g, '\\u0027');
+        await renderTemplate(res, 'Web/browsers.html', {
+            logs,
+            logsJson: safeJsonB(logs),
+        });
+    } catch (err) {
+        console.error('[5ELG] Error querying database:', err);
+        res.status(500).send('Error loading dashboard.');
+    }
+},
+    ippanel: async (req, res) => {
         try {
-            const logs = await Log.findAll({
-                attributes: [
-                    [sequelize.fn('MAX', sequelize.col('Ts')), 'latestTs'], // Obtener el último Ts
-                    'Fb', // Mantener el Fb único
-                    'Fu', // Fingerprint for user 
-                    'Ip', // IP
-                    'Ts', // TimeStamp 
-                    'Dl', // Dealer/Data
-                    'Er', // 
-                    'Ed', // 
-                    'ID', // 
-                    'Fr', // 
-                    'Jd', // 
-                    'html', // 
-                    'screen' // Screenshots 
-                ],
-                where: {
-                    Fu: { [Op.ne]: '' || 'N/B' },
-                    Fb: { [Op.ne]: '' },
-                    Ip: { [Op.ne]: '' },
-                },
-                group: ['Fb'], // Agrupar por Fb para eliminar duplicados
-                order: [[sequelize.fn('MAX', sequelize.col('Ts')), 'DESC']], // Ordenar por el último Ts
-            });
-    
-            await renderTemplate(res, 'Web/browsers.html', { logs });
+            // XSS-safe JSON: encodes <, >, &, ' as Unicode escapes so data
+            // can never close a <script> tag or inject HTML, even in edge cases.
+            const safeJson = (v) => JSON.stringify(v || [])
+                .replace(/</g,  '\\u003c')
+                .replace(/>/g,  '\\u003e')
+                .replace(/&/g,  '\\u0026')
+                .replace(/'/g,  '\\u0027');
+
+            const [logsResult, ipsResult] = await Promise.allSettled([
+                // Raw log entries (no GROUP BY) — last 10 000 records ordered by date.
+                // Only the fields analyzeRAW() actually uses; Er/Jd can be large so keep them
+                // but drop html/screen/Ed/Fr which are never read by the analysis.
+                Log.findAll({
+                    attributes: ['ID', 'Fu', 'Fb', 'Ip', 'Ua', 'Dl', 'Er', 'Jd', 'Ts'],
+                    where: {
+                        Ip: { [Op.ne]: '' },
+                        Dl: { [Op.ne]: 'DNS.LOG' },
+                    },
+                    order: [['Ts', 'DESC']],
+                    limit: 10000,
+                }),
+                IPINT.findAll({
+                    attributes: ['ID', 'IP', 'DATA', 'GEO', 'SCAN', 'INTEL'],
+                    order: [['ID', 'DESC']],
+                }),
+            ]);
+
+            const logs = logsResult.status === 'fulfilled' ? logsResult.value : [];
+            const ips  = ipsResult.status  === 'fulfilled' ? ipsResult.value  : [];
+
+            if (logsResult.status === 'rejected')
+                console.error('[5ELG] ippanel logs error:', logsResult.reason);
+            if (ipsResult.status === 'rejected')
+                console.error('[5ELG] ippanel ips error:', ipsResult.reason);
+
+            // Bypass Handlebars — direct string replace is deterministic and
+            // avoids any template-engine ambiguity with the large JSON payload.
+            const template = fs.readFileSync(
+                path.join(__dirname, '../Web/index.html'), 'utf8'
+            );
+            const html = template
+                .replace('{{{logsJson}}}', safeJson(logs))
+                .replace('{{{ipsJson}}}',  safeJson(ips));
+
+            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.send(html);
         } catch (err) {
-            console.error('[5ELG] Error querying database:', err);
-            res.status(500).send('Error loading dashboard.');
+            console.error('[5ELG] ippanel fatal:', err);
+            res.status(500).send('Error loading index.');
         }
     },
-        
+   
     createLog: (req, res) => {
         // Código para crear un nuevo log
         res.send('Create log logic goes here.');
@@ -78,54 +140,62 @@ const webfuncs = {
     },
     infoDeal: async (req, res) => {
         try {
-            // Validar si se ha proporcionado un ID
             if (!req.query.id) {
                 return res.status(400).send('Error: Falta el parámetro "id".');
             }
-    
-            // Buscar el registro en la base de datos
-            var result = await Log.findAll({
-                where: {
-                    Fr: { [Op.eq]: req.query.id }, 
-                },
+
+            const result = await Log.findAll({
+                where: { Fr: { [Op.eq]: req.query.id } },
             });
 
-            // Construir las rutas de los archivos Base64
+            if (result.length === 0) {
+                return res.status(404).send('Error: No se encontraron datos para el ID proporcionado.');
+            }
+
+            const record = result[0];
+
+
+            // Try legacy files first, fall back to DB BLOB fields
             const screenshotDir = path.join(__dirname, '../Sources/screenshotsB64');
             const shotPath = path.join(screenshotDir, `${req.query.id}.shot`);
             const codePath = path.join(screenshotDir, `${req.query.id}.code`);
 
-            // Leer los archivos Base64 (si existen)
+
             let base64Shot = null;
             let base64Code = null;
 
             if (fs.existsSync(shotPath)) {
-                base64Shot = fs.readFileSync(shotPath, 'utf8'); // Leer archivo como texto
+                base64Shot = fs.readFileSync(shotPath, 'utf8');
+
+            } else if (record.screen) {
+                try {
+                    const raw = Buffer.from(record.screen).toString('utf8');
+                    base64Shot = decodeURIComponent(raw);
+                } catch (e) { /* silent */ }
             } else {
-                console.warn(`[5ELG] Archivo no encontrado: ${shotPath}`);
             }
 
             if (fs.existsSync(codePath)) {
-                base64Code = fs.readFileSync(codePath, 'utf8'); // Leer archivo como texto
-            } else {
-                console.warn(`[5ELG] Archivo no encontrado: ${codePath}`);
+                base64Code = fs.readFileSync(codePath, 'utf8');
+            } else if (record.html) {
+                base64Code = Buffer.from(record.html).toString('utf8');
             }
-    
-            // Verificar si se encontraron resultados
-            if (result.length === 0) {
-                return res.status(404).send('Error: No se encontraron datos para el ID proporcionado.');
-            }
-    
-            // Renderizar la plantilla con los datos encontrados
-            // Renderizar la plantilla con los datos encontrados y los Base64
-            await renderTemplate(res, 'Web/info.html', { 
-                result, 
-                base64Shot, 
-                base64Code 
+
+            // Decode the URL-encoded wrapper so the client gets clean base64
+            let base64CodeClean = null;
+            let base64ShotClean = null;
+            if (base64Code) { try { base64CodeClean = decodeURIComponent(base64Code); } catch(_){ base64CodeClean = base64Code; } }
+            if (base64Shot) { try { base64ShotClean = decodeURIComponent(base64Shot); } catch(_){ base64ShotClean = base64Shot; } }
+
+
+            // Template uses {{#each result}} so pass result array; base64 accessed via {{@root.*}}
+            await renderTemplate(res, 'Web/info.html', {
+                result,
+                base64Shot: base64ShotClean,
+                base64Code: base64CodeClean,
             });
-            
+
         } catch (err) {
-            // Manejo de errores y envío de respuesta al cliente
             console.error('[5ELG] Error procesando la solicitud:', err.message);
             res.status(500).send('Error procesando la solicitud.');
         }
@@ -174,73 +244,18 @@ const webfuncs = {
             res.status(200).send(data); // Enviar el contenido del archivo HTML
         });  
     },
-    dealer: async (req, res) => {
-         var ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || '';
-         var userAgent = req.body.Ua || req.headers['user-agent'] || '';
+    runOldDealer: (req, res) => {
+        const filePath = path.join(__dirname, '../Web/oldmerca.html'); // Ruta del archivo HTML
 
-         // Obtener los parámetros del request
-         var fpUser = req.body.u || ''; // Parámetro "u"
-         var fpBrowser = req.body.b || ''; // Parámetro "b"
-         var fpRequest = req.body.r || ''; // Parámetro "r"
-         var jsData = req.body.data || ''; // Datos JS
-         var encodedPage = req.body.code || ''; // Página codificada
-         var encodedScr = req.body.s || ''; // Captura de pantalla codificada
-         var rts = req.body.ts || ''; // Captura de pantalla codificada
-
-         // Obtener las cookies
-         var cookies = {};
-         (req.cookies || []).forEach((cookie) => {
-             cookies[cookie.name] = cookie.value;
-         });
-
-         // varruir el objeto `requestData` con información adicional de la petición
-         var requestData = {
-             headers: req.headers, // Todas las cabeceras de la petición
-             cookies: cookies, // Cookies obtenidas
-             requestURL: req.originalUrl || req.url, // URL de la petición
-             method: req.method, // Método HTTP (GET, POST, etc.)
-             dealer_uri: req.headers['origin'] || '', // Origen de la petición
-             merca_uri: req.headers['referer'] || '', // Referer (si está disponible)
-         };
-
-         // Codificar la información de la petición en Base64
-         var encodedReq = Buffer.from(JSON.stringify(requestData)).toString('base64');
-
-        var detectdata = false;
-        // Si es una solicitud GET normal, devolver el archivo HTML
-        if (req.method === 'GET') {
-            var filePath = path.join(__dirname, '../Web/merca.html'); // Ruta del archivo HTML
-            fs.readFile(filePath, 'utf8', (err, data) => {
-                if (err) {
-                    console.error('[!] Error al leer el archivo HTML:', err.message);
-                    res.status(500).send('ERROR'); // Respuesta con error 500
-                    return;
-                }
-
-                res.status(200).send(data); // Enviar el contenido del archivo HTML
-            });
-            return;
-        }
-
-        if (req.path.endsWith('.png')) {        
-            detectdata = true;
-        } 
-        
-        if (req.method === 'POST') {
-            detectdata = true;  
-        } 
-
-        if (detectdata) {
-            processDealerData({ fpRequest, encodedScr, encodedPage, jsData, encodedReq, rts, ip, userAgent, fpUser, fpBrowser })
-        }
-        res.setHeader('Content-Type', 'image/png');
-        const imagePath = path.join(__dirname, '../Web/assets/img/1.png');
-        return res.sendFile(imagePath, (err) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
             if (err) {
-                console.error('[DealerHandler] Error al enviar el archivo PNG:', err.message);
-                res.status(500).send('Error al enviar la imagen');
+                console.error('[!] Error al leer el archivo HTML:', err.message);
+                res.status(500).send('ERROR'); // Respuesta con error 500
+                return;
             }
-        });
+    
+            res.status(200).send(data); // Enviar el contenido del archivo HTML
+        });  
     },
     dealerData: (req, res) => {
         //database.html
@@ -316,9 +331,7 @@ router.use('/upload', webfuncs.scope); //FILE UPLOAD
 
 router.use('/logs', webfuncs.createLog); 
 //INTERNAL DEALER EXEMPLE
-router.use('/dealer', webfuncs.dealer); 
-router.use('/dealer.png', webfuncs.dealer); 
-router.use('/', webfuncs.indexHandler); 
+router.use('/index', webfuncs.ippanel); 
 
 // Exportar el router para que pueda ser utilizado en el servidor principal
 module.exports = router;

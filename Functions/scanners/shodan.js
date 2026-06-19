@@ -1,147 +1,108 @@
 require('dotenv').config();
 const ShodanClient = require('shodan-client');
 const axios = require('axios');
-const { IPINT } = require('../db'); // Modelo Sequelize
+const { IPINT } = require('../db');
 
-// Función para obtener información de Shodan
+// ANSI escape codes for colors and styles
+const C = {
+    Reset: "\x1b[0m",
+    Bold: "\x1b[1m",
+    Dim: "\x1b[2m",
+    Red: "\x1b[31m",
+    Green: "\x1b[32m",
+    Yellow: "\x1b[33m",
+    Cyan: "\x1b[36m",
+    Magenta: "\x1b[35m",
+    White: "\x1b[37m",
+};
+
+function safeParse(raw) {
+    if (!raw) return {};
+    try { return typeof raw === 'string' ? JSON.parse(raw) : raw; }
+    catch(_) { return {}; }
+}
+
 async function fetchShodanData(ip, retries = 3) {
     try {
-        // Obtener información de la IP usando Shodan
         const data = await ShodanClient.host(ip, process.env.SHODAN_API_KEY);
-        console.log('[5ELG-SHODAN] Shodan API Response:', data);
+        console.log(`${C.Magenta}[5ELG-SHODAN]${C.Reset} Response for ${C.Bold}${ip}${C.Reset}: ${C.Dim}${JSON.stringify(data).slice(0, 200)}${C.Reset}`);
         return data;
     } catch (error) {
+        console.error(`${C.Red}[5ELG-SHODAN] Error for ${ip}:${C.Reset}`, error.message);
         if (retries > 0) {
-            console.warn(`[5ELG-SHODAN] Error fetching data from Shodan for IP ${ip}. Retrying in 5 seconds... (${retries} retries left)`);
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Esperar 5 segundos antes de reintentar
+            console.warn(`${C.Yellow}[5ELG-SHODAN] Retrying in 5s... (${retries} left)${C.Reset}`);
+            await new Promise(r => setTimeout(r, 5000));
             return fetchShodanData(ip, retries - 1);
-        } else {
-            console.error(`[5ELG-SHODAN] Error fetching data from Shodan for IP ${ip}:`, error.message);
-            return null;
         }
+        return null;
     }
 }
 
-// Función para actualizar la base de datos
 async function updateSHODANIPData(ip) {
     try {
-        // Buscar la IP en la base de datos
-        const ipRecord = await IPINT.findOne({ where: { IP: ip } });
-
-        if (!ipRecord) {
-            console.error(`[5ELG-DB] IP ${ip} not found in the database.`);
-            return;
-        }
-
-        // Obtener datos de Shodan
-        const shodanData = await fetchShodanData(ip);
-
-        if (!shodanData) {
-            console.error('No data received from Shodan.');
-            return;
-        }
-
-        // Fusionar los datos existentes en `DATA` con los nuevos datos de Shodan
-        let existingData = {};
-        if (ipRecord.DATA) {
-            try {
-                existingData = JSON.parse(JSON.parse(ipRecord.DATA));
-            } catch (error) {
-                console.warn(`[5ELG-SHODAN] Error parsing existing DATA for IP: ${ip}. Initializing as empty object.`);
-                existingData = {};
-            }
-        }
-
-        // Añadir la información de Shodan sin sobrescribir el resto de los datos
-        const updatedData = {
-            ...existingData, // Mantener los datos existentes
-            shodan: shodanData, // Agregar la nueva información de Shodan
-        };
-
-        // Actualizar el registro en la base de datos
-        await IPINT.update({ DATA: JSON.stringify(updatedData) }, { where: { IP: ip } }); // Agregar where correctamente
-        console.log(`[5ELG-SHODAN] IP ${ip} updated successfully in the database.`);
-    } catch (error) {
-        console.error('Error updating IP data in the database:', error.message);
-    }
-}
-
-
-// Función para obtener información de CriminalIP usando su API
-async function fetchCriminalIPReport(ip) {
-    const API_KEY = process.env.CRIMINALIP_API_KEY;
-
-    if (!API_KEY) {
-        console.error("[5ELG-CRIMINALIP] Error: CRIMINALIP_API_KEY no está configurada en las variables de entorno.");
-        return null;
-    }
-
-    try {
-        // URL del endpoint para consultar IPs con el parámetro `full=true`
-        const url = `https://api.criminalip.io/v1/asset/ip/report?ip=${ip}&full=true`;
-
-        // Realizar la solicitud GET con el encabezado de autorización
-        const response = await axios.get(url, {
-            headers: {
-                'x-api-key': API_KEY, // Clave API en el encabezado
-            },
+        const [ipRecord] = await IPINT.findOrCreate({
+            where: { IP: ip },
+            defaults: { MAC: null, DATA: null, GEO: null, SCAN: false, INTEL: null },
         });
 
-        // Mostrar los datos obtenidos de la API
-        const data = response.data;
-        console.log(`[5ELG-CRIMINALIP] Datos de CriminalIP para la IP ${ip}:`, JSON.stringify(data, null, 2));
+        const shodanData = await fetchShodanData(ip);
+        if (!shodanData) {
+            console.error(`${C.Red}[5ELG-SHODAN] No data for ${ip}${C.Reset}`);
+            return;
+        }
+
+        const existingData = safeParse(ipRecord.DATA);
+        const updatedData  = { ...existingData, shodan: shodanData };
+
+        // DataTypes.JSON → objeto directo, sin JSON.stringify
+        await ipRecord.update({ DATA: updatedData });
+        console.log(`${C.Magenta}[5ELG-SHODAN]${C.Reset} Updated ${C.Bold}${ip}${C.Reset}`);
+    } catch (error) {
+        console.error(`${C.Red}[5ELG-SHODAN] updateSHODANIPData error:${C.Reset}`, error.message);
+    }
+}
+
+async function fetchCriminalIPReport(ip) {
+    const API_KEY = process.env.CRIMINALIP_API_KEY;
+    if (!API_KEY) {
+        console.error(`${C.Red}[5ELG-CRIMINALIP] CRIMINALIP_API_KEY not set${C.Reset}`);
+        return null;
+    }
+    try {
+        const { data } = await axios.get(
+            `https://api.criminalip.io/v1/asset/ip/report?ip=${ip}&full=true`,
+            { headers: { 'x-api-key': API_KEY } }
+        );
+        console.log(`${C.Magenta}[5ELG-CRIMINALIP]${C.Reset} Got data for ${C.Bold}${ip}${C.Reset}`);
         return data;
     } catch (error) {
-        console.error(`[5ELG-CRIMINALIP] Error obteniendo información de CriminalIP para la IP ${ip}:`, error.message);
-        if (error.response) {
-            console.error("Detalles del error:", JSON.stringify(error.response.data, null, 2));
-        }
+        console.error(`${C.Red}[5ELG-CRIMINALIP] Error for ${ip}:${C.Reset}`, error.message);
+        if (error.response) console.error(`${C.Dim}Details: ${JSON.stringify(error.response.data)}${C.Reset}`);
         return null;
     }
 }
 
-// Función para actualizar la base de datos con datos de CriminalIP
 async function updateCriminalIPData(ip) {
     try {
-        // Buscar la IP en la base de datos
-        const ipRecord = await IPINT.findOne({ where: { IP: ip } });
+        const [ipRecord] = await IPINT.findOrCreate({
+            where: { IP: ip },
+            defaults: { MAC: null, DATA: null, GEO: null, SCAN: false, INTEL: null },
+        });
 
-        if (!ipRecord) {
-            console.error(`[5ELG-DB] IP ${ip} not found in the database.`);
-            return;
-        }
-
-        // Obtener datos de CriminalIP
         const criminalIPData = await fetchCriminalIPReport(ip);
-
         if (!criminalIPData) {
-            console.error('No data received from CriminalIP.');
+            console.error(`${C.Red}[5ELG-CRIMINALIP] No data for ${ip}${C.Reset}`);
             return;
         }
 
-        let existingData = {};
-        if (ipRecord.DATA) {
-            try {
-                existingData = JSON.parse(JSON.parse(ipRecord.DATA));
-            } catch (error) {
-                console.warn(`[5ELG-CRIMINALIP] Error parsing existing DATA for IP: ${ip}. Initializing as empty object.`);
-                existingData = {};
-            }
-        }
+        const existingData = safeParse(ipRecord.DATA);
+        const updatedData  = { ...existingData, criminalip: criminalIPData };
 
-        // Fusionar los datos existentes con los nuevos datos de CriminalIP
-        const updatedData = {
-            ...existingData, // Mantener los datos existentes
-            criminalip: criminalIPData, // Agregar la nueva información de CriminalIP
-        };
-
-        // Actualizar el registro en la base de datos
-        await IPINT.update({ DATA: JSON.stringify(updatedData) }, { where: { IP: ip } }); // Agregar where correctamente
-        console.log(`IP ${ip} updated successfully in the database with CriminalIP data.`);
+        await ipRecord.update({ DATA: updatedData });
+        console.log(`${C.Magenta}[5ELG-CRIMINALIP]${C.Reset} Updated ${C.Bold}${ip}${C.Reset}`);
     } catch (error) {
-        console.error('Error updating IP data in the database:', error.message);
+        console.error(`${C.Red}[5ELG-CRIMINALIP] updateCriminalIPData error:${C.Reset}`, error.message);
     }
 }
-
 
 module.exports = { updateSHODANIPData, updateCriminalIPData };

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5ELG Dealer Example</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.rawgit.com/h2non/jsHashes/master/hashes.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+
+    <script>
+        let dealerUri = "";
+        let encodedPageHTML;
+        let encodedImg;
+        let fingerprint;
+        const SHA256 = new Hashes.SHA256();
+
+
+        function getGpuModel() {
+            let canvas = document.createElement("canvas");
+            let gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+            return gl ? gl.getParameter(gl.RENDERER) : "WebGL not supported";
+        }
+
+        function objToString(obj) {
+            return Object.entries(obj).reduce((str, [key, val]) => `${str}${key}::${val}\n`, '');
+        }
+
+        // Collect extensive browser and device data for fingerprinting, including experimental APIs
+        function getFingerprintDataExtended() {
+            let data = {};
+
+            // Browser plugins
+            data.browserPlugins = [...navigator.plugins].map(p => `${p.name} ${p.version}`).join(";");
+
+            // Device data
+            let deviceData = {};
+            ["hardwareConcurrency", "maxTouchPoints", "platform", "product", "vendor", "languages", "deviceMemory"].forEach(key => {
+                deviceData[key] = navigator[key] || null;
+            });
+
+            // GPU information
+            data.gpuData = {
+                colorDepth: screen.colorDepth,
+                renderer: getGpuModel()
+            };
+
+            // Browser data
+            let browserData = {};
+            ["appCodeName", "appName", "appVersion", "language", "product", "productSub", "userAgent", "onLine"].forEach(key => {
+                browserData[key] = navigator[key] || null;
+            });
+            browserData.actualUri = location.href;
+
+            // Collect permission statuses
+            let permissions = {};
+            ["geolocation", "accelerometer", "camera", "clipboard-read", "clipboard-write", "microphone", "notifications", "persistent-storage", "payment-handler", "midi"].forEach(permission => {
+                navigator.permissions.query({ name: permission }).then(status => {
+                    permissions[permission] = status.state;
+                }).catch(err => console.warn(`Permission query failed for ${permission}:`, err));
+            });
+            browserData.permissions = objToString(permissions);
+
+            // Battery data
+            if (navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    browserData.batteryData = {
+                        charging: battery.charging,
+                        chargingTime: battery.chargingTime,
+                        dischargingTime: battery.dischargingTime,
+                        level: battery.level
+                    };
+                }).catch(err => console.warn('Failed to access battery data:', err));
+            }
+
+            // Media devices
+            if (navigator.mediaDevices) {
+                navigator.mediaDevices.enumerateDevices().then(devices => {
+                    browserData.mediaDevices = devices.map(d => `${d.kind}: ${d.label}`).join("; ");
+                }).catch(err => console.warn('Failed to access media devices:', err));
+            }
+
+            // WebRTC IP leaks (getting local IP via WebRTC)
+            try {
+                let rtcPeerConnection = new RTCPeerConnection({ iceServers: [] });
+                rtcPeerConnection.createDataChannel(''); // Create an empty data channel
+                rtcPeerConnection.createOffer()
+                    .then(offer => rtcPeerConnection.setLocalDescription(offer))
+                    .catch(err => console.warn('Error creating offer:', err));
+
+                rtcPeerConnection.onicecandidate = function (ice) {
+                    // Ensure the candidate is not null and has valid information
+                    if (ice.candidate && ice.candidate.candidate) {
+                        const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
+                        browserData.rtcdata = ice.candidate.candidate;
+                        const localIP = ice.candidate.candidate.match(ipRegex);
+                        if (localIP) {
+                            browserData.localIP = localIP[1]; // Store the extracted IP address
+                            console.log('Local IP detected:', localIP[1]);
+                        }
+                    } else {
+                        console.log('ICE gathering completed or no valid candidate found.');
+                    }
+                };
+            } catch (err) {
+                console.warn('Failed to access WebRTC IP:', err);
+            }
+
+
+            // Network Information API (Experimental)
+            try {
+                if (navigator.connection) {
+                    browserData.networkInfo = {
+                        downlink: navigator.connection.downlink,
+                        effectiveType: navigator.connection.effectiveType,
+                        rtt: navigator.connection.rtt,
+                        saveData: navigator.connection.saveData
+                    };
+                }
+            } catch (err) {
+                console.warn('Failed to access network information:', err);
+            }
+
+            // Device Orientation and Motion (Experimental)
+            try {
+                window.addEventListener("deviceorientation", function (event) {
+                    browserData.deviceOrientation = {
+                        alpha: event.alpha,
+                        beta: event.beta,
+                        gamma: event.gamma
+                    };
+                }, true);
+
+                window.addEventListener("devicemotion", function (event) {
+                    browserData.deviceMotion = {
+                        acceleration: event.acceleration,
+                        accelerationIncludingGravity: event.accelerationIncludingGravity,
+                        rotationRate: event.rotationRate,
+                        interval: event.interval
+                    };
+                }, true);
+            } catch (err) {
+                console.warn('Failed to access device orientation/motion:', err);
+            }
+
+            // Memory API (Experimental)
+            try {
+                if (performance && performance.memory) {
+                    browserData.memoryInfo = {
+                        jsHeapSizeLimit: performance.memory.jsHeapSizeLimit,
+                        totalJSHeapSize: performance.memory.totalJSHeapSize,
+                        usedJSHeapSize: performance.memory.usedJSHeapSize
+                    };
+                }
+            } catch (err) {
+                console.warn('Failed to access memory information:', err);
+            }
+
+            // Touch Capabilities (Experimental)
+            try {
+                browserData.touchCapabilities = {
+                    maxTouchPoints: navigator.maxTouchPoints,
+                    touchEventSupported: 'ontouchstart' in window,
+                    pointerEventSupported: 'onpointerdown' in window
+                };
+            } catch (err) {
+                console.warn('Failed to access touch capabilities:', err);
+            }
+
+            data.deviceData = deviceData;
+            data.browserData = browserData;
+            return data;
+        }
+
+        function generateBrowserFingerprint() {
+            const fingerprintData = {
+                cookieEnabled: navigator.cookieEnabled,
+                font: getComputedStyle(document.documentElement).fontSize,
+                primaryLanguage: navigator.language || navigator.userLanguage || navigator.browserLanguage,
+                timezone: new Date().getTimezoneOffset() / -60,
+                screenResolution: `${screen.width}x${screen.height}`
+            };
+            return SHA256.hex(JSON.stringify(fingerprintData));
+        }
+
+        window.onload = function() {
+            try {
+                const data = getFingerprintDataExtended();
+                const userFingerprint = generateBrowserFingerprint();
+                const fingerprintData = SHA256.hex(JSON.stringify(data));
+                const pageHTML = document.documentElement.outerHTML;
+                encodedPageHTML = btoa(encodeURIComponent(pageHTML)); // Encode page HTML
+
+                html2canvas(document.body).then(canvas => {
+                    encodedImg = canvas.toDataURL().replace(/^data:image\/(png|jpg);base64,/, ""); // Screenshot encoding
+
+                    // Prepare data to send to server
+                    const payload = new URLSearchParams({
+                        u: userFingerprint,
+                        b: fingerprintData,
+                        r: SHA256.hex(JSON.stringify(data)),
+                        code: encodeURIComponent(encodedPageHTML),
+                        s: encodeURIComponent(encodedImg),
+                        data: btoa(JSON.stringify(data))
+                    });
+
+                    // Send POST request
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("POST", dealerUri, true);
+                    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    xhr.onreadystatechange = function() {
+                        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+                            console.log("Data sent successfully!");
+                        }
+                    };
+                    xhr.send(payload.toString());
+                });
+            } catch (error) {
+                console.error("Error during fingerprinting:", error);
+            }
+        };
+
+
+    </script>
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        p {
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+
+        .highlight {
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .github-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .github-link a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #2980b9;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .github-link a:hover {
+            background-color: #3498db;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Welcome to the 5ELG Dealer Example</h1>
+        <p>
+            This is a demonstration of a <span class="highlight">dealer</span> within the <strong>5ELG Project</strong>.
+            The 5ELG system is designed to track, log, and analyze interactions from dealers, which are responsible for collecting browser and user fingerprint data.
+        </p>
+        <p>
+            Please note that all the data collected through this example dealer is strictly for <span class="highlight">academic purposes</span>.
+            The collected information is used solely for research, educational, and non-commercial purposes.
+            We take data privacy seriously, and no personal or sensitive data will be sold, shared, or used outside of its intended academic scope.
+        </p>
+        <p>
+            If you are interested in learning more about the 5ELG project, its architecture, or how this data is processed,
+            please feel free to visit the official repository on <span class="highlight">GitHub</span>. The repository contains detailed documentation on the system, 
+            including how to set up your own dealers and interact with the various APIs available within 5ELG.
+        </p>
+        <div class="github-link">
+            <a href="https://github.com/jomoza/5ELG" target="_blank">Visit our GitHub Repository</a>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2024 5ELG Project. All Rights Reserved. Data collected is for academic use only.
+    </footer>
+
+  
+  <noscript>
+    <style>
+      #nojs-image { display: none; }
+    </style>
+     <img src="/dealer/dl.php?unjs=true&u=img-ping&b=CSS_BLOCKING-DETECTED" id="nojs-image">
+
+    //# sourceMappingURL=/dealer/dl.php?unjs=true&u=sourcemap-ping&b=NOSCRIPT-DETECTED
+    <style>
+     
+        @font-face { 
+            font-family: 'Ubuntu'; 
+            src: local('Ubuntu'), url('/dealer/dl.php?unjs=true&u=cssTracking(ubuntu)&b=NOSCRIPT-DETECTED') format('truetype'); 
+        }
+        @font-face { 
+            font-family: 'Calibri'; src: local('Calibri'), url('/dealer/dl.php?unjs=true&u=cssTracking(Linux)&b=NOSCRIPT-DETECTED') format('truetype'); 
+        }
+        @font-face { font-family: 'MS UI Gothic'; src: local('Roboto'), url('/dealer/dl.php?unjs=true&u=cssTracking(Windows)&b=NOSCRIPT-DETECTED') format('truetype') }
+
+        @supports(-webkit-app-region: inherit) { .badboy { background: url('/dealer/dl.php?unjs=true&u=cssTracking(ChromeBasedBrowser)&b=NOSCRIPT-DETECTED') } }
+        @supports(-moz-appearance: inherit) { .badboy { background: url('/dealer/dl.php?unjs=true&u=cssTracking(FirefoxBasedBrowser)&b=NOSCRIPT-DETECTED') } }
+        @supports(-apple-pay-button-style: inherit) { .badboy { background: url('/dealer/dl.php?unjs=true&u=cssTracking(cssWebkit)&b=NOSCRIPT-DETECTED') } }
+        @supports(-webkit-touch-callout: inherit) { .badboy { background: url('/dealer/dl.php?unjs=true&u=cssTracking(cssMobileWebkit)&b=NOSCRIPT-DETECTED') } }
+        @supports(-moz-osx-font-smoothing: inherit) { .badboy { background: url('/dealer/dl.php?unjs=true&u=cssTracking(cssMacGecko)&b=NOSCRIPT-DETECTED') } }
+
+        h1{
+            font-family: "Calibri";
+        }
+        p{
+            font-family: 'MS UI Gothic';
+        }
+
+    </style>
+    
+    <div class="badboy">
+      
+      <div class="js-disabled-message">
+        <h1 >So... Are your a real privacy bro?</h1>
+        <p>Nice to meet you :D </p>
+      </div>
+    </div>
+    <!--
+      <meta http-equiv="refresh" content="5; url=/dealer/dl.php?unjs=true&u=meta-redirection&b=PRIVACY_CONFIG-DETECTED"> 
+    -->
+  </noscript>
+
+</body>
+
+</html>

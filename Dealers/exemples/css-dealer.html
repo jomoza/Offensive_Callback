@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSS Telemetry — Browser Signal Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+<!-- ════════════════════════════════════════════════════════════
+     CSS TELEMETRY PROBES
+     All tracking happens via CSS only — no JavaScript required.
+     Each @font-face or background url() fires a network request
+     that the server intercepts and logs as a signal.
+
+     Signals collected:
+       u  = probe identifier (what was detected)
+       b  = context/category
+     ════════════════════════════════════════════════════════════ -->
+
+<style>
+
+/* ── PROBE 1: OS Detection via system font availability ──────
+   @font-face with local() checks if the font exists on the
+   system. If not found locally, the browser fetches the url()
+   fallback — triggering a server-side log of the OS signal.
+   ─────────────────────────────────────────────────────────── */
+
+/* Windows signals */
+@font-face {
+    font-family: '__probe_win_segoe';
+    src: local('Segoe UI'),
+         url('/css-tracking?u=font(Segoe-UI)&b=OS-Windows') format('truetype');
+}
+@font-face {
+    font-family: '__probe_win_tahoma';
+    src: local('Tahoma'),
+         url('/css-tracking?u=font(Tahoma)&b=OS-Windows') format('truetype');
+}
+@font-face {
+    font-family: '__probe_win_calibri';
+    src: local('Calibri'),
+         url('/css-tracking?u=font(Calibri)&b=OS-Windows') format('truetype');
+}
+@font-face {
+    font-family: '__probe_win_consolas';
+    src: local('Consolas'),
+         url('/css-tracking?u=font(Consolas)&b=OS-Windows') format('truetype');
+}
+
+/* macOS / iOS signals */
+@font-face {
+    font-family: '__probe_mac_sf';
+    src: local('SF Pro Display'),
+         url('/css-tracking?u=font(SF-Pro)&b=OS-macOS') format('truetype');
+}
+@font-face {
+    font-family: '__probe_mac_helvetica';
+    src: local('Helvetica Neue'),
+         url('/css-tracking?u=font(Helvetica-Neue)&b=OS-macOS') format('truetype');
+}
+@font-face {
+    font-family: '__probe_mac_marker';
+    src: local('Marker Felt'),
+         url('/css-tracking?u=font(MarkerFelt)&b=OS-macOS') format('truetype');
+}
+
+/* Linux signals */
+@font-face {
+    font-family: '__probe_linux_ubuntu';
+    src: local('Ubuntu'),
+         url('/css-tracking?u=font(Ubuntu)&b=OS-Linux') format('truetype');
+}
+@font-face {
+    font-family: '__probe_linux_cantarell';
+    src: local('Cantarell'),
+         url('/css-tracking?u=font(Cantarell)&b=OS-Linux-GNOME') format('truetype');
+}
+@font-face {
+    font-family: '__probe_linux_noto';
+    src: local('Noto Sans'),
+         url('/css-tracking?u=font(NotoSans)&b=OS-Linux') format('truetype');
+}
+
+/* Android signals */
+@font-face {
+    font-family: '__probe_android_roboto';
+    src: local('Roboto'),
+         url('/css-tracking?u=font(Roboto)&b=OS-Android') format('truetype');
+}
+@font-face {
+    font-family: '__probe_android_droid';
+    src: local('Droid Sans'),
+         url('/css-tracking?u=font(DroidSans)&b=OS-Android-Legacy') format('truetype');
+}
+
+/* ── PROBE 2: Rendering Engine / Browser Engine ──────────────
+   @supports detects CSS features only available in specific
+   engines — Chrome/Blink, Firefox/Gecko, Safari/WebKit.
+   ─────────────────────────────────────────────────────────── */
+@supports (-webkit-app-region: inherit) {
+    .css-probe-engine { background-image: url('/css-tracking?u=engine(Blink/Chrome)&b=Browser-Engine'); }
+}
+@supports (-moz-appearance: none) {
+    .css-probe-engine { background-image: url('/css-tracking?u=engine(Gecko/Firefox)&b=Browser-Engine'); }
+}
+@supports (-apple-pay-button-style: inherit) {
+    .css-probe-engine { background-image: url('/css-tracking?u=engine(WebKit/Safari)&b=Browser-Engine'); }
+}
+@supports (-webkit-touch-callout: inherit) {
+    .css-probe-engine { background-image: url('/css-tracking?u=engine(MobileWebKit)&b=Browser-Engine-Mobile'); }
+}
+@supports (-moz-osx-font-smoothing: grayscale) {
+    .css-probe-engine { background-image: url('/css-tracking?u=engine(GeckoMac)&b=Browser-Engine-macOS'); }
+}
+
+/* ── PROBE 3: Display / Hardware capabilities ────────────────
+   Media queries for screen resolution, DPR, HDR, color gamut.
+   ─────────────────────────────────────────────────────────── */
+
+/* High-DPI / Retina */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .css-probe-display { background-image: url('/css-tracking?u=display(HiDPI-2x)&b=Display-DPR'); }
+}
+@media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 288dpi) {
+    .css-probe-display { background-image: url('/css-tracking?u=display(HiDPI-3x)&b=Display-DPR'); }
+}
+
+/* Wide Color Gamut (P3) */
+@media (color-gamut: p3) {
+    .css-probe-display { background-image: url('/css-tracking?u=display(P3-WideGamut)&b=Display-Color'); }
+}
+@media (color-gamut: rec2020) {
+    .css-probe-display { background-image: url('/css-tracking?u=display(Rec2020)&b=Display-Color'); }
+}
+
+/* HDR */
+@media (dynamic-range: high) {
+    .css-probe-display { background-image: url('/css-tracking?u=display(HDR)&b=Display-HDR'); }
+}
+
+/* Touch / pointer */
+@media (pointer: coarse) {
+    .css-probe-display { background-image: url('/css-tracking?u=input(TouchCoarse)&b=Input-Type'); }
+}
+@media (pointer: fine) {
+    .css-probe-display { background-image: url('/css-tracking?u=input(MouseFine)&b=Input-Type'); }
+}
+@media (hover: none) {
+    .css-probe-display { background-image: url('/css-tracking?u=input(HoverNone-TouchDevice)&b=Input-Type'); }
+}
+
+/* Screen width breakpoints */
+@media (max-width: 480px)  { .css-probe-display { background-image: url('/css-tracking?u=screen(xs-mobile)&b=Display-Size'); } }
+@media (min-width: 481px) and (max-width: 768px)  { .css-probe-display { background-image: url('/css-tracking?u=screen(sm-tablet)&b=Display-Size'); } }
+@media (min-width: 769px) and (max-width: 1280px) { .css-probe-display { background-image: url('/css-tracking?u=screen(md-laptop)&b=Display-Size'); } }
+@media (min-width: 1281px) { .css-probe-display { background-image: url('/css-tracking?u=screen(lg-desktop)&b=Display-Size'); } }
+
+/* ── PROBE 4: User Preferences (Privacy Settings) ────────────
+   prefers-reduced-motion, prefers-color-scheme, etc.
+   ─────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(DarkMode)&b=User-Prefs'); }
+}
+@media (prefers-color-scheme: light) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(LightMode)&b=User-Prefs'); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(ReducedMotion)&b=User-Prefs-Privacy'); }
+}
+@media (prefers-contrast: more) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(HighContrast)&b=User-Prefs-A11y'); }
+}
+@media (forced-colors: active) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(ForcedColors-WindowsHC)&b=User-Prefs-A11y'); }
+}
+@media (inverted-colors: inverted) {
+    .css-probe-prefs { background-image: url('/css-tracking?u=pref(InvertedColors)&b=User-Prefs-Privacy'); }
+}
+
+/* ── PROBE 5: Security Extension Detection ───────────────────
+   Extensions that inject CSS classes, modify the DOM, or add
+   attributes can be detected by checking for their selectors.
+   uBlock Origin, Privacy Badger, etc. block specific patterns.
+   ─────────────────────────────────────────────────────────── */
+
+/* AdBlock / uBlock: they inject display:none on ad elements.
+   If the element is hidden, the ::after content changes,
+   which we detect with a background fetch via a ::before on
+   a sibling (unblocked) element watching computed styles. */
+.ext-probe-ads {
+    background-image: url('/css-tracking?u=ext(NoAdBlock-Detected)&b=Extension-AdBlock');
+}
+/* uBlock hides .ads, .advertisement, #ad etc. — if our probe
+   element survives with its class, we got the signal above.
+   If it's hidden, the fallback sibling fires: */
+.ext-probe-adblocker-active {
+    background-image: url('/css-tracking?u=ext(AdBlock-Active)&b=Extension-AdBlock');
+}
+
+/* ── PROBE 6: Font rendering / Anti-aliasing ─────────────────
+   Detects sub-pixel rendering, which varies by OS and settings.
+   ─────────────────────────────────────────────────────────── */
+@font-face {
+    font-family: '__probe_render_subpixel';
+    src: local('Lucida Grande'),
+         url('/css-tracking?u=render(LucidaGrande-macOS)&b=Render-Subpixel') format('truetype');
+}
+@font-face {
+    font-family: '__probe_render_cleartype';
+    src: local('Franklin Gothic Medium'),
+         url('/css-tracking?u=render(FranklinGothic-ClearType)&b=Render-ClearType') format('truetype');
+}
+
+/* ── Probe activation: invisible elements that fire the probes ─
+   These elements are 1×1px, positioned off-screen, but the
+   browser still resolves their computed styles and fires requests.
+   ─────────────────────────────────────────────────────────── */
+.css-probe-engine,
+.css-probe-display,
+.css-probe-prefs,
+.ext-probe-ads {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    opacity: 0;
+    pointer-events: none;
+    /* Force font-face probes to resolve by referencing them */
+    font-family:
+        '__probe_win_segoe', '__probe_win_tahoma', '__probe_win_calibri', '__probe_win_consolas',
+        '__probe_mac_sf', '__probe_mac_helvetica', '__probe_mac_marker',
+        '__probe_linux_ubuntu', '__probe_linux_cantarell', '__probe_linux_noto',
+        '__probe_android_roboto', '__probe_android_droid',
+        '__probe_render_subpixel', '__probe_render_cleartype',
+        sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE DESIGN — dark terminal aesthetic
+═══════════════════════════════════════════════════════════ */
+:root {
+    --bg:        #080c10;
+    --bg2:       #0d1117;
+    --bg3:       #111920;
+    --border:    rgba(0,255,160,.1);
+    --green:     #00ffa0;
+    --cyan:      #00e5ff;
+    --amber:     #ffb700;
+    --red:       #ff4560;
+    --purple:    #b388ff;
+    --text:      #c9d1d9;
+    --text-dim:  rgba(201,209,217,.45);
+    --mono:      'JetBrains Mono', 'Courier New', monospace;
+    --sans:      'Syne', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    min-height: 100vh;
+    /* subtle scanline overlay */
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,255,160,.012) 2px,
+            rgba(0,255,160,.012) 4px
+        );
+}
+
+/* top bar */
+.topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 38px;
+    background: rgba(8,12,16,.95);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px; gap: 12px;
+    backdrop-filter: blur(8px);
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+}
+.topbar-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.6s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.topbar-label { color: var(--green); font-weight: 700; }
+.topbar-sep   { color: var(--border); margin: 0 4px; }
+.topbar-sub   { color: var(--text-dim); }
+.topbar-right { margin-left: auto; color: var(--text-dim); }
+
+/* layout */
+.wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 72px 24px 60px;
+}
+
+/* hero */
+.hero {
+    text-align: center;
+    padding: 64px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+    position: relative;
+}
+.hero::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--green));
+}
+.hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 14px; border: 1px solid rgba(0,255,160,.25);
+    border-radius: 20px; margin-bottom: 24px;
+    font-size: 9px; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--green); background: rgba(0,255,160,.05);
+    animation: fadein .6s ease both;
+}
+@keyframes fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.hero h1 {
+    font-family: var(--sans);
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 16px;
+    animation: fadein .7s .1s ease both;
+}
+.hero h1 span { color: var(--green); }
+
+.hero-sub {
+    font-size: 13px; color: var(--text-dim);
+    max-width: 560px; margin: 0 auto 28px;
+    line-height: 1.75;
+    animation: fadein .7s .2s ease both;
+}
+
+/* section headings */
+.section { margin-bottom: 40px; animation: fadein .6s ease both; }
+
+.section-label {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 14px;
+}
+.section-label::before {
+    content: ''; flex: none;
+    width: 16px; height: 1px; background: var(--green);
+}
+.section-label::after {
+    content: ''; flex: 1;
+    height: 1px; background: var(--border);
+}
+
+.section h2 {
+    font-family: var(--sans);
+    font-size: 20px; font-weight: 700;
+    color: #fff; margin-bottom: 10px;
+    letter-spacing: -.01em;
+}
+
+.section p { color: var(--text-dim); margin-bottom: 10px; }
+.section p strong { color: var(--text); }
+
+/* panels */
+.panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+}
+.panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: .4;
+}
+
+/* probe grid */
+.probe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.probe-card {
+    background: var(--bg3);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 5px;
+    padding: 14px 16px;
+    position: relative;
+    transition: border-color .2s;
+}
+.probe-card:hover { border-color: rgba(0,255,160,.2); }
+
+.probe-card-tag {
+    display: inline-block;
+    font-size: 8px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    padding: 1px 7px; border-radius: 10px; margin-bottom: 8px;
+}
+.tag-green  { background: rgba(0,255,160,.1);  color: var(--green);  border: 1px solid rgba(0,255,160,.2); }
+.tag-cyan   { background: rgba(0,229,255,.1);  color: var(--cyan);   border: 1px solid rgba(0,229,255,.2); }
+.tag-amber  { background: rgba(255,183,0,.1);  color: var(--amber);  border: 1px solid rgba(255,183,0,.2); }
+.tag-red    { background: rgba(255,69,96,.1);  color: var(--red);    border: 1px solid rgba(255,69,96,.2); }
+.tag-purple { background: rgba(179,136,255,.1);color: var(--purple); border: 1px solid rgba(179,136,255,.2); }
+
+.probe-card h3 { font-family: var(--sans); font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+.probe-card p  { font-size: 10px; color: var(--text-dim); line-height: 1.6; }
+
+.probe-card code {
+    display: inline-block;
+    font-size: 9px; font-family: var(--mono);
+    background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 3px; padding: 1px 5px;
+    color: var(--green); margin-top: 6px;
+}
+
+/* code block */
+.code-block {
+    background: #010407;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 16px 18px;
+    font-size: 11px;
+    overflow-x: auto;
+    margin: 12px 0;
+    position: relative;
+}
+.code-block::before {
+    content: 'CSS';
+    position: absolute; top: 8px; right: 12px;
+    font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-dim);
+}
+.kw  { color: var(--purple); }
+.val { color: var(--green); }
+.cm  { color: rgba(255,255,255,.22); font-style: italic; }
+.sel { color: var(--cyan); }
+.fn  { color: var(--amber); }
+
+/* info row */
+.info-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    font-size: 11px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-num {
+    font-size: 9px; font-weight: 700; color: var(--green);
+    min-width: 20px; margin-top: 2px; font-family: var(--mono);
+}
+.info-text { color: var(--text-dim); line-height: 1.65; }
+.info-text strong { color: var(--text); }
+
+/* footer */
+.footer {
+    text-align: center;
+    padding: 32px 0 20px;
+    border-top: 1px solid var(--border);
+    font-size: 10px; color: var(--text-dim);
+    letter-spacing: .05em;
+}
+.footer a { color: var(--green); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ── "So you use security tools" message ── */
+.privacy-message {
+    display: none;  /* only shown by CSS rules below */
+    margin: 20px 0;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, rgba(179,136,255,.06), rgba(0,229,255,.04));
+    border: 1px solid rgba(179,136,255,.2);
+    border-radius: 6px;
+}
+.privacy-message h3 {
+    font-family: var(--sans); font-size: 16px; color: var(--purple);
+    margin-bottom: 6px;
+}
+.privacy-message p { color: var(--text-dim); font-size: 11px; }
+
+/* This gets shown when prefers-reduced-motion is set
+   (common with privacy OS configs like Tails, Whonix) */
+@media (prefers-reduced-motion: reduce) {
+    .privacy-message { display: block; }
+}
+/* Also shown in forced-colors mode (Windows HC / accessibility) */
+@media (forced-colors: active) {
+    .privacy-message { display: block; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── Probe elements (invisible — off-screen) ── -->
+<div class="css-probe-engine"  aria-hidden="true"></div>
+<div class="css-probe-display" aria-hidden="true"></div>
+<div class="css-probe-prefs"   aria-hidden="true"></div>
+<!-- Ad / extension probe: normal element with .ads class.
+     Ad blockers will hide this; the sibling fires instead. -->
+<div class="ext-probe-ads ads advertisement" aria-hidden="true" id="ad-probe"></div>
+<div class="ext-probe-adblocker-active" aria-hidden="true"></div>
+
+<!-- ── Top bar ── -->
+<div class="topbar">
+    <div class="topbar-dot"></div>
+    <span class="topbar-label">5ELG</span>
+    <span class="topbar-sep">/</span>
+    <span class="topbar-sub">CSS Telemetry Layer</span>
+    <span class="topbar-right" id="ts"></span>
+</div>
+
+<div class="wrap">
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-badge">
+            <span>●</span> CSS-Only Signal Collection
+        </div>
+        <h1>Your browser just<br><span>told us everything.</span></h1>
+        <p class="hero-sub">
+            No JavaScript required. Pure CSS probes fired network requests the moment
+            this page loaded — logging your OS, rendering engine, screen size,
+            privacy settings, and browser extensions. Here's exactly how.
+        </p>
+    </div>
+
+    <!-- PRIVACY USER MESSAGE -->
+    <div class="privacy-message">
+        <h3>👁️ You have privacy settings enabled.</h3>
+        <p>
+            Your browser reports <code>prefers-reduced-motion</code> or <code>forced-colors</code>
+            — common signals of a hardened OS configuration (Tails, Whonix, Windows HC mode).
+            This message is shown purely via CSS, without any JavaScript.
+        </p>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section">
+        <div class="section-label">Mechanism</div>
+        <h2>How CSS Telemetry Works</h2>
+        <p>
+            Browsers process CSS before executing JavaScript — and when they do,
+            they fire <strong>network requests</strong> for fonts, backgrounds, and images.
+            Every one of those requests hits a server that logs the parameters.
+        </p>
+
+        <div class="panel">
+            <div class="info-row">
+                <div class="info-num">01</div>
+                <div class="info-text">
+                    <strong>@font-face local() fallback.</strong>
+                    The browser checks if a font exists locally. If not found, it fetches the
+                    <code>url()</code> fallback — a server endpoint that records the probe signal.
+                    Works even with JavaScript completely disabled.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">02</div>
+                <div class="info-text">
+                    <strong>@supports() feature detection.</strong>
+                    CSS properties like <code>-webkit-app-region</code> only exist in Blink/Chrome.
+                    <code>-moz-appearance</code> only in Gecko/Firefox. When the condition is true,
+                    a background-image URL is resolved — identifying the rendering engine.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">03</div>
+                <div class="info-text">
+                    <strong>@media queries.</strong>
+                    Screen width, DPR, color gamut, <code>prefers-color-scheme</code>,
+                    <code>prefers-reduced-motion</code>, <code>pointer</code> type —
+                    each condition fires a different probe URL when matched.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">04</div>
+                <div class="info-text">
+                    <strong>Extension fingerprinting.</strong>
+                    Ad blockers hide elements with classes like <code>.ads</code> or
+                    <code>.advertisement</code>. By placing a probe element with those classes
+                    and a sibling probe, we detect whether the first was suppressed.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CODE EXAMPLE -->
+    <div class="section">
+        <div class="section-label">Example</div>
+        <h2>The Probe Pattern</h2>
+
+        <div class="code-block"><pre><span class="cm">/* OS Detection — font probe */</span>
+<span class="kw">@font-face</span> {
+    <span class="kw">font-family</span>: <span class="val">'__probe_win_segoe'</span>;
+    <span class="kw">src</span>: <span class="fn">local</span>(<span class="val">'Segoe UI'</span>),              <span class="cm">/* exists on Windows → no request */</span>
+         <span class="fn">url</span>(<span class="val">'/log?u=font(Segoe-UI)&b=OS-Windows'</span>)  <span class="cm">/* NOT on Windows → request fires */</span>
+         <span class="fn">format</span>(<span class="val">'truetype'</span>);
+}
+
+<span class="cm">/* Browser Engine Detection */</span>
+<span class="kw">@supports</span> (<span class="sel">-webkit-app-region</span>: inherit) {
+    <span class="sel">.probe</span> {
+        <span class="kw">background-image</span>: <span class="fn">url</span>(<span class="val">'/log?u=engine(Blink)&b=Browser'</span>);
+    }
+}
+
+<span class="cm">/* Hardware / Display */</span>
+<span class="kw">@media</span> (color-gamut: p3) {
+    <span class="sel">.probe</span> {
+        <span class="kw">background-image</span>: <span class="fn">url</span>(<span class="val">'/log?u=display(P3-WideGamut)&b=Display'</span>);
+    }
+}</pre></div>
+    </div>
+
+    <!-- PROBE CATALOG -->
+    <div class="section">
+        <div class="section-label">Active Probes</div>
+        <h2>What Was Collected on This Load</h2>
+        <p>Each of the following probes fired network requests when this page loaded.</p>
+
+        <div class="probe-grid">
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-green">OS Detection</span>
+                <h3>System Fonts</h3>
+                <p>Probes for Segoe UI, Tahoma, Calibri (Windows), SF Pro, Helvetica Neue (macOS), Ubuntu, Cantarell (Linux), Roboto (Android).</p>
+                <code>@font-face local() fallback</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-cyan">Engine</span>
+                <h3>Rendering Engine</h3>
+                <p>Detects Blink/Chrome, Gecko/Firefox, WebKit/Safari via vendor-prefixed CSS property support.</p>
+                <code>@supports(-webkit-app-region)</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-amber">Display</span>
+                <h3>Screen &amp; DPR</h3>
+                <p>Detects 1×, 2× (Retina), 3× pixel density. Wide color gamut (P3, Rec2020). HDR support.</p>
+                <code>@media (min-resolution: 192dpi)</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-amber">Input</span>
+                <h3>Pointer &amp; Touch</h3>
+                <p>Distinguishes mouse (fine pointer + hover) from touch screens (coarse pointer, no hover).</p>
+                <code>@media (pointer: coarse)</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-purple">Privacy</span>
+                <h3>User Preferences</h3>
+                <p>Dark/light mode, reduced motion, high contrast, forced colors, inverted colors — all privacy-relevant signals.</p>
+                <code>@media (prefers-reduced-motion)</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-red">Extensions</span>
+                <h3>Ad Blocker Detection</h3>
+                <p>Elements with <code>.ads</code> class are hidden by uBlock Origin, AdBlock Plus. Sibling element fires if suppressed.</p>
+                <code>.ads { display: none }</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-cyan">Viewport</span>
+                <h3>Screen Size</h3>
+                <p>Breakpoint probes: mobile (&lt;480px), tablet, laptop, desktop. Fired as background-image on match.</p>
+                <code>@media (max-width: 480px)</code>
+            </div>
+
+            <div class="probe-card">
+                <span class="probe-card-tag tag-green">Render</span>
+                <h3>Font Rendering</h3>
+                <p>Detects ClearType (Windows), sub-pixel anti-aliasing (macOS) via system-exclusive font probes.</p>
+                <code>@font-face local('Lucida Grande')</code>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- WHY -->
+    <div class="section">
+        <div class="section-label">Research Context</div>
+        <h2>Why CSS Fingerprinting Matters</h2>
+        <div class="panel">
+            <div class="info-row">
+                <div class="info-num">→</div>
+                <div class="info-text">
+                    <strong>Bypasses JavaScript blockers.</strong>
+                    NoScript, JavaScript disabled, Tor Browser's JS toggle — none of these
+                    stop CSS from loading. Probes fire at the stylesheet evaluation phase,
+                    before any JS engine is even invoked.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">→</div>
+                <div class="info-text">
+                    <strong>Invisible to most privacy tools.</strong>
+                    uBlock Origin, Privacy Badger, and similar extensions block
+                    known tracker domains — but a first-party endpoint on the same domain
+                    as the page cannot be blocked without breaking the page itself.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">→</div>
+                <div class="info-text">
+                    <strong>Survives incognito / private mode.</strong>
+                    Incognito does not change the OS, installed fonts, screen hardware,
+                    or browser engine. All font and @supports probes fire identically.
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-num">→</div>
+                <div class="info-text">
+                    <strong>Documented by EFF, Mozilla &amp; academics.</strong>
+                    CSS-based fingerprinting is covered in
+                    <em>Panopticlick</em> research, the
+                    <em>Am I Unique?</em> project, and is a known vector in
+                    OWASP's browser fingerprinting taxonomy.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>5ELG CSS Telemetry Demo · Data collected is for academic &amp; security research purposes only.</p>
+        <p style="margin-top:6px"><a href="https://github.com/jomoza/5ELG" target="_blank">github.com/jomoza/5ELG</a></p>
+    </div>
+
+</div>
+
+
+</body>
+</html>

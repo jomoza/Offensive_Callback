@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5ELG · Access</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+    --bg:#0e0e0e;--bg2:#141414;--bg3:#1a1a1a;
+    --bdr:rgba(255,255,255,.07);
+    --accent:#e0e0e0;--green:#5fffb0;--red:#ff7070;--amber:#ffd070;--dim:rgba(255,255,255,.32);--dim2:rgba(255,255,255,.15);
+}
+body{
+    background:var(--bg);color:#e0e0e0;font-family:Consolas,'Courier New',monospace;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+}
+
+.wrap{width:100%;max-width:480px;padding:0 16px}
+
+/* ASCII logo */
+.logo{text-align:center;margin-bottom:28px;line-height:1.25}
+.logo pre{font-size:14px;letter-spacing:.05em;display:inline-block;text-align:left;color:rgba(255,255,255,.12)}
+.logo-sub{font-size:9px;color:var(--dim2);letter-spacing:.18em;text-transform:uppercase;margin-top:6px}
+
+/* Card */
+.card{
+    background:#0a0a0a;border:1px solid var(--bdr);border-radius:6px;
+    padding:28px 28px 24px;
+}
+.card-title{
+    font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(255,255,255,.5);margin-bottom:20px;display:flex;align-items:center;gap:8px
+}
+.card-title::before{content:'◉';font-size:13px;color:var(--amber)}
+
+/* Form */
+label{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.field{margin-bottom:16px}
+input[type=text],input[type=password]{
+    width:100%;padding:9px 12px;background:#0a0a0a;
+    border:1px solid rgba(255,255,255,.1);border-radius:3px;
+    color:#fff;font-family:Consolas,monospace;font-size:13px;outline:none;
+    transition:border-color .15s;
+}
+input[type=text]:focus,input[type=password]:focus{border-color:rgba(255,255,255,.25)}
+input::placeholder{color:var(--dim2)}
+
+.btn{
+    width:100%;padding:10px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);border-radius:3px;
+    color:#e0e0e0;font-family:Consolas,monospace;font-size:11px;font-weight:700;
+    letter-spacing:.1em;cursor:pointer;transition:all .15s;margin-top:4px;
+}
+.btn:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.28)}
+.btn:active{transform:scale(.99)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Error / info */
+.msg{
+    font-size:10px;letter-spacing:.04em;padding:8px 10px;border-radius:3px;
+    margin-bottom:14px;display:none;
+}
+.msg.err{background:rgba(255,112,112,.08);border:1px solid rgba(255,112,112,.2);color:var(--red)}
+.msg.warn{background:rgba(255,208,112,.08);border:1px solid rgba(255,208,112,.2);color:var(--amber)}
+.msg.ok{background:rgba(95,255,176,.08);border:1px solid rgba(95,255,176,.2);color:var(--green)}
+.msg.show{display:block}
+
+/* Footer */
+.footer{text-align:center;margin-top:18px;font-size:8px;color:var(--dim2);letter-spacing:.08em}
+
+/* Spinner inside button */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .7s linear infinite;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="logo">
+        <pre id="ascii-logo">
+.------. .------. .------. .------.
+|U.--. | |F.--. | |C.--. | |4.--. |
+| (  ) | | (\/) | | :/\: | | :/\: |
+|(_||_)| |  \/  | | (__) | | :\/: |
+| '--'U| | '--'F| | '--'C| | '--'4|
+'------' '------' '------' '------'</pre>
+        <div class="logo-sub">Browser · Deal · Fingerprinter</div>
+    </div>
+
+    <div class="card">
+
+        <div id="msg" class="msg"></div>
+
+        <form id="form" onsubmit="doLogin(event)">
+            <div class="field">
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" autocomplete="username" placeholder="admin" autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" autocomplete="current-password" placeholder="••••••••">
+            </div>
+            <button class="btn" id="btn" type="submit">▶ SIGN IN</button>
+        </form>
+    </div>
+
+    <div class="footer">5ELG · Offensive Callback 0FC4 &nbsp;·&nbsp; Restricted access</div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const nextUrl = params.get('next') || '/web/index';
+
+function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = 'msg show ' + type;
+}
+
+async function doLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) { showMsg('Enter username and password.', 'warn'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin">◌</span> AUTHENTICATING…';
+
+    try {
+        const res = await fetch('/run/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, next: nextUrl }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.ok) {
+            showMsg('Access granted. Redirecting…', 'ok');
+            setTimeout(() => { window.location.href = data.redirect || nextUrl; }, 600);
+        } else {
+            showMsg(data.error || 'Authentication failed.', res.status === 429 ? 'warn' : 'err');
+            btn.disabled = false;
+            btn.innerHTML = '▶ SIGN IN';
+        }
+    } catch (_) {
+        showMsg('Network error. Try again.', 'err');
+        btn.disabled = false;
+        btn.innerHTML = '▶ SIGN IN';
+    }
+}
+
+// Allow Enter key on username to jump to password
+document.getElementById('username').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('password').focus(); }
+});
+
+// ASCII glitch — per-card colors + hover aggression
+(function(){
+    const el = document.getElementById('ascii-logo');
+    const GLITCH = '!@#$%^&*[]{}|\\/?~`±§░▒▓█▀▄';
+    // one color per card column (U F C 4)
+    const CARD_COLORS = ['#5fffb0', '#ff7070', '#ffd070', '#c4b0ff'];
+    // each card is 9 chars wide (last is 8), cards start at col 0,9,18,27
+    function cardOf(col) { return col < 9 ? 0 : col < 18 ? 1 : col < 27 ? 2 : 3; }
+
+    // build char model: [{char, color}]
+    const origModel = [];
+    let col = 0;
+    for (const c of el.textContent) {
+        if (c === '\n') { origModel.push({char:'\n', color:null}); col = 0; }
+        else { origModel.push({char:c, color: c===' ' ? null : CARD_COLORS[cardOf(col)]}); col++; }
+    }
+
+    const validIdx = origModel.reduce((a,{char},i) => { if(char!==' '&&char!=='\n') a.push(i); return a; }, []);
+
+    function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function render(model) {
+        let html='', curCol=null, seg='';
+        function flush(){ if(!seg)return; html += curCol ? `<span style="color:${curCol}">${esc(seg)}</span>` : esc(seg); seg=''; }
+        for(const {char,color} of model){
+            if(char==='\n'){ flush(); html+='\n'; curCol=null; }
+            else if(color===curCol){ seg+=char; }
+            else { flush(); curCol=color; seg+=char; }
+        }
+        flush();
+        return html;
+    }
+
+    const originalHTML = render(origModel);
+    el.innerHTML = originalHTML;
+
+    function corrupt(count) {
+        const m = origModel.map(c=>({...c}));
+        const pool = validIdx.slice();
+        for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+        pool.slice(0,count).forEach(i=>{ m[i]={char:GLITCH[Math.floor(Math.random()*GLITCH.length)], color:m[i].color}; });
+        return m;
+    }
+
+    let hovered=false, idleTimer=null, hoverFrame=null;
+
+    function glitchFlash(count, flashMs){
+        el.innerHTML = render(corrupt(count));
+        setTimeout(()=>{ if(!hovered) el.innerHTML=originalHTML; }, flashMs);
+    }
+
+    function scheduleIdle(){
+        idleTimer = setTimeout(()=>{
+            if(hovered) return;
+            const burst = 2+Math.floor(Math.random()*3);
+            let fired=0;
+            function fire(){ if(hovered||fired>=burst){ scheduleIdle(); return; }
+                glitchFlash(4+Math.floor(Math.random()*4), 60+Math.random()*80);
+                fired++; setTimeout(fire, 100+Math.random()*120); }
+            fire();
+        }, 1800+Math.random()*2400);
+    }
+
+    function runHover(){
+        if(!hovered) return;
+        el.innerHTML = render(corrupt(Math.floor(validIdx.length*(0.3+Math.random()*0.3))));
+        hoverFrame = setTimeout(runHover, 40+Math.random()*60);
+    }
+
+    el.addEventListener('mouseenter', ()=>{ hovered=true; clearTimeout(idleTimer); clearTimeout(hoverFrame); runHover(); });
+    el.addEventListener('mouseleave', ()=>{ hovered=false; clearTimeout(hoverFrame); el.innerHTML=originalHTML; scheduleIdle(); });
+
+    setTimeout(scheduleIdle, 800);
+})();
+</script>
+</body>
+</html>

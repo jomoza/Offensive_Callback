@@ -8,8 +8,13 @@ require('dotenv').config();
 // Crear la instancia de Sequelize apuntando a la base de datos SQLite
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: process.env.DB_PATH, // Ruta a la base de datos definida en `.env`
-    logging: false, // Desactivar logging de consultas SQL en consola
+    storage: process.env.DB_PATH,
+    logging: false,
+    dialectOptions: {
+        // Wait up to 5 s before giving up on a locked DB instead of throwing immediately
+        busyTimeout: 5000,
+    },
+    pool: { max: 1, min: 0, acquire: 30000, idle: 10000 },
 });
 
 
@@ -195,6 +200,10 @@ module.exports = { MAIL_SERVER };
 
 
  */
+
+// Enable WAL mode once on startup — reduces SQLITE_BUSY under concurrent writes
+sequelize.query('PRAGMA journal_mode=WAL;').catch(() => {});
+sequelize.query('PRAGMA synchronous=NORMAL;').catch(() => {});
 
 module.exports = {
     Op,

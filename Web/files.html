@@ -1,104 +1,934 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>5ELG - FILES</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5ELG — Files</title>
     <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="assets/css/index.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css"> <!-- DataTables CSS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
-    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script> <!-- DataTables JS -->
-    <script>
+<style>
+:root {
+    --blue:   #7eb8ff;
+    --green:  #5fffb0;
+    --amber:  #ffd070;
+    --red:    #c87070;
+    --purple: #c4b0ff;
+    --pink:   #f472b6;
+    --border: rgba(255,255,255,.07);
+    --dim2:   rgba(255,255,255,.04);
+}
 
-        var MD5 = function(d){var r = M(V(Y(X(d),8*d.length)));return r.toLowerCase()};function M(d){for(var _,m="0123456789ABCDEF",f="",r=0;r<d.length;r++)_=d.charCodeAt(r),f+=m.charAt(_>>>4&15)+m.charAt(15&_);return f}function X(d){for(var _=Array(d.length>>2),m=0;m<_.length;m++)_[m]=0;for(m=0;m<8*d.length;m+=8)_[m>>5]|=(255&d.charCodeAt(m/8))<<m%32;return _}function V(d){for(var _="",m=0;m<32*d.length;m+=8)_+=String.fromCharCode(d[m>>5]>>>m%32&255);return _}function Y(d,_){d[_>>5]|=128<<_%32,d[14+(_+64>>>9<<4)]=_;for(var m=1732584193,f=-271733879,r=-1732584194,i=271733878,n=0;n<d.length;n+=16){var h=m,t=f,g=r,e=i;f=md5_ii(f=md5_ii(f=md5_ii(f=md5_ii(f=md5_hh(f=md5_hh(f=md5_hh(f=md5_hh(f=md5_gg(f=md5_gg(f=md5_gg(f=md5_gg(f=md5_ff(f=md5_ff(f=md5_ff(f=md5_ff(f,r=md5_ff(r,i=md5_ff(i,m=md5_ff(m,f,r,i,d[n+0],7,-680876936),f,r,d[n+1],12,-389564586),m,f,d[n+2],17,606105819),i,m,d[n+3],22,-1044525330),r=md5_ff(r,i=md5_ff(i,m=md5_ff(m,f,r,i,d[n+4],7,-176418897),f,r,d[n+5],12,1200080426),m,f,d[n+6],17,-1473231341),i,m,d[n+7],22,-45705983),r=md5_ff(r,i=md5_ff(i,m=md5_ff(m,f,r,i,d[n+8],7,1770035416),f,r,d[n+9],12,-1958414417),m,f,d[n+10],17,-42063),i,m,d[n+11],22,-1990404162),r=md5_ff(r,i=md5_ff(i,m=md5_ff(m,f,r,i,d[n+12],7,1804603682),f,r,d[n+13],12,-40341101),m,f,d[n+14],17,-1502002290),i,m,d[n+15],22,1236535329),r=md5_gg(r,i=md5_gg(i,m=md5_gg(m,f,r,i,d[n+1],5,-165796510),f,r,d[n+6],9,-1069501632),m,f,d[n+11],14,643717713),i,m,d[n+0],20,-373897302),r=md5_gg(r,i=md5_gg(i,m=md5_gg(m,f,r,i,d[n+5],5,-701558691),f,r,d[n+10],9,38016083),m,f,d[n+15],14,-660478335),i,m,d[n+4],20,-405537848),r=md5_gg(r,i=md5_gg(i,m=md5_gg(m,f,r,i,d[n+9],5,568446438),f,r,d[n+14],9,-1019803690),m,f,d[n+3],14,-187363961),i,m,d[n+8],20,1163531501),r=md5_gg(r,i=md5_gg(i,m=md5_gg(m,f,r,i,d[n+13],5,-1444681467),f,r,d[n+2],9,-51403784),m,f,d[n+7],14,1735328473),i,m,d[n+12],20,-1926607734),r=md5_hh(r,i=md5_hh(i,m=md5_hh(m,f,r,i,d[n+5],4,-378558),f,r,d[n+8],11,-2022574463),m,f,d[n+11],16,1839030562),i,m,d[n+14],23,-35309556),r=md5_hh(r,i=md5_hh(i,m=md5_hh(m,f,r,i,d[n+1],4,-1530992060),f,r,d[n+4],11,1272893353),m,f,d[n+7],16,-155497632),i,m,d[n+10],23,-1094730640),r=md5_hh(r,i=md5_hh(i,m=md5_hh(m,f,r,i,d[n+13],4,681279174),f,r,d[n+0],11,-358537222),m,f,d[n+3],16,-722521979),i,m,d[n+6],23,76029189),r=md5_hh(r,i=md5_hh(i,m=md5_hh(m,f,r,i,d[n+9],4,-640364487),f,r,d[n+12],11,-421815835),m,f,d[n+15],16,530742520),i,m,d[n+2],23,-995338651),r=md5_ii(r,i=md5_ii(i,m=md5_ii(m,f,r,i,d[n+0],6,-198630844),f,r,d[n+7],10,1126891415),m,f,d[n+14],15,-1416354905),i,m,d[n+5],21,-57434055),r=md5_ii(r,i=md5_ii(i,m=md5_ii(m,f,r,i,d[n+12],6,1700485571),f,r,d[n+3],10,-1894986606),m,f,d[n+10],15,-1051523),i,m,d[n+1],21,-2054922799),r=md5_ii(r,i=md5_ii(i,m=md5_ii(m,f,r,i,d[n+8],6,1873313359),f,r,d[n+15],10,-30611744),m,f,d[n+6],15,-1560198380),i,m,d[n+13],21,1309151649),r=md5_ii(r,i=md5_ii(i,m=md5_ii(m,f,r,i,d[n+4],6,-145523070),f,r,d[n+11],10,-1120210379),m,f,d[n+2],15,718787259),i,m,d[n+9],21,-343485551),m=safe_add(m,h),f=safe_add(f,t),r=safe_add(r,g),i=safe_add(i,e)}return Array(m,f,r,i)}function md5_cmn(d,_,m,f,r,i){return safe_add(bit_rol(safe_add(safe_add(_,d),safe_add(f,i)),r),m)}function md5_ff(d,_,m,f,r,i,n){return md5_cmn(_&m|~_&f,d,_,r,i,n)}function md5_gg(d,_,m,f,r,i,n){return md5_cmn(_&f|m&~f,d,_,r,i,n)}function md5_hh(d,_,m,f,r,i,n){return md5_cmn(_^m^f,d,_,r,i,n)}function md5_ii(d,_,m,f,r,i,n){return md5_cmn(m^(_|~f),d,_,r,i,n)}function safe_add(d,_){var m=(65535&d)+(65535&_);return(d>>16)+(_>>16)+(m>>16)<<16|65535&m}function bit_rol(d,_){return d<<_|d>>>32-_}
-        // Function to fetch and display files in the table
-        function fetchFiles() {
-            fetch('/api/files')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(data); // Verify the JSON structure in the console
+/* ── stat cards ── */
+.stat-row { display:grid; gap:8px; grid-template-columns:repeat(5,1fr); margin-bottom:10px; }
+.stat-card { background:#0a0a0a; border:1px solid var(--border); border-radius:4px; padding:10px 14px; border-top:2px solid transparent; }
+.sc-blue   { border-top-color:var(--blue); }
+.sc-green  { border-top-color:var(--green); }
+.sc-amber  { border-top-color:var(--amber); }
+.sc-purple { border-top-color:var(--purple); }
+.sc-pink   { border-top-color:var(--pink); }
+.sc-label  { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.26); margin-bottom:5px; }
+.sc-val    { font-size:22px; font-weight:700; color:#e0e0e0; line-height:1; font-family:Consolas,monospace; }
+.sc-sub    { font-size:10px; color:rgba(255,255,255,.3); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-                    // Clear any existing rows in the table
-                    const tableBody = document.querySelector("#filesTable tbody");
-                    tableBody.innerHTML = '';
+/* ── distribution panel ── */
+.dist-panel { background:#0a0a0a; border:1px solid var(--border); border-radius:4px; padding:12px 14px; margin-bottom:12px; }
+.dist-bar   { display:flex; height:7px; border-radius:4px; overflow:hidden; gap:1px; margin:8px 0 10px; }
+.dist-seg   { height:100%; transition:flex .5s cubic-bezier(.4,0,.2,1); }
+.dist-legend{ display:flex; flex-wrap:wrap; gap:6px 18px; }
+.dist-item  { display:flex; align-items:center; gap:5px; font-size:10px; cursor:pointer; }
+.dist-dot   { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+.dist-ext   { font-family:Consolas,monospace; font-weight:700; }
+.dist-info  { color:rgba(255,255,255,.3); }
+
+/* ── filter bar ── */
+.filter-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.flt-search {
+    flex:1; min-width:200px; max-width:320px;
+    padding:5px 10px; font-size:11px;
+    border:1px solid rgba(255,255,255,.12); border-radius:3px;
+    background:var(--dim2); color:#fff; outline:none;
+    font-family:Consolas,monospace;
+}
+.flt-search:focus { border-color:rgba(255,255,255,.25); }
+.flt-search::placeholder { color:rgba(255,255,255,.22); }
+
+.flt-sep { width:1px; height:18px; background:var(--border); flex-shrink:0; margin:0 2px; }
+
+.flt-btn {
+    padding:2px 9px; border:1px solid rgba(255,255,255,.1); border-radius:3px;
+    font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    cursor:pointer; background:transparent; color:rgba(255,255,255,.3);
+    transition:all .1s; user-select:none; white-space:nowrap;
+}
+.flt-btn:hover { color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.2); }
+.flt-btn.on { background:rgba(126,184,255,.1); border-color:var(--blue); color:var(--blue); }
+.flt-btn.hide-active { background:rgba(200,112,112,.08); border-color:rgba(200,112,112,.3); color:var(--red); text-decoration:line-through; }
+
+.page-sel { padding:4px 8px; font-size:11px; border:1px solid rgba(255,255,255,.12); border-radius:3px; background:var(--dim2); color:#fff; outline:none; cursor:pointer; }
+
+.flt-count { font-size:11px; color:rgba(255,255,255,.3); margin-left:auto; white-space:nowrap; }
+
+/* ── action buttons ── */
+.cfg-btn { padding:4px 11px; border:1px solid rgba(95,255,176,.3); border-radius:3px; font-size:10px; font-weight:700; letter-spacing:.04em; cursor:pointer; background:transparent; color:var(--green); transition:all .12s; white-space:nowrap; text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
+.cfg-btn:hover { background:rgba(95,255,176,.07); }
+.cfg-btn-blue { border-color:rgba(126,184,255,.3); color:var(--blue); }
+.cfg-btn-blue:hover { background:rgba(126,184,255,.07); }
+.cfg-btn-red { border-color:rgba(200,112,112,.3); color:var(--red); }
+.cfg-btn-red:hover { background:rgba(200,112,112,.07); }
+
+/* ── table ── */
+.files-wrap { background:#0a0a0a; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+.files-table { width:100%; border-collapse:collapse; font-size:11px; }
+.files-table thead { background:rgba(255,255,255,.02); }
+.files-table th {
+    padding:7px 10px; font-size:9px; letter-spacing:.09em; text-transform:uppercase;
+    color:rgba(255,255,255,.4); border-bottom:1px solid var(--border);
+    text-align:left; font-weight:600; white-space:nowrap; cursor:pointer; user-select:none;
+}
+.files-table th:hover { color:rgba(255,255,255,.5); }
+.files-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; color:rgba(255,255,255,.8); }
+.files-table tr:last-child td { border-bottom:none; }
+.files-table tr:hover td { background:rgba(255,255,255,.02); }
+
+.col-idx  { width:36px; }
+.col-icon { width:30px; }
+.col-name { min-width:180px; }
+.col-ext  { width:66px; }
+.col-size { width:82px; }
+.col-date { width:136px; }
+.col-origin { width:160px; }
+.col-act  { width:120px; }
+
+.file-icon { font-size:15px; line-height:1; }
+.file-name { font-family:Consolas,monospace; font-size:11px; color:var(--blue); font-weight:700; cursor:pointer; }
+.file-name:hover { text-decoration:underline; }
+.file-subpath { font-size:9px; color:rgba(255,255,255,.22); font-family:Consolas,monospace; margin-top:1px; }
+
+.ext-badge {
+    display:inline-block; padding:1px 6px; border-radius:2px;
+    font-size:8px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+}
+.file-size { font-family:Consolas,monospace; font-size:11px; color:rgba(255,255,255,.7); font-weight:600; }
+.file-date { font-size:11px; color:rgba(255,255,255,.55); }
+.file-origin { font-size:10px; color:rgba(255,255,255,.45); font-family:Consolas,monospace;
+    max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.tbl-btn { padding:2px 7px; border:1px solid rgba(255,255,255,.1); border-radius:3px; font-size:9px; font-weight:700; cursor:pointer; background:transparent; color:rgba(255,255,255,.4); transition:all .1s; }
+.tbl-btn:hover { color:#fff; background:rgba(255,255,255,.06); }
+.tbl-btn.dl  { border-color:rgba(95,255,176,.22);  color:var(--green); }
+.tbl-btn.dl:hover  { background:rgba(95,255,176,.07); }
+.tbl-btn.del { border-color:rgba(200,112,112,.22); color:var(--red); }
+.tbl-btn.del:hover { background:rgba(200,112,112,.07); }
+
+/* ── pagination ── */
+.pag-bar { display:flex; align-items:center; gap:4px; padding:8px 12px; border-top:1px solid var(--border); font-size:10px; }
+.pag-btn { padding:2px 8px; border:1px solid rgba(255,255,255,.1); border-radius:3px; font-size:10px; background:transparent; color:rgba(255,255,255,.45); cursor:pointer; transition:all .1s; }
+.pag-btn:hover:not(:disabled) { background:rgba(255,255,255,.07); color:#fff; }
+.pag-btn.active { background:rgba(126,184,255,.12); border-color:rgba(126,184,255,.35); color:var(--blue); font-weight:700; }
+.pag-btn:disabled { opacity:.25; cursor:default; }
+.pag-info { margin-left:auto; color:rgba(255,255,255,.25); }
 
 
-                    // Populate table rows with the fetched file data - <td><a href="/api/files/data?id=${fid}" target="_blank">DATA</a></td>
-                    data.files.forEach((file, index) => {
-                        const row = document.createElement('tr');
-                        const fid = MD5(`${file.origin$}/${index + 1}`);
-                        row.innerHTML = `
-                            <td><a href="/api/files/${file.name}" download>${file.name}</a></td>
-                            <td>${file.type}</td>
-                            <td>${(file.size / 1024).toFixed(2)} KB</td>
-                            <td>${new Date(file.lastModified).toLocaleString()}</td>
-                            <td>${file.origin}</td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
 
-                    // Initialize DataTables functionality
-                    $('#filesTable').DataTable({
-                        destroy: true, // Destroy existing DataTable instance to reinitialize with new data
-                        paging: true, // Enable pagination
-                        searching: true, // Enable search
-                        ordering: true, // Enable column ordering
-                        info: true, // Show table information
-                        autoWidth: false, // Disable automatic column width adjustment
-                    });
-                })
-                .catch(error => console.error('Error fetching files:', error));
+/* ── sec head ── */
+.sec-head { display:flex; align-items:center; gap:8px; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.06); }
+.sec-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.sec-title{ font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#e0e0e0; }
+.sec-right{ margin-left:auto; font-size:10px; color:rgba(255,255,255,.28); }
+
+/* ── skeletons ── */
+.skel { height:12px; border-radius:2px; background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.04) 75%); background-size:200% 100%; animation:sh 1.4s infinite; }
+@keyframes sh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
+
+mark { background:rgba(255,208,112,.2); color:var(--amber); border-radius:2px; padding:0 1px; }
+
+/* ── SIDEBAR (from options) ── */
+/* ── layout ── */
+        :root {
+            --nav-w: 220px;
+            --nav-w-col: 54px;
+            --nav-tr: .18s cubic-bezier(.4,0,.2,1);
         }
+        .cfg-grid { display:grid; grid-template-columns:var(--nav-w) 1fr; gap:0; min-height:calc(100vh - 120px); margin-top:14px; transition:grid-template-columns var(--nav-tr); }
+        .cfg-grid.nav-collapsed { grid-template-columns:var(--nav-w-col) 1fr; }
+        .cfg-sidebar { border-right:1px solid rgba(255,255,255,.07); padding-right:0; overflow:hidden; }
+        .cfg-content { padding-left:28px; }
+        .cfg-pane { display:none; }
+        .cfg-pane.active { display:block; }
 
-        // Fetch files on initial load
-        document.addEventListener("DOMContentLoaded", function() {
-            fetchFiles();
-        });
-    </script>
+        /* ── nav container ── */
+        .cfg-nav { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; padding:0 0 12px; width:100%; overflow:hidden; }
+
+        /* ── nav header (logo + toggle) ── */
+        .cfg-nav-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:12px 12px 12px 14px;
+            border-bottom:1px solid rgba(255,255,255,.06);
+            margin-bottom:6px; flex-shrink:0;
+        }
+        .cfg-nav-logo {
+            font-size:13px; font-weight:800; letter-spacing:.14em; color:#7eb8ff;
+            white-space:nowrap; overflow:hidden;
+            max-width:100px;
+            transition:opacity var(--nav-tr), max-width var(--nav-tr);
+        }
+        .cfg-grid.nav-collapsed .cfg-nav-logo { opacity:0; max-width:0; }
+
+        .cfg-nav-toggle {
+            width:26px; height:26px; border:1px solid rgba(255,255,255,.1); border-radius:4px;
+            background:transparent; color:rgba(255,255,255,.4); cursor:pointer;
+            display:flex; align-items:center; justify-content:center; font-size:11px;
+            transition:all var(--nav-tr); flex-shrink:0;
+        }
+        .cfg-nav-toggle:hover { background:rgba(126,184,255,.08); color:#7eb8ff; border-color:rgba(126,184,255,.3); }
+        .cfg-grid.nav-collapsed .cfg-nav-toggle { transform:rotate(180deg); }
+
+        /* ── separator ── */
+        .cfg-nav-sep { height:1px; background:rgba(255,255,255,.05); margin:4px 12px; flex-shrink:0; }
+
+        /* ── nav item ── */
+        .cfg-nav-item {
+            position:relative;
+            display:flex; align-items:center; gap:10px;
+            padding:0 12px;
+            height:40px;
+            font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+            color:rgba(255,255,255,.32);
+            cursor:pointer;
+            border-left:2px solid transparent;
+            margin:1px 0;
+            transition:all var(--nav-tr);
+            user-select:none; white-space:nowrap; overflow:hidden; max-width:100%;
+        }
+        .cfg-nav-item:hover { color:rgba(255,255,255,.75); background:rgba(255,255,255,.04); border-left-color:rgba(255,255,255,.15); }
+        .cfg-nav-item.active { color:#fff; background:rgba(126,184,255,.07); border-left-color:#7eb8ff; }
+        .cfg-nav-item.nav-ext { opacity:.6; font-size:10px; }
+        .cfg-nav-item.nav-ext:hover { opacity:1; }
+
+        /* ── icon ── */
+        .nav-icon { font-size:15px; flex-shrink:0; width:20px; text-align:center; transition:transform var(--nav-tr); }
+        .cfg-nav-item:hover .nav-icon { transform:scale(1.1); }
+
+        /* ── label ── */
+        .nav-label { overflow:hidden; transition:opacity var(--nav-tr), max-width var(--nav-tr); max-width:160px; }
+        .cfg-grid.nav-collapsed .nav-label { opacity:0; max-width:0; }
+
+        /* ── tooltip (only visible when collapsed, appears on right) ── */
+        .nav-tooltip {
+            pointer-events:none;
+            position:fixed;
+            left:calc(var(--nav-w-col) + 10px);
+            top:50%; transform:translateY(-50%) translateX(-6px);
+            background:#131320;
+            border:1px solid rgba(126,184,255,.15);
+            border-radius:5px;
+            padding:9px 12px;
+            min-width:190px; max-width:240px;
+            box-shadow:0 6px 24px rgba(0,0,0,.5);
+            opacity:0;
+            transition:opacity var(--nav-tr), transform var(--nav-tr);
+            z-index:1000;
+        }
+        .cfg-nav-item:hover .nav-tooltip { opacity:1; transform:translateY(-50%) translateX(0); }
+        /* Hide tooltip when expanded — user can already read the label */
+        .cfg-grid:not(.nav-collapsed) .nav-tooltip { display:none; }
+
+        .tt-title { font-size:10px; font-weight:700; color:#7eb8ff; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; }
+        .tt-desc  { font-size:10px; color:rgba(255,255,255,.45); line-height:1.55; text-transform:none; letter-spacing:0; font-weight:400; }
+
+
+
+        /* ── section head ── */
+        .sec-head { display:flex; align-items:center; gap:8px; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.06); }
+        .sec-title { font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#e0e0e0; }
+        .sec-sub { font-size:11px; color:rgba(255,255,255,.3); margin-left:auto; }
+        .sec-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+</style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav>        
-        <div class="nav-container">
-            <div class="brand">
-                <a href="/web/index">5ELG</a>
-                <a href="https://github.com/jomoza/5ELG" target="_blank">GITHUB</a>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/web/callback">CALLBACK</a>|</li>
-                <li><a href="/web/dashboard">BROWSERS_DASHBOARD</a>
-                <a href="/web/scanners" >IPs_DASHBOARD</a>|</li>
-                <li><a href="/web/files">FILES</a>|</li>
-                <li><a href="/web/options">OPTIONS</a></li>
-            </ul>
-        </div>
-    </nav>
-    <h4>FILES</h4>
-    <p>This section provides an overview of the files available on the server. You can view detailed metadata for each file or download it directly.
-        <br><br>
-        These files are the result of exfiltration techniques executed via commands through the web interface or email. Various methods are utilized to exfiltrate files, including **PowerShell scripts**, client-side scripting embedded in the browser, or other automated processes. Each file stored here is categorized and logged for review, ensuring traceability of its origin.
-        <br>
-    <table id="filesTable" class="display">
-        <thead>
-            <tr>
-                <th>File Name</th>
-                <th>Type</th>
-                <th>Size</th>
-                <th>Last Modified</th>
-                <th>Origin</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- This will be dynamically populated with the files and links -->
-        </tbody>
-    </table>
+<nav>
+    <div class="nav-container">
+        <div class="brand">
+            <a href="/web/index" class="brand-logo">Offensive Callback <span class="brand-tag">0FC4</span></a>
+                <a href="/run/logout" class="brand-logout">LOG OUT</a>
+    <span class="brand-user" id="nav-user"></span>
 
-    <hr>
+        </div>
+        <script>fetch('/run/whoami').then(r=>r.json()).then(d=>{var e=document.getElementById('nav-user');if(e&&d.username)e.textContent=d.username;}).catch(function(){});</script>
+        <ul class="nav-links">
+            <li><a href="/web/callback" class="nav-btn nav-callback">CALLBACK</a></li>
+            <li><a href="/web/dashboard" class="nav-btn nav-browsers">BROWSERS</a></li>
+            <li><a href="/web/scanners" class="nav-btn nav-panel">PANEL</a></li>
+            <li><a href="/web/options" class="nav-btn nav-app">APP</a></li>
+        </ul>
+    </div>
+</nav>
+<script>
+(function(){
+    var p=location.pathname;
+    var a=p.includes('/callback')?'nav-callback'
+         :p.includes('/dashboard')||p.includes('/browsers')?'nav-browsers'
+         :p.includes('/scanners')||p.includes('/scope')||p.includes('/infoIPX')?'nav-panel'
+         :p.includes('/options')?'nav-app'
+         :'nav-app';
+    var el=document.querySelector('.'+a);
+    if(el)el.classList.add('active');
+})();
+</script>
+
+<div class="cfg-grid" id="files-grid">
+<div class="cfg-sidebar">
+        <div class="cfg-nav">
+
+            <!-- Header: logo + collapse toggle -->
+            <div class="cfg-nav-header">
+                <span class="cfg-nav-logo">5ELG</span>
+                <button class="cfg-nav-toggle" onclick="toggleNav()" title="Collapse / expand sidebar" id="nav-toggle-btn">
+                    ◀
+                </button>
+            </div>
+
+            <!-- General -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options'">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">General</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">General</div>
+                    <div class="tt-desc">Server overview, protocol status, environment variables and storage paths.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- DNS Server -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#dns'">
+                <span class="nav-icon">🌐</span>
+                <span class="nav-label">DNS Server</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">DNS Server</div>
+                    <div class="tt-desc">Manage DNS records, dealer domains and server configuration.</div>
+                </span>
+            </div>
+
+            <!-- Dealers -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#dealers'">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">Dealers</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Dealers</div>
+                    <div class="tt-desc">Configure and manage dealer campaigns, proxy dealers and injection payloads.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- Users -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#users'">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Users</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Users</div>
+                    <div class="tt-desc">Manage operator accounts: create, change passwords, assign roles and delete users.</div>
+                </span>
+            </div>
+
+            <!-- Backups -->
+            <div class="cfg-nav-item" onclick="window.location.href='/web/options#backups'">
+                <span class="nav-icon">💾</span>
+                <span class="nav-label">Backups</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Backups</div>
+                    <div class="tt-desc">Generate and download database backups as CSV files.</div>
+                </span>
+            </div>
+
+            <div class="cfg-nav-sep"></div>
+
+            <!-- Files — active (current page) -->
+            <div class="cfg-nav-item active" id="nav-files">
+                <span class="nav-icon">📁</span>
+                <span class="nav-label">Files</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Files</div>
+                    <div class="tt-desc">Browse and manage uploaded files on the server.</div>
+                </span>
+            </div>
+
+            <!-- Upload -->
+            <div class="cfg-nav-item nav-ext" onclick="window.location.href='/web/upload'">
+                <span class="nav-icon">⬆️</span>
+                <span class="nav-label">Upload ↗</span>
+                <span class="nav-tooltip">
+                    <div class="tt-title">Upload</div>
+                    <div class="tt-desc">Upload CSV datasets or dealer files to the server.</div>
+                </span>
+            </div>
+
+        </div>
+    </div>
+    <!-- Main content -->
+    <div class="cfg-content">
+
+<!-- ── STATS ── -->
+<div class="sec-head">
+    <span class="sec-dot" style="background:var(--blue)"></span>
+    <span class="sec-title">Storage Overview</span>
+    <span class="sec-right" id="stats-updated"></span>
+</div>
+
+<div class="stat-row">
+    <div class="stat-card sc-blue">
+        <div class="sc-label">Total Files</div>
+        <div class="sc-val" id="s-total">—</div>
+        <div class="sc-sub" id="s-total-sub">loading…</div>
+    </div>
+    <div class="stat-card sc-green">
+        <div class="sc-label">Total Size</div>
+        <div class="sc-val" id="s-size">—</div>
+        <div class="sc-sub" id="s-avg">avg —</div>
+    </div>
+    <div class="stat-card sc-amber">
+        <div class="sc-label">Unique Formats</div>
+        <div class="sc-val" id="s-formats">—</div>
+        <div class="sc-sub" id="s-top-ext">most common —</div>
+    </div>
+    <div class="stat-card sc-purple">
+        <div class="sc-label">Largest File</div>
+        <div class="sc-val" id="s-largest">—</div>
+        <div class="sc-sub" id="s-largest-name">—</div>
+    </div>
+    <div class="stat-card sc-pink">
+        <div class="sc-label">Most Recent</div>
+        <div class="sc-val" id="s-recent">—</div>
+        <div class="sc-sub" id="s-recent-name">—</div>
+    </div>
+</div>
+
+<!-- ── DISTRIBUTION ── -->
+<div class="dist-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28)">Extension Distribution</span>
+        <span style="font-size:9px;color:rgba(255,255,255,.22)" id="dist-total-label"></span>
+    </div>
+    <div class="dist-bar" id="dist-bar"><div class="skel" style="flex:1;height:7px;border-radius:4px"></div></div>
+    <div class="dist-legend" id="dist-legend"><div class="skel" style="width:280px;height:10px"></div></div>
+</div>
+
+
+
+<!-- ── TABLE ── -->
+<div class="sec-head" style="margin-top:6px">
+    <span class="sec-dot" style="background:var(--green)"></span>
+    <span class="sec-title">Files</span>
+    <span class="sec-right" id="tbl-head-count"></span>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+    <input type="text" class="flt-search" id="flt-q" placeholder="Search name, extension, origin…" oninput="_page=1;syncFuParam();renderTable()">
+
+    <span class="flt-sep"></span>
+
+    <!-- Hide .css/.map/.scss by default — toggled -->
+    <button class="flt-btn hide-active" id="hide-css-btn" onclick="toggleHide('css',this)">HIDE .CSS</button>
+    <button class="flt-btn hide-active" id="hide-js-btn"  onclick="toggleHide('js',this)">HIDE .JS</button>
+    <button class="flt-btn" id="hide-noext-btn" onclick="toggleHide('noext',this)">HIDE (no ext)</button>
+
+    <span class="flt-sep"></span>
+
+    <!-- Dynamic ext quick-filters injected here -->
+    <div id="ext-btns" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
+
+    <span class="flt-sep"></span>
+
+    <select class="page-sel" id="page-sel" onchange="_page=1;renderTable()">
+        <option value="20">20 / page</option>
+        <option value="50">50 / page</option>
+        <option value="100">100 / page</option>
+        <option value="0">All</option>
+    </select>
+
+    <div style="display:flex;gap:5px;margin-left:auto">
+        <button class="cfg-btn cfg-btn-blue" onclick="loadFiles()">↺ Refresh</button>
+        <button class="cfg-btn cfg-btn-red" onclick="deleteAll()">⚠ Delete All</button>
+    </div>
+</div>
+
+<div class="files-wrap">
+    <div style="overflow-x:auto">
+        <table class="files-table" id="files-table">
+            <thead>
+                <tr>
+                    <th class="col-idx">#</th>
+                    <th class="col-icon" style="cursor:default"></th>
+                    <th class="col-name" onclick="sortBy('name')">Filename <span id="si-name" style="color:rgba(255,255,255,.2)">↕</span></th>
+                    <th class="col-ext"  onclick="sortBy('ext')">Ext <span id="si-ext" style="color:rgba(255,255,255,.2)">↕</span></th>
+                    <th class="col-size" onclick="sortBy('size')">Size <span id="si-size" style="color:rgba(255,255,255,.2)">↕</span></th>
+                    <th class="col-date" onclick="sortBy('mtime')">Modified <span id="si-mtime" style="color:var(--blue)">↓</span></th>
+                    <th class="col-origin" onclick="sortBy('origin')">Origin <span id="si-origin" style="color:rgba(255,255,255,.2)">↕</span></th>
+                    <th class="col-act" style="cursor:default">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="files-tbody">
+                <tr><td colspan="8" style="padding:20px"><div class="skel"></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="pag-bar" id="pag-bar"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════════ */
+const EXT_ICON = {
+    js:'🟨',mjs:'🟨',cjs:'🟨',ts:'🔷',tsx:'🔵',jsx:'🔵',
+    php:'🐘',py:'🐍',rb:'💎',java:'☕',cs:'💜',go:'🐹',rs:'🦀',lua:'🌙',pl:'🐪',
+    sh:'🖥️',bash:'🖥️',zsh:'🖥️',ps1:'💠',bat:'💠',cmd:'💠',
+    html:'🌐',htm:'🌐',css:'🎨',scss:'🎨',sass:'🎨',less:'🎨',
+    json:'📋',xml:'📋',yaml:'📋',yml:'📋',toml:'📋',csv:'📊',tsv:'📊',
+    md:'📝',txt:'📄',log:'📄',env:'🔒',
+    png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',svg:'🖼️',webp:'🖼️',ico:'🖼️',bmp:'🖼️',
+    pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',ppt:'📙',pptx:'📙',
+    zip:'📦',tar:'📦',gz:'📦',bz2:'📦',rar:'📦','7z':'📦',
+    mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',mp3:'🎵',wav:'🎵',ogg:'🎵',
+    sql:'🗄️',db:'🗄️',sqlite:'🗄️',sqlite3:'🗄️',
+    exe:'⚙️',dll:'⚙️',so:'⚙️',bin:'⚙️',
+};
+const EXT_COLOR = {
+    js:'#ffeb3b',mjs:'#ffeb3b',cjs:'#ffeb3b',
+    ts:'#29b6f6',tsx:'#00e5ff',jsx:'#00e5ff',
+    php:'#b388ff',py:'#80cbc4',rb:'#ef5350',java:'#ff9800',cs:'#c4b0ff',go:'#00bcd4',rs:'#ff7043',
+    sh:'#a5d6a7',bash:'#a5d6a7',zsh:'#a5d6a7',ps1:'#29b6f6',bat:'#ffd070',cmd:'#ffd070',
+    html:'#5fffb0',htm:'#5fffb0',css:'#f472b6',scss:'#f472b6',sass:'#f472b6',less:'#f472b6',
+    json:'#ffd070',xml:'#ce93d8',yaml:'#80cbc4',yml:'#80cbc4',toml:'#a5d6a7',csv:'#5fffb0',
+    md:'#aaa',txt:'#888',log:'#555',env:'#ff7043',
+    png:'#00e5ff',jpg:'#00e5ff',jpeg:'#00e5ff',gif:'#a0ff32',svg:'#a0ff32',webp:'#00e5ff',ico:'#aaa',
+    pdf:'#ef5350',
+    zip:'#ffd070',tar:'#ffd070',gz:'#ffd070',rar:'#ffd070','7z':'#ffd070',
+    sql:'#c4b0ff',db:'#c4b0ff',sqlite:'#c4b0ff',
+    exe:'#ff8080',dll:'#ff8080',so:'#aaa',
+};
+const CSS_HIDE = new Set(['css','scss','sass','less','map']);
+const JS_HIDE = new Set(['js','mjs','cjs','ts','tsx','jsx','min']);
+
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+let _files   = [];
+let _sort    = { col:'mtime', dir:-1 };
+let _page    = 1;
+let _hideCSS  = true;
+let _hideJS   = true;
+let _hideNoExt= false;
+let _onlyExt = new Set(); // if non-empty, show only these
+
+/* ════════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════════ */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function hl(text, q){
+    if(!q) return esc(text);
+    const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return esc(text).replace(new RegExp('('+safe+')','gi'),'<mark>$1</mark>');
+}
+
+function fmtBytes(b){
+    if(b===undefined||b===null||b==='') return '—';
+    b=Number(b);
+    if(isNaN(b)) return '—';
+    if(b>=1073741824) return (b/1073741824).toFixed(2)+' GB';
+    if(b>=1048576)    return (b/1048576).toFixed(1)+' MB';
+    if(b>=1024)       return (b/1024).toFixed(1)+' KB';
+    return b+' B';
+}
+
+function fmtDate(ts){
+    if(!ts) return '—';
+    try{
+        const d=new Date(ts);
+        if(isNaN(d)) return String(ts);
+        return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+            +' '+[d.getHours(),d.getMinutes()].map(n=>String(n).padStart(2,'0')).join(':');
+    }catch{ return String(ts); }
+}
+
+function extOf(name){ return (name||'').includes('.') ? (name.split('.').pop()||'').toLowerCase() : ''; }
+function iconOf(ext){ return EXT_ICON[ext]||'📄'; }
+function colorOf(ext){ return EXT_COLOR[ext]||'rgba(255,255,255,.3)'; }
+
+/* ════════════════════════════════════════════════
+   LOAD
+════════════════════════════════════════════════ */
+async function loadFiles(){
+    try{
+        let data;
+        const r = await fetch('/api/files');
+        if(r.ok) data = await r.json();
+        _files = Array.isArray(data) ? data : (data?.files || []);
+    }catch(e){
+        console.warn('files fetch failed', e.message);
+        _files = [];
+    }
+    buildStats();
+    buildDist();
+    buildExtBtns();
+    renderTable();
+    const el = document.getElementById('stats-updated');
+    if(el) el.textContent = 'Updated '+new Date().toLocaleTimeString();
+}
+
+/* ════════════════════════════════════════════════
+   STATS
+════════════════════════════════════════════════ */
+function buildStats(){
+    const total = _files.length;
+    const totalSize = _files.reduce((s,f)=>s+(Number(f.size)||0), 0);
+    const avgSize   = total ? totalSize/total : 0;
+
+    // ext counts
+    const extMap = {};
+    _files.forEach(f=>{
+        const e = extOf(f.name||f.filename||'');
+        extMap[e] = (extMap[e]||0)+1;
+    });
+    const extCount = Object.keys(extMap).length;
+    const topExt   = Object.entries(extMap).sort((a,b)=>b[1]-a[1])[0];
+
+    const largest = [..._files].sort((a,b)=>(Number(b.size)||0)-(Number(a.size)||0))[0];
+    const latest  = [..._files].sort((a,b)=>new Date(b.mtime||b.lastModified||0)-new Date(a.mtime||a.lastModified||0))[0];
+
+    const s = id=>document.getElementById(id);
+    s('s-total').textContent        = total.toLocaleString();
+    s('s-total-sub').textContent    = extCount+' unique formats';
+    s('s-size').textContent         = fmtBytes(totalSize);
+    s('s-avg').textContent          = 'avg '+fmtBytes(Math.round(avgSize));
+    s('s-formats').textContent      = extCount;
+    s('s-top-ext').textContent      = topExt ? '.'+topExt[0]+' most common ('+topExt[1]+')' : '—';
+    s('s-largest').textContent      = largest ? fmtBytes(largest.size) : '—';
+    s('s-largest-name').textContent = largest ? (largest.name||largest.filename||'—').slice(-22) : '—';
+
+    if(latest){
+        const d = new Date(latest.mtime||latest.lastModified||0);
+        s('s-recent').textContent      = isNaN(d) ? '—' : d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+        s('s-recent-name').textContent = (latest.name||latest.filename||'—').slice(-22);
+    }
+}
+
+/* ════════════════════════════════════════════════
+   DISTRIBUTION BAR
+════════════════════════════════════════════════ */
+function buildDist(){
+    const sizeByExt = {};
+    let total = 0;
+    _files.forEach(f=>{
+        const e = extOf(f.name||f.filename||'') || 'other';
+        const s = Number(f.size)||0;
+        sizeByExt[e] = (sizeByExt[e]||0)+s;
+        total+=s;
+    });
+    if(!total){ document.getElementById('dist-bar').innerHTML='<span style="font-size:10px;color:rgba(255,255,255,.2)">No data</span>'; return; }
+
+    const sorted = Object.entries(sizeByExt).sort((a,b)=>b[1]-a[1]);
+    const top    = sorted.slice(0,9);
+    const rest   = sorted.slice(9).reduce((s,[,v])=>s+v,0);
+    if(rest>0) top.push(['…other',rest]);
+
+    document.getElementById('dist-total-label').textContent = fmtBytes(total)+' total';
+
+    document.getElementById('dist-bar').innerHTML = top.map(([ext,sz])=>{
+        const pct = sz/total*100;
+        const c   = ext==='…other' ? 'rgba(255,255,255,.15)' : colorOf(ext);
+        return `<div class="dist-seg" style="flex:${pct.toFixed(2)};background:${c};opacity:.85" title=".${ext} — ${fmtBytes(sz)} (${pct.toFixed(1)}%)"></div>`;
+    }).join('');
+
+    document.getElementById('dist-legend').innerHTML = top.map(([ext,sz])=>{
+        const pct = (sz/total*100).toFixed(1);
+        const c   = ext==='…other' ? 'rgba(255,255,255,.25)' : colorOf(ext);
+        const cnt = _files.filter(f=>(extOf(f.name||f.filename||'')||'other')===ext.replace('…','')).length;
+        return `<div class="dist-item" title="Click to filter" onclick="quickFilterExt('${ext.replace('…','')}')">
+            <div class="dist-dot" style="background:${c}"></div>
+            <span class="dist-ext" style="color:${c}">.${ext}</span>
+            <span class="dist-info">${fmtBytes(sz)} · ${cnt}f · ${pct}%</span>
+        </div>`;
+    }).join('');
+}
+
+function quickFilterExt(ext){
+    if(_onlyExt.has(ext)) _onlyExt.delete(ext);
+    else _onlyExt.add(ext);
+    _page=1;
+    buildExtBtns();
+    renderTable();
+}
+
+/* ════════════════════════════════════════════════
+   EXT FILTER BUTTONS
+════════════════════════════════════════════════ */
+function buildExtBtns(){
+    const extSet = new Set();
+    _files.forEach(f=>{ const e=extOf(f.name||f.filename||''); if(e) extSet.add(e); });
+    const container = document.getElementById('ext-btns');
+    const exts = [...extSet].filter(e=>!CSS_HIDE.has(e)).sort();
+    container.innerHTML = exts.map(ext=>{
+        const on  = _onlyExt.has(ext);
+        const c   = colorOf(ext);
+        return `<button class="flt-btn${on?' on':''}"
+            style="${on?`border-color:${c};color:${c};background:${c}18`:''}"
+            onclick="quickFilterExt('${esc(ext)}')"
+            title="${_files.filter(f=>extOf(f.name||f.filename||'')===ext).length} files"
+        >.${ext.toUpperCase()}</button>`;
+    }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   HIDE TOGGLES
+════════════════════════════════════════════════ */
+function toggleHide(type, btn){
+    if(type==='css'){
+        _hideCSS=!_hideCSS;
+        btn.classList.toggle('hide-active',_hideCSS);
+        btn.textContent=(_hideCSS?'HIDE':'SHOW')+' .CSS';
+    } else if(type==='js'){
+        _hideJS=!_hideJS;
+        btn.classList.toggle('hide-active',_hideJS);
+        btn.textContent=(_hideJS?'HIDE':'SHOW')+' .JS';
+    } else if(type==='noext'){
+        _hideNoExt=!_hideNoExt;
+        btn.classList.toggle('hide-active',_hideNoExt);
+        btn.textContent=(_hideNoExt?'HIDE':'SHOW')+' (no ext)';
+    }
+    _page=1; renderTable();
+}
+
+/* ════════════════════════════════════════════════
+   SORT
+════════════════════════════════════════════════ */
+function sortBy(col){
+    if(_sort.col===col) _sort.dir*=-1;
+    else { _sort.col=col; _sort.dir=col==='mtime'||col==='size'?-1:1; }
+    ['name','ext','size','mtime','origin'].forEach(c=>{
+        const el=document.getElementById('si-'+c); if(!el)return;
+        if(c===_sort.col){ el.textContent=_sort.dir===1?' ↑':' ↓'; el.style.color='var(--blue)'; }
+        else { el.textContent=' ↕'; el.style.color='rgba(255,255,255,.2)'; }
+    });
+    _page=1; renderTable();
+}
+
+/* ════════════════════════════════════════════════
+   URL PARAM SYNC
+════════════════════════════════════════════════ */
+function syncFuParam(){
+    const q = document.getElementById('flt-q')?.value||'';
+    const url = new URL(window.location);
+    if(q) url.searchParams.set('fu', q);
+    else  url.searchParams.delete('fu');
+    history.replaceState(null,'', url);
+}
+
+/* ════════════════════════════════════════════════
+   RENDER TABLE
+════════════════════════════════════════════════ */
+function renderTable(){
+    const tbody  = document.getElementById('files-tbody');
+    const pagBar = document.getElementById('pag-bar');
+    const q      = (document.getElementById('flt-q')?.value||'').toLowerCase();
+    const perPage= parseInt(document.getElementById('page-sel')?.value||'20');
+    if(!tbody) return;
+
+    let rows = _files.filter(f=>{
+        const name = (f.name||f.filename||'').toLowerCase();
+        const ext  = extOf(name);
+        if(_hideCSS && CSS_HIDE.has(ext)) return false;
+        if(_hideJS  && JS_HIDE.has(ext))  return false;
+        if(_hideNoExt && !ext) return false;
+        if(_onlyExt.size>0 && !_onlyExt.has(ext)) return false;
+        if(q && !name.includes(q) && !(f.origin||'').toLowerCase().includes(q) && !ext.includes(q)) return false;
+        return true;
+    });
+
+    rows = [...rows].sort((a,b)=>{
+        let av, bv;
+        const na=(a.name||a.filename||''), nb=(b.name||b.filename||'');
+        switch(_sort.col){
+            case 'name':   av=na.toLowerCase(); bv=nb.toLowerCase(); break;
+            case 'ext':    av=extOf(na); bv=extOf(nb); break;
+            case 'size':   return _sort.dir*((Number(b.size)||0)-(Number(a.size)||0));
+            case 'mtime':  return _sort.dir*(new Date(b.mtime||b.lastModified||0)-new Date(a.mtime||a.lastModified||0));
+            case 'origin': av=(a.origin||'').toLowerCase(); bv=(b.origin||'').toLowerCase(); break;
+            default:       av=''; bv='';
+        }
+        return _sort.dir*(av<bv?-1:av>bv?1:0);
+    });
+
+    const cntEl = document.getElementById('tbl-head-count');
+    if(cntEl) cntEl.textContent = rows.length+' file'+(rows.length===1?'':'s')+(q||_onlyExt.size||_hideCSS?' (filtered)':'');
+
+    const totalPages = perPage>0 ? Math.max(1,Math.ceil(rows.length/perPage)) : 1;
+    if(_page>totalPages) _page=totalPages;
+    const pageRows = perPage>0 ? rows.slice((_page-1)*perPage, _page*perPage) : rows;
+
+    if(!pageRows.length){
+        tbody.innerHTML=`<tr><td colspan="8" style="padding:28px;text-align:center;font-size:11px;color:rgba(255,255,255,.22)">${q||_onlyExt.size?'No files match your filters.':'No files found.'}</td></tr>`;
+    } else {
+        const offset = (_page-1)*(perPage||0);
+        tbody.innerHTML = pageRows.map((f,i)=>{
+            const name   = f.name||f.filename||'—';
+            const ext    = extOf(name);
+            const icon   = iconOf(ext);
+            const color  = colorOf(ext);
+            const origin = f.origin||f.path||'—';
+            const url    = f.url||`/api/files/${encodeURIComponent(name)}`;
+
+            return `<tr>
+                <td class="col-idx" style="color:rgba(255,255,255,.18);font-size:9px;font-family:Consolas,monospace">${offset+i+1}</td>
+                <td class="col-icon"><span class="file-icon">${icon}</span></td>
+                <td class="col-name">
+                    <div class="file-name" onclick="viewFile('${esc(name)}','${esc(url)}','${esc(ext)}')" title="${esc(name)}">${hl(name,q)}</div>
+                    ${f.path&&f.path!==name?`<div class="file-subpath" title="${esc(f.path)}">${esc(f.path)}</div>`:''}
+                </td>
+                <td class="col-ext">
+                    <span class="ext-badge" style="background:${color}18;color:${color};border:1px solid ${color}28">${ext?ext.toUpperCase():'—'}</span>
+                </td>
+                <td class="col-size"><span class="file-size">${fmtBytes(f.size)}</span></td>
+                <td class="col-date"><span class="file-date">${fmtDate(f.mtime||f.lastModified)}</span></td>
+                <td class="col-origin" title="${esc(origin)}"><span class="file-origin">${hl(origin,q)}</span></td>
+                <td class="col-act">
+                    <div style="display:flex;gap:3px">
+                        <a class="tbl-btn dl" href="${esc(url)}" download="${esc(name)}" title="Download">⬇</a>
+                        <button class="tbl-btn" onclick="copyURL('${esc(url)}')" title="Copy URL" style="color:var(--blue);border-color:rgba(126,184,255,.2)">⎘</button>
+                        <button class="tbl-btn del" onclick="deleteFile('${esc(name)}')" title="Delete">✕</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // pagination
+    if(pagBar){
+        if(rows.length<=perPage||perPage===0){
+            pagBar.innerHTML=`<span class="pag-info">${rows.length} file${rows.length===1?'':'s'}</span>`;
+        } else {
+            let btns='';
+            btns+=`<button class="pag-btn" onclick="goPage(${_page-1})" ${_page===1?'disabled':''}>‹</button>`;
+            let s=Math.max(1,_page-3), e=Math.min(totalPages,s+6);
+            if(e-s<6) s=Math.max(1,e-6);
+            if(s>1) btns+=`<span style="color:rgba(255,255,255,.2);padding:0 2px">…</span>`;
+            for(let p=s;p<=e;p++) btns+=`<button class="pag-btn${p===_page?' active':''}" onclick="goPage(${p})">${p}</button>`;
+            if(e<totalPages) btns+=`<span style="color:rgba(255,255,255,.2);padding:0 2px">…</span>`;
+            btns+=`<button class="pag-btn" onclick="goPage(${_page+1})" ${_page===totalPages?'disabled':''}>›</button>`;
+            const from=(_page-1)*(perPage)+1, to=Math.min(_page*perPage,rows.length);
+            btns+=`<span class="pag-info">${from}–${to} of ${rows.length}</span>`;
+            pagBar.innerHTML=btns;
+        }
+    }
+}
+
+function goPage(p){ _page=p; renderTable(); }
+
+/* ════════════════════════════════════════════════
+   ACTIONS
+════════════════════════════════════════════════ */
+function copyURL(url){
+    const full = url.startsWith('http') ? url : location.origin+url;
+    navigator.clipboard.writeText(full).then(()=>{
+        Swal.fire({title:'Copied!',text:full,icon:'success',timer:1400,showConfirmButton:false});
+    });
+}
+
+function viewFile(name, url, ext){
+    const IMG  = new Set(['png','jpg','jpeg','gif','svg','webp','ico','bmp']);
+    const CODE = new Set(['js','ts','php','py','rb','sh','ps1','bash','html','css','json','xml','yaml','yml','md','txt','log','csv','sql','env','lua','go','rs']);
+    const full = url.startsWith('http') ? url : location.origin+url;
+
+    if(IMG.has(ext)){
+        Swal.fire({
+            title:esc(name),
+            html:`<img src="${esc(full)}" style="max-width:100%;max-height:65vh;border-radius:3px;border:1px solid rgba(255,255,255,.1)">`,
+            width:'auto', confirmButtonText:'Close',
+            showDenyButton:true, denyButtonText:'⬇ Download'
+        }).then(r=>{ if(r.isDenied) window.open(full,'_blank'); });
+    } else if(CODE.has(ext)){
+        fetch(full).then(r=>r.text()).then(txt=>{
+            Swal.fire({
+                title:esc(name),
+                html:`<pre style="text-align:left;background:#010407;border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:14px;font-size:10px;font-family:Consolas,monospace;color:rgba(255,255,255,.75);overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">${esc(txt.slice(0,10000))}${txt.length>10000?'\n\n[… truncated]':''}</pre>`,
+                width:'820px', confirmButtonText:'Close',
+                showDenyButton:true, denyButtonText:'⬇ Download'
+            }).then(r=>{ if(r.isDenied) window.open(full,'_blank'); });
+        }).catch(()=>window.open(full,'_blank'));
+    } else {
+        window.open(full,'_blank');
+    }
+}
+
+async function deleteFile(name){
+    const ok = await Swal.fire({
+        title:'Delete file?',
+        html:`Remove <code style="color:var(--red)">${esc(name)}</code>?<br><span style="font-size:11px;color:rgba(255,255,255,.35)">Cannot be undone.</span>`,
+        icon:'warning', showCancelButton:true,
+        confirmButtonText:'Delete', cancelButtonText:'Cancel', confirmButtonColor:'#c87070'
+    });
+    if(!ok.isConfirmed) return;
+    try{
+        const r = await fetch(`/api/files/${encodeURIComponent(name)}`,{method:'DELETE'});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        await loadFiles();
+        Swal.fire({title:'Deleted',text:name,icon:'success',timer:1400,showConfirmButton:false});
+    }catch(e){ Swal.fire({title:'Error',text:e.message,icon:'error'}); }
+}
+
+async function deleteAll(){
+    const ok = await Swal.fire({
+        title:'Delete ALL files?',
+        text:'This permanently removes every file from the server.',
+        icon:'warning', showCancelButton:true,
+        confirmButtonText:'Delete All', confirmButtonColor:'#c87070'
+    });
+    if(!ok.isConfirmed) return;
+    try{
+        const r = await fetch('/api/files',{method:'DELETE'});
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        await loadFiles();
+        Swal.fire({title:'Done',text:'All files deleted',icon:'success',timer:1500,showConfirmButton:false});
+    }catch(e){ Swal.fire({title:'Error',text:e.message,icon:'error'}); }
+}
+
+
+
+
+/* ══ SIDEBAR COLLAPSE ══ */
+let _navCollapsed = localStorage.getItem('5elg-nav-collapsed') === '1';
+function applyNavState(){
+    const grid = document.getElementById('files-grid');
+    const btn  = document.getElementById('nav-toggle-btn');
+    if(!grid) return;
+    if(_navCollapsed){ grid.classList.add('nav-collapsed'); if(btn)btn.textContent='▶'; }
+    else             { grid.classList.remove('nav-collapsed'); if(btn)btn.textContent='◀'; }
+}
+function toggleNav(){
+    _navCollapsed = !_navCollapsed;
+    localStorage.setItem('5elg-nav-collapsed', _navCollapsed?'1':'0');
+    applyNavState();
+}
+applyNavState();
+
+/* ════ INIT ════ */
+// Read ?fu= from URL and pre-fill search on load
+(function(){
+    const params = new URLSearchParams(window.location.search);
+    const fu = params.get('fu');
+    if(fu){
+        const el = document.getElementById('flt-q');
+        if(el){ el.value = fu; }
+    }
+})();
+loadFiles();
+</script>
+    </div><!-- /cfg-content -->
+</div><!-- /cfg-grid -->
 </body>
 </html>

